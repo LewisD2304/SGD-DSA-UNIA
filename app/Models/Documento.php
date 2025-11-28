@@ -3,11 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\AuditoriaTrait;
 
 class Documento extends Model
 {
-    use AuditoriaTrait;
+    use AuditoriaTrait, softDeletes;
+
+    const CREATED_AT = 'au_fechacr';
+    const UPDATED_AT = 'au_fechamd';
+    const DELETED_AT = 'au_fechael';
 
     protected $table = 'ta_documento';
     protected $primaryKey = 'id_documento';
@@ -25,13 +30,7 @@ class Documento extends Model
         'tipo_documento_catalogo',
         'ruta_documento',
         'id_persona',
-        'id_area',
-        'au_fechacr',
-        'au_fechamd',
-        'au_fechael',
-        'au_usuariocr',
-        'au_usuariomd',
-        'au_usuarioel'
+        'id_area'
     ];
 
     protected $hidden = [

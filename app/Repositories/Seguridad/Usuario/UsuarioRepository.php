@@ -2,14 +2,33 @@
 
 namespace App\Repositories\Seguridad\Usuario;
 
-class UsuarioRepository
+use App\Models\Usuario;
+use App\Traits\BaseRepositoryTrait;
+
+class UsuarioRepository implements UsuarioRepositoryInterface
 {
-    /**
-     * Create a new class instance.
-     */
-    public function __construct()
+    //TODAS LAS CONSULTAS SE VAN HACER ACA, NADA EN EL CONTROLADOR !!! =D
+    //EN EL SERVICIO ESTÁ TODA LA LOGICA
+
+    use BaseRepositoryTrait;
+    protected $model;
+
+    public function __construct(Usuario $usuario)
     {
-        //TODAS LAS CONSULTAS SE VAN HACER ACA, NADA EN EL CONTROLADOR !!! =D
-        //EN EL SERVICIO ESTÁ TODA LA LOGICA
+        $this->model = $usuario;
     }
+
+    // Verificar si un usuario existe por nombre de usuario
+    public function existePorNombreUsuario(string $nombreUsuario): bool
+    {
+        return $this->model::where('nombre_usuario', $nombreUsuario)->exists();
+    }
+
+
+
+
+
+
+
+
 }

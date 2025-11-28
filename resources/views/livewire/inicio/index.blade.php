@@ -1,3 +1,9 @@
+@section('breadcrumb')
+    <x-breadcrumb titulo="Multipurpose">
+        <x-breadcrumb.item titulo="Inicio" />
+    </x-breadcrumb>
+@endsection
+
 <div>
-    {{-- Success is as dangerous as failure. --}}
+    Inicio
 </div>
