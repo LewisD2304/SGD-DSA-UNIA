@@ -65,11 +65,6 @@ return [
             // Usar el modelo Usuario para autenticación (tabla `ta_usuario`).
             'model' => App\Models\Usuario::class,
         ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
     ],
 
     /*

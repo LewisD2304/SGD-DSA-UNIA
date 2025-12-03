@@ -24,9 +24,10 @@ class Index extends Component
     public $nombreUsuarioEliminar = '';
     public $idRol;
     public $roles;
+    #[Validate('required', 'persona')]
     public $idPersona;
+    #[Validate('required|min:8|max:20','contraseña')]
     public $claveUsuario;
-
     #[Validate('required|max:30|min:3', as: 'nombre de usuario')]
     public $nombreUsuario;
 
@@ -58,34 +59,51 @@ class Index extends Component
     // Guardar un usuario nuevo o modificado
     public function guardarUsuario()
     {
-        // Limpiar de cadena
-        $this->nombreUsuario = limpiarCadena($this->nombreUsuario, false);
-        $this->claveUsuario = limpiarCadena($this->claveUsuario ?? '', false);
-
         $mensajeToastr = NULL;
 
         try {
+            // Limpiar de cadena
+            $this->nombreUsuario = limpiarCadena($this->nombreUsuario, false);
+            $this->claveUsuario = limpiarCadena($this->claveUsuario ?? '', true, true, false);
 
             $this->validate([
                 'idPersona' => ['required', 'integer'],
                 'idRol' => ['required', 'integer'],
                 'nombreUsuario' => [
                     'required',
-                    'max:120',
                     'min:3',
+                    'max:120',
+                    'regex:/^[A-Za-z0-9@._-]+$/',
                     Rule::unique('ta_usuario', 'nombre_usuario')
-                        ->ignore($this->modeloUsuario->id_usuario ?? null, 'id_usuario'),
+                        ->ignore($this->modeloUsuario->id_usuario ?? null, 'id_usuario')
+                        ->whereNull('au_fechael'),
                 ],
-                'claveUsuario' => $this->modoModal == 1 ? 'required|min:6' : 'nullable|min:6',
+                'claveUsuario' => $this->modoModal == 1
+                    ? ['required', 'min:8', 'max:20', 'regex:/^(?=.*[A-Za-z])(?=(.*\d|.*[@$!%*#?&]))[A-Za-z\d@$!%*#?&]{8,}$/']
+                    : ['nullable', 'min:8', 'max:20', 'regex:/^(?=.*[A-Za-z])(?=(.*\d|.*[@$!%*#?&]))[A-Za-z\d@$!%*#?&]{8,}$/'],
+            ], [
+                'nombreUsuario.unique' => 'El nombre de usuario ya está en uso. Por favor, elige otro.',
+                'nombreUsuario.regex' => 'El nombre de usuario solo puede contener letras, números y los caracteres especiales: . _ - @',
+                'claveUsuario.regex' => 'La contraseña debe contener al menos una letra, un número o símbolo especial. Ejemplo: $%#@',
+                'claveUsuario.min' => 'La contraseña debe tener al menos 8 caracteres.',
+                'claveUsuario.max' => 'La contraseña no puede exceder 20 caracteres.',
             ]);
 
             if ($this->modoModal == 1) {
-
-
                 $mensajeToastr = $this->registrar();
             } else {
                 $mensajeToastr = $this->modificar();
             }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Capturar errores de validación
+            foreach ($e->errors() as $field => $messages) {
+                foreach ($messages as $message) {
+                    $this->addError($field, $message);
+                }
+            }
+
+            $this->dispatch('errores_validacion', validacion: $this->getErrorBag()->messages());
+            return;
         } catch (\Exception $e) {
             // Emitir un evento para mostrar el Toastr con el mensaje de error
             $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');

@@ -34,9 +34,12 @@ interface UsuarioRepositoryInterface
     // Buscar usuario por nombre de usuario
     public function buscarPorNombreUsuario(string $nombre_usuario): ?Usuario;
 
-    // Autenticar un usuario
-    public function autenticar(string $nombre_usuario, string $password): bool;
+    // Autenticar un usuario y retornar el modelo autenticado
+    public function autenticar(string $nombre_usuario, string $password): ?Usuario;
 
     // Verificar si un usuario existe por nombre de usuario
     public function existePorNombreUsuario(string $nombreUsuario): bool;
+
+    // Verificar si un usuario tiene un permiso
+    public function verificarPermiso(int $id_usuario, string $accion, string $menu, ?string $modulo = null);
 }

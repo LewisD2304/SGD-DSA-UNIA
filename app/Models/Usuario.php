@@ -32,7 +32,6 @@ class Usuario extends Autenticatable
      * VARIABLES QUE NO SE VAN A MOSTRAR O PROTEGER
      */
     protected $hidden = [
-        'clave_usuario',
         'au_fechacr',
         'au_fechamd',
         'au_fechael',

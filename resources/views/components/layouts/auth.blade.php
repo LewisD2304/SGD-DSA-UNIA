@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
-    <title>{{ $title ?? 'Login | Sistema Académico y Recursos Administrativos | SARA' }}</title>
+    <title>{{ $title ?? 'Login | Sistema de Gestión Documental | SGD' }}</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="{{ asset('media/logo-unia.webp') }}" />
@@ -48,7 +48,7 @@
 
                     <!--begin::Title-->
                     <h1 class="d-none d-lg-block text-white fs-2qx fw-bolder text-center mb-7">
-                        SARA - UNIA
+                        SGD - UNIA
                     </h1>
                     <!--end::Title-->
 

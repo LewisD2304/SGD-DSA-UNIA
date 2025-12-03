@@ -67,32 +67,51 @@ class UsuarioRepository implements UsuarioRepositoryInterface
     // Buscar usuario por nombre de usuario (case insensitive)
     public function buscarPorNombreUsuario(string $nombre_usuario): ?Usuario
     {
-        return Usuario::where('nombre_usuario', strtoupper($nombre_usuario))->first();
+        return Usuario::where('nombre_usuario', strtoupper($nombre_usuario))
+            ->first();
     }
 
-    // Intentar autenticar un usuario
-    public function autenticar($usuario, $password): bool
+    // Intentar autenticar un usuario y retornar el modelo autenticado
+    public function autenticar(string $usuario, string $password): ?Usuario
     {
+        // Buscar por nombre_usuario en mayúsculas, coherente con almacenamiento
+        $usuarioModel = $this->buscarPorNombreUsuario($usuario);
 
-            $usuario_model = $this->buscarPorNombreUsuario($usuario);
+        if (!$usuarioModel) {
+            throw new AutenticacionException("El usuario ingresado no existe.");
+        }
 
-            if (!$usuario_model) {
-                throw new AutenticacionException("El usuario ingresado no existe.");
-            }
+        if ($usuarioModel->estado_usuario === EstadoEnum::DESHABILITADO) {
+            throw new AutenticacionException("Este usuario se encuentra deshabilitado.");
+        }
 
-            if ($usuario_model->estado_usuario === EstadoEnum::DESHABILITADO) {
-                throw new AutenticacionException("Este usuario se encuentra deshabilitado.");
-            }
+        // Verificar contraseña hasheada (bcrypt)
+        if (!Hash::check($password, $usuarioModel->clave_usuario)) {
+            throw new AutenticacionException("La contraseña ingresada es incorrecta.");
+        }
 
-            if (!Hash::check($password, $usuario_model->clave_usuario)) {
-                throw new AutenticacionException("La contraseña ingresada es incorrecta.");
-            }
-
-            if (!Auth::attempt(['nombre_usuario' => $usuario, 'password' => $password])) {
-                throw new AutenticacionException("Credenciales incorrectas.");
-            }
-
-            return true;
-
+        return $usuarioModel;
     }
+
+
+    // Verificar si un usuario tiene un permiso
+    public function verificarPermiso(int $id_usuario, string $accion, string $menu, ?string $modulo = null)
+    {
+        DB::connection('seguridad_mysql')->statement("SET @permiso = 0");
+
+        DB::connection('seguridad_mysql')->statement(
+            "CALL sp_seguridad_verificar_permiso(:id_usuario, :accion, :menu, :modulo, @permiso)", [
+                'id_usuario' => $id_usuario,
+                'accion' => $accion,
+                'menu' => $menu,
+                'modulo' => $modulo
+            ]
+        );
+
+        $resultado = DB::connection('seguridad_mysql')->select("SELECT @permiso AS tiene_permiso");
+
+        return (bool) $resultado[0]->tiene_permiso;
+    }
+
+
 }

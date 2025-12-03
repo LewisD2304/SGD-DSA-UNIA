@@ -7,28 +7,36 @@ use App\Livewire\Seguridad\Usuario\Index as UsuarioIndex;
 use App\Livewire\Seguridad\Persona\Index as PersonaIndex;
 use App\Livewire\Seguridad\Menu\Index as MenuIndex;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
-Route::get('/', function () {
-    return view('welcome');
-});
 
 Route::middleware(['throttle:100,1'])->group(function () {
 
-    Route::get('/inicio', InicioIndex::class)->name('inicio.index');
+    Route::redirect('/', 'inicio');
 
     // Ruta de Login (solo para invitados)
     Route::get('/login', Login::class)->name('login')->middleware('guest');
 
+    // Ruta para cerrar sesión
+    Route::post('/logout', function () {
+        Auth::logout();
+        session()->invalidate();
+        session()->regenerateToken();
+        return redirect()->route('login');
+    })->name('logout')->middleware('auth');
+
     // Agrupar rutas protegidas con 'auth'
     Route::middleware(['auth'])->group(function () {
 
-        /*
+        Route::get('/inicio', InicioIndex::class)->name('inicio.index');
+
+    /*
     |--------------------------------------------------------------------------
     | MODULO DE SEGURIDAD
     |--------------------------------------------------------------------------
     */
 
-        // Seguridad
+    // Seguridad
         Route::prefix('seguridad')->name('seguridad.')->group(function () {
             // Menú
             Route::get('/menu', MenuIndex::class)->name('menu.index');
@@ -41,5 +49,7 @@ Route::middleware(['throttle:100,1'])->group(function () {
             // Persona
             Route::get('/persona', PersonaIndex::class)->name('persona.index');
         });
+
+
     });
 });

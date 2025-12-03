@@ -108,26 +108,25 @@ class UsuarioService
         }
     }
 
-    // Método para autenticar usuario
-    public function autenticar(string $usuario, string $password): bool
+    // Método para autenticar usuario: retorna el Usuario y deja el login a la capa superior
+    public function autenticar(string $usuario, string $password): ?Usuario
     {
         try {
+            $usuarioModel = $this->repository->autenticar($usuario, $password);
 
-
-            $autenticado = $this->repository->autenticar($usuario, $password);
-
-            if ($autenticado) {
-                Session::regenerate();
+            if (!$usuarioModel) {
+                throw new AutenticacionException("Estas credenciales son incorrectas.");
             }
 
-            return $autenticado;
+            // Regenerar sesión en la capa de Livewire después de Auth::login
+            return $usuarioModel;
 
         } catch (PDOException | QueryException $e) {
-            throw new ErrorConexionException("Credenciales incorrectas.". $e->getMessage());
+            throw new ErrorConexionException("Error de conexión." . $e->getMessage());
         } catch (AutenticacionException $e) {
             throw $e;
         } catch (Exception $e) {
-            throw new Exception("Credenciales incorrectas.". $e->getMessage());
+            throw new Exception("Error inesperado." . $e->getMessage());
         }
     }
 
