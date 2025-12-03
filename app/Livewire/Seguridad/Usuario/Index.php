@@ -3,8 +3,11 @@
 namespace App\Livewire\Seguridad\Usuario;
 
 use App\Enums\EstadoEnum;
+use App\Services\Seguridad\PersonaService;
 use App\Services\Seguridad\UsuarioService;
+use App\Services\Seguridad\RolService;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
@@ -19,16 +22,37 @@ class Index extends Component
     public $modeloUsuario = null;
     public $nombreUsuarioEstado = '';
     public $nombreUsuarioEliminar = '';
-
+    public $idRol;
+    public $roles;
+    public $idPersona;
+    public $claveUsuario;
 
     #[Validate('required|max:30|min:3', as: 'nombre de usuario')]
     public $nombreUsuario;
 
     protected UsuarioService $usuarioService;
+    protected RolService $rolService;
+    protected PersonaService $personaService;
 
     public function __construct()
     {
         $this->usuarioService = resolve(UsuarioService::class);
+        $this->rolService = resolve(RolService::class);
+        $this->personaService = resolve(PersonaService::class);
+    }
+
+
+    #[Computed()]
+    public function listaRol()
+    {
+        // Devolver únicamente roles habilitados para que no aparezcan deshabilitados en el select
+        return $this->rolService->listarHabilitados();
+    }
+
+    #[Computed()]
+    public function listaPersona()
+    {
+        return $this->personaService->listarHabilitados();
     }
 
     // Guardar un usuario nuevo o modificado
@@ -36,19 +60,23 @@ class Index extends Component
     {
         // Limpiar de cadena
         $this->nombreUsuario = limpiarCadena($this->nombreUsuario, false);
+        $this->claveUsuario = limpiarCadena($this->claveUsuario ?? '', false);
 
         $mensajeToastr = NULL;
 
         try {
 
             $this->validate([
+                'idPersona' => ['required', 'integer'],
+                'idRol' => ['required', 'integer'],
                 'nombreUsuario' => [
                     'required',
-                    'max:30',
+                    'max:120',
                     'min:3',
                     Rule::unique('ta_usuario', 'nombre_usuario')
                         ->ignore($this->modeloUsuario->id_usuario ?? null, 'id_usuario'),
                 ],
+                'claveUsuario' => $this->modoModal == 1 ? 'required|min:6' : 'nullable|min:6',
             ]);
 
             if ($this->modoModal == 1) {
@@ -85,6 +113,9 @@ class Index extends Component
     {
         $this->usuarioService->registrar([
             'nombre_usuario' => $this->nombreUsuario,
+            'id_rol' => $this->idRol,
+            'id_persona' => $this->idPersona,
+            'clave_usuario' => bcrypt($this->claveUsuario),
             'estado_usuario' => EstadoEnum::HABILITADO,
         ]);
 
@@ -97,9 +128,17 @@ class Index extends Component
 
     public function modificar()
     {
-        $this->usuarioService->modificar([
+        $datos = [
             'nombre_usuario' => $this->nombreUsuario,
-        ], $this->modeloUsuario);
+            'id_rol' => $this->idRol,
+            'id_persona' => $this->idPersona,
+        ];
+
+        if (!empty($this->claveUsuario)) {
+            $datos['clave_usuario'] = bcrypt($this->claveUsuario);
+        }
+
+        $this->usuarioService->modificar($datos, $this->modeloUsuario);
 
         $this->dispatch('refrescarUsuarios');
 
@@ -117,6 +156,9 @@ class Index extends Component
             $this->modoModal = 2; // Modificar
             $this->modeloUsuario = $this->usuarioService->obtenerPorId($id_usuario);
             $this->nombreUsuario = $this->modeloUsuario->nombre_usuario;
+            $this->idRol = $this->modeloUsuario->id_rol;
+            $this->idPersona = $this->modeloUsuario->id_persona;
+            $this->claveUsuario = '';
         } else {
             $this->tituloModal = 'Registrar nuevo usuario';
             $this->modoModal = 1;
@@ -132,7 +174,7 @@ class Index extends Component
         $mensajeToastr = NULL;
 
         try {
-            $this->usuarioService->cambiar_estado($this->modeloUsuario, $this->modoModal === 1 ? EstadoEnum::HABILITADO : EstadoEnum::DESHABILITADO);
+            $this->usuarioService->cambiarEstado($this->modeloUsuario, $this->modoModal === 1 ? EstadoEnum::HABILITADO : EstadoEnum::DESHABILITADO);
 
             $this->dispatch('refrescarUsuarios');
 
@@ -234,7 +276,7 @@ class Index extends Component
     {
         $this->tituloModal = 'Registrar nuevo usuario';
         $this->modoModal = 1;
-        $this->reset(['modeloUsuario', 'nombreUsuario', 'nombreUsuarioEliminar', 'nombreUsuarioEstado']);
+        $this->reset(['modeloUsuario', 'nombreUsuario', 'nombreUsuarioEliminar', 'nombreUsuarioEstado', 'idRol', 'idPersona', 'claveUsuario']);
         $this->resetErrorBag();
     }
 
@@ -242,9 +284,5 @@ class Index extends Component
     {
         return view('livewire.seguridad.usuario.index');
     }
-
-
-
-
 
 }

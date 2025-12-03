@@ -62,19 +62,40 @@ class Usuario extends Autenticatable
         return $this->belongsTo(Persona::class, 'id_persona');
     }
 
+    // Especifica el campo que Laravel usará para autenticación
+    public function getAuthIdentifierName()
+    {
+        return 'id_usuario';
+    }
+
+    public function getAuthPassword()
+    {
+        return $this->clave_usuario;
+    }
+
     //sirve para hacer querys mas simplificadas
+        // Función buscar usuario por nombre completo de la persona, nombre de usuario y rol
     public function scopeBuscar($query, $buscar)
     {
         if (empty($buscar)) {
             return $query;
         }
 
-        return $query->whereHas('persona', function ($subQuery) use ($buscar) {
-            $subQuery->where(function ($subSubQuery) use ($buscar) {
-                $subSubQuery
-                    ->buscar($buscar);
-            });
-        })->orWhere('nombre_usuario', 'LIKE', "%{$buscar}%");
+        return $query->where(function ($q) use ($buscar) {
+            $q->where('nombre_usuario', 'like', "%{$buscar}%")
+                ->orWhereHas('persona', function ($subQuery) use ($buscar) {
+                    $subQuery->where(function ($q2) use ($buscar) {
+                        $q2->orWhere('numerodocumento_persona', 'LIKE', "%{$buscar}%")
+                            ->orWhere('nombres_persona', 'LIKE', "%{$buscar}%")
+                            ->orWhere('apellido_paterno_persona', 'LIKE', "%{$buscar}%")
+                            ->orWhere('apellido_materno_persona', 'LIKE', "%{$buscar}%")
+                            ->orWhereRaw("CONCAT(COALESCE(nombres_persona, ''), ' ', COALESCE(apellido_paterno_persona, ''), ' ', COALESCE(apellido_materno_persona, '')) LIKE ?", ["%{$buscar}%"]);
+                    });
+                })
+                ->orWhereHas('roles', function ($q) use ($buscar) {
+                    $q->where('nombre_rol', 'like', "%{$buscar}%");
+                });
+        });
     }
 
     // Scope para filtrar por estado
@@ -95,6 +116,12 @@ class Usuario extends Autenticatable
         }
 
         return $query->limit($limite);
+    }
+
+    // Función verificar credenciales
+    public function verificarCredenciales($clave): bool
+    {
+        return password_verify($clave, $this->clave_usuario);
     }
 
 

@@ -33,6 +33,7 @@ class Tabla extends Component
         return $this->usuarioService->listarPaginado($this->mostrarPaginate, $this->buscar, 'id_usuario', 'desc');
     }
 
+
     public function placeholder()
     {
         return <<<'HTML'
@@ -159,6 +160,8 @@ class Tabla extends Component
         </div>
         HTML;
     }
+
+    
     public function render()
     {
         return view('livewire.components.seguridad.usuario.tabla');

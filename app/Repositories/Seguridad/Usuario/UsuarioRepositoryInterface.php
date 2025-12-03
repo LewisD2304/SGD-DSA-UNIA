@@ -6,13 +6,16 @@ use App\Models\Usuario;
 
 interface UsuarioRepositoryInterface
 {
-   //FUNCIONES QUE VA A TENER EL USUARIO
+    //FUNCIONES QUE VA A TENER EL USUARIO
     public function listar();
-     // Encontrar un usuario por id
+    // Encontrar un usuario por id
     public function obtenerPorId(int $id, array $relaciones = []);
 
+    // Listar usuarios habilitadas
+    public function buscarHabilitados($buscar, $limite = null);
+
     // Listado con paginación y buscador
-    public function listarPaginado(int $paginado = 10, ?string $buscar = null,string $columnaOrden, string $orden = 'asc', array $relaciones = []);
+    public function listarPaginado(int $paginado = 10, ?string $buscar = null, string $columnaOrden, string $orden = 'asc', array $relaciones = []);
 
     public function buscar(?string $buscar);
 
@@ -27,6 +30,12 @@ interface UsuarioRepositoryInterface
 
     //Verifica si un modelo tiene relaciones existentes.
     public function verificarRelaciones(Usuario $modulo, array $relaciones);
+
+    // Buscar usuario por nombre de usuario
+    public function buscarPorNombreUsuario(string $nombre_usuario): ?Usuario;
+
+    // Autenticar un usuario
+    public function autenticar(string $nombre_usuario, string $password): bool;
 
     // Verificar si un usuario existe por nombre de usuario
     public function existePorNombreUsuario(string $nombreUsuario): bool;

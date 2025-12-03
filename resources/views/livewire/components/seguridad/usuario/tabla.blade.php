@@ -79,8 +79,6 @@
 
                                             <td>{{ formatoFechaText($item->au_fechacr)}}</td>
 
-
-
                                             <td class="text-center">
                                                 <a
                                                     class="btn btn-light btn-active-light-primary btn-flex btn-center btn-sm fs-6"

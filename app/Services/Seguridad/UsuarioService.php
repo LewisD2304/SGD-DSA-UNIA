@@ -5,6 +5,15 @@ namespace App\Services\Seguridad;
 use App\Repositories\Seguridad\Usuario\UsuarioRepositoryInterface;
 use App\Models\Usuario;
 use Illuminate\Support\Facades\DB;
+use Exception;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Session;
+use PDOException;
+
+
+class RelacionesUsuarioExcepton extends \Exception {}
+class ErrorConexionException extends Exception {}
+class AutenticacionException extends Exception {}
 
 class UsuarioService
 {
@@ -35,6 +44,12 @@ class UsuarioService
         return $this->repository->buscar($buscar);
     }
 
+    // Buscar usuarios por coincidencia
+    public function buscarHabilitados($buscar, $limite = null)
+    {
+        return $this->repository->buscarHabilitados($buscar, $limite);
+    }
+
     // Registrar un nuevo usuario
     public function registrar(array $datos)
     {
@@ -48,6 +63,7 @@ class UsuarioService
             }
 
             // Registrar el usuario
+
             $usuario = $this->repository->registrar($datos);
 
             DB::commit();
@@ -55,7 +71,7 @@ class UsuarioService
             return $usuario;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception('Error al registrar el usuario.');
+            throw new \Exception('Error al registrar el usuario.'.$e->getMessage());
         }
     }
 
@@ -77,7 +93,7 @@ class UsuarioService
     }
 
     // Cambiar el estado de un usuario
-    public function cambiar_estado(Usuario $usuario, $estado)
+    public function cambiarEstado(Usuario $usuario, $estado)
     {
         DB::beginTransaction();
 
@@ -89,6 +105,29 @@ class UsuarioService
         } catch (\Exception $e) {
             DB::rollBack();
             throw new \Exception('Ocurrió un error al cambiar el estado del usuario');
+        }
+    }
+
+    // Método para autenticar usuario
+    public function autenticar(string $usuario, string $password): bool
+    {
+        try {
+
+
+            $autenticado = $this->repository->autenticar($usuario, $password);
+
+            if ($autenticado) {
+                Session::regenerate();
+            }
+
+            return $autenticado;
+
+        } catch (PDOException | QueryException $e) {
+            throw new ErrorConexionException("Credenciales incorrectas.". $e->getMessage());
+        } catch (AutenticacionException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            throw new Exception("Credenciales incorrectas.". $e->getMessage());
         }
     }
 
@@ -107,5 +146,7 @@ class UsuarioService
             throw new \Exception('Ocurrió un error al eliminar usuario');
         }
     }
+
+
 
 }

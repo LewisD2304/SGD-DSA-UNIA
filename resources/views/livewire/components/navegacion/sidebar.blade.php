@@ -60,6 +60,17 @@
                         <div class="menu-sub menu-sub-accordion">
                             <div class="menu-item">
                                 <a
+                                    class="menu-link {{ request()->routeIs('seguridad.menu.*') || request()->routeIs('seguridad.menu') ? 'active' : '' }}"
+                                    href="{{ route('seguridad.menu.index') }}"
+                                >
+                                    <span class="menu-bullet">
+                                        <span class="bullet bullet-dot"></span>
+                                    </span>
+                                    <span class="menu-title">Menú</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
+                                <a
                                     class="menu-link {{ request()->routeIs('seguridad.usuario.*') || request()->routeIs('seguridad.usuario') ? 'active' : '' }}"
                                     href="{{ route('seguridad.usuario.index') }}"
                                 >
@@ -78,6 +89,17 @@
                                         <span class="bullet bullet-dot"></span>
                                     </span>
                                     <span class="menu-title">Roles</span>
+                                </a>
+                            </div>
+                            <div class="menu-item">
+                                <a
+                                    class="menu-link {{ request()->routeIs('seguridad.persona.*') || request()->routeIs('seguridad.persona') ? 'active' : '' }}"
+                                    href="{{ route('seguridad.persona.index') }}"
+                                >
+                                    <span class="menu-bullet">
+                                        <span class="bullet bullet-dot"></span>
+                                    </span>
+                                    <span class="menu-title">Personas</span>
                                 </a>
                             </div>
                         </div>

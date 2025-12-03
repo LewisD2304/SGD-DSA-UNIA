@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Usuario;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Auth;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Auth::provider('eloquent', function ($app, array $config) {
+            return new \Illuminate\Auth\EloquentUserProvider($app['hash'], Usuario::class);
+        });
     }
 }

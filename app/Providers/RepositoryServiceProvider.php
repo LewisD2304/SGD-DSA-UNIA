@@ -12,6 +12,15 @@ class RepositoryServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        /*******************************************************************
+         * Seguridad
+         *******************************************************************/
+
+        // Menu
+        $this->app->bind(
+            'App\Repositories\Seguridad\Menu\MenuRepositoryInterface',
+            'App\Repositories\Seguridad\Menu\MenuRepository'
+        );
         // Usuario
         $this->app->bind(
             'App\Repositories\Seguridad\Usuario\UsuarioRepositoryInterface',
@@ -23,13 +32,26 @@ class RepositoryServiceProvider extends ServiceProvider
             'App\Repositories\Seguridad\Rol\RolRepositoryInterface',
             'App\Repositories\Seguridad\Rol\RolRepository'
         );
+
+        // Persona
+        $this->app->bind(
+            'App\Repositories\Seguridad\Persona\PersonaRepositoryInterface',
+            'App\Repositories\Seguridad\Persona\PersonaRepository'
+        );
+
+        /*******************************************************************
+         * Configuracion
+         *******************************************************************/
+
+        // Catalogo
+        $this->app->bind(
+            'App\Repositories\Configuracion\Catalogo\CatalogoRepositoryInterface',
+            'App\Repositories\Configuracion\Catalogo\CatalogoRepository'
+        );
     }
 
-    /**
-     * Bootstrap services.
-     */
     public function boot(): void
     {
-        //
+
     }
 }

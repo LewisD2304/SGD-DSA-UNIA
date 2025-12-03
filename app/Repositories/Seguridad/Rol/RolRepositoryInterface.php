@@ -9,6 +9,9 @@ interface RolRepositoryInterface
     // Listar todos los registros
     public function listar();
 
+    // Listar roles habilitados
+    public function listarHabilitados();
+
     // Encontrar un registro por id
     public function obtenerPorId(int $id, array $relaciones = []);
 

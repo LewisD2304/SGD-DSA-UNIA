@@ -21,20 +21,92 @@
                 <div class="modal-body px-5">
                     <div class="d-flex flex-column px-5 px-lg-10">
 
-                        <div class="form-floating">
+                        <!-- Seleccionar persona -->
+                        <div class="fv-row px-0" wire:ignore>
+                            <label class="form-label fs-6 fw-bold mb-2">Buscar persona <span class="text-danger">*</span></label>
+                            <select
+                                id="idPersona"
+                                class="form-select @if($errors->has('idPersona')) is-invalid @endif"
+                                wire:model="idPersona"
+                                data-control="select"
+                                data-placeholder="Buscar persona"
+                            >
+                                <option value="">Buscar persona</option>
+                                @forelse($this->listaPersona() as $persona)
+                                    <option value="{{ $persona->id_persona }}">{{ strtoupper($persona->nombres_persona) }}</option>
+                                @empty
+                                    <option value="" disabled>No hay personas</option>
+                                @endforelse
+                            </select>
+                            @error('idPersona')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="fv-row px-0 mt-4" wire:ignore>
+                            <label class="form-label fs-6 fw-bold mb-2">Rol Asignado <span class="text-danger">*</span></label>
+                            <select
+                                id="idRol"
+                                class="form-select @if($errors->has('idRol')) is-invalid @endif"
+                                wire:model="idRol"
+                                data-control="select"
+                                data-placeholder="Seleccione el rol"
+                            >
+                                <option value="">Seleccione el rol</option>
+                                {{-- Recorre los roles desde el método computed listaRol() del componente --}}
+                                @forelse($this->listaRol() as $rol)
+                                    <option value="{{ $rol->id_rol }}">{{ $rol->nombre_rol }}</option>
+                                @empty
+                                    <option value="" disabled>No hay roles disponibles</option>
+                                @endforelse
+                            </select>
+                            @error('idRol')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Datos de usuario -->
+                        <div class="fw-bold text-dark mb-3 mt-4">
+                            <i class="ki-outline ki-user me-2"></i> Datos de usuario
+                        </div>
+
+                        <div class="form-floating mb-3">
                             <input
                                 type="text"
-                                class="form-control text-uppercase @if ($errors->has('nombreUsuario')) is-invalid @elseif($nombreUsuario) is-valid @endif"
+                                class="form-control text-lowercase @if ($errors->has('nombreUsuario')) is-invalid @elseif($nombreUsuario) is-valid @endif"
                                 id="nombreUsuario"
                                 autocomplete="off"
-                                placeholder="Nombre del usuario"
+                                placeholder="Nombre de usuario"
                                 wire:model.live="nombreUsuario"
-                                maxlength="60"
+                                maxlength="120"
                             />
                             <label for="nombreUsuario">
-                                Nombre del usuario <span class="text-danger">*</span>
+                                Nombre de usuario <span class="text-danger">*</span>
                             </label>
                             @error('nombreUsuario')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Contraseña con toggle -->
+                        <div class="form-floating" x-data="{ show: false }">
+                            <input
+                                :type="show ? 'text' : 'password'"
+                                class="form-control @if ($errors->has('claveUsuario')) is-invalid @elseif($claveUsuario) is-valid @endif"
+                                id="claveUsuario"
+                                autocomplete="off"
+                                placeholder="password"
+                                wire:model.lazy="claveUsuario"
+                                maxlength="80"
+                            />
+                            <label for="claveUsuario">Password <span class="text-danger">{{ $modoModal == 1 ? '*' : '' }}</span></label>
+                            <div class="form-control-icon" style="right: 1rem; top: .8rem; position: absolute;">
+                                <button type="button" class="btn btn-sm btn-icon btn-active-light" @click="show = !show" tabindex="-1">
+                                    <i x-show="!show" class="ki-outline ki-eye fs-3"></i>
+                                    <i x-show="show" class="ki-outline ki-eye-crossed fs-3"></i>
+                                </button>
+                            </div>
+                            @error('claveUsuario')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>

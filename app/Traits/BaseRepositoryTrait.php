@@ -97,4 +97,12 @@ trait BaseRepositoryTrait
         return false;
     }
 
+    /**
+     * Listar con relaciones precargadas
+     */
+    public function listarConRelaciones(array $relaciones = [])
+    {
+        return $this->model::with($relaciones)->get();
+    }
+
 }

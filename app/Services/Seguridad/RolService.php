@@ -17,6 +17,12 @@ class RolService
         return $this->repository->listar();
     }
 
+    // Listar roles habilitados
+    public function listarHabilitados()
+    {
+        return $this->repository->listarHabilitados();
+    }
+
     // Encontrar un usuario por id
     public function obtenerPorId(int $id, array $relaciones = [])
     {
