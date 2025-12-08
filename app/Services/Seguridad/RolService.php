@@ -4,12 +4,16 @@ namespace App\Services\Seguridad;
 
 use App\Models\Rol;
 use App\Repositories\Seguridad\Rol\RolRepositoryInterface;
+use App\Services\Seguridad\PermisoService;
 use Illuminate\Support\Facades\DB;
 
 class RolService
 {
 
-    public function __construct(private RolRepositoryInterface $repository) {}
+    public function __construct(
+        private RolRepositoryInterface $repository,
+        private PermisoService $permiso_service
+    ) {}
 
     // Listar todos los usuarios
     public function listar()
@@ -117,6 +121,45 @@ class RolService
             DB::rollBack();
             dd($e);
             throw new \Exception('Ocurrió un error al eliminar rol');
+        }
+    }
+
+    // Obtener menús asignados a un rol con sus permisos
+    public function obtenerMenusAsignadosConPermisos(int $id_rol)
+    {
+        return $this->repository->obtenerMenusAsignadosConPermisos($id_rol);
+    }
+
+    // Guardar permisos para un menú específico
+    public function guardarPermisos(Rol $rol, int $id_menu, array $acciones_seleccionadas)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Guardar los permisos usando el servicio de permisos
+            $this->permiso_service->guardarPermisos($rol->id_rol, $id_menu, $acciones_seleccionadas);
+
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw new \Exception('Error al guardar los permisos: ' . $e->getMessage());
+        }
+    }
+
+    // Eliminar todos los permisos de un menú para un rol
+    public function eliminarPermisosPorMenu(Rol $rol, int $id_menu)
+    {
+        DB::beginTransaction();
+
+        try {
+            $this->permiso_service->eliminarPermisosPorMenu($rol->id_rol, $id_menu);
+
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw new \Exception('Error al eliminar los permisos: ' . $e->getMessage());
         }
     }
 }

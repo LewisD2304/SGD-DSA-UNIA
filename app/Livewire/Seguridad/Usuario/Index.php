@@ -102,7 +102,7 @@ class Index extends Component
                 }
             }
 
-            $this->dispatch('errores_validacion', validacion: $this->getErrorBag()->messages());
+            $this->dispatch('erroresValidacion', validacion: $this->getErrorBag()->messages());
             return;
         } catch (\Exception $e) {
             // Emitir un evento para mostrar el Toastr con el mensaje de error

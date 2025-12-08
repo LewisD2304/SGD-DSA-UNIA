@@ -3,6 +3,7 @@
 use App\Livewire\Inicio\Index as InicioIndex;
 use App\Livewire\Seguridad\Auth\Login;
 use App\Livewire\Seguridad\Rol\Index as RolIndex;
+use App\Livewire\Seguridad\Rol\ConfiguracionAcceso;
 use App\Livewire\Seguridad\Usuario\Index as UsuarioIndex;
 use App\Livewire\Seguridad\Persona\Index as PersonaIndex;
 use App\Livewire\Seguridad\Menu\Index as MenuIndex;
@@ -45,6 +46,7 @@ Route::middleware(['throttle:100,1'])->group(function () {
 
             // Rol
             Route::get('/rol', RolIndex::class)->name('rol.index');
+            Route::get('/rol/{id_rol}/configuracion-acceso', ConfiguracionAcceso::class)->name('rol.asignar');
 
             // Persona
             Route::get('/persona', PersonaIndex::class)->name('persona.index');

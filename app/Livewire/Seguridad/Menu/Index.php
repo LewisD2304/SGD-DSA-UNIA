@@ -78,7 +78,7 @@ class Index extends Component
                 }
             }
 
-            $this->dispatch('errores_validacion', validacion: $this->getErrorBag()->messages());
+            $this->dispatch('erroresValidacion', validacion: $this->getErrorBag()->messages());
             return;
         } catch (Exception $e) {
             // Emitir un evento para mostrar el Toastr con el mensaje de error
@@ -126,7 +126,7 @@ class Index extends Component
             'estado_menu' => EstadoEnum::HABILITADO,
         ], $this->acciones);
 
-        $this->dispatch('refrescar_menus');
+        $this->dispatch('refrescarMenus');
 
         return mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Menú registrado correctamente', 'top', 'right');
     }
@@ -138,7 +138,7 @@ class Index extends Component
             'ruta_menu' => $this->ruta_menu,
         ], $this->modelo_menu, $this->acciones);
 
-        $this->dispatch('refrescar_menus');
+        $this->dispatch('refrescarMenus');
 
         return mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Menú modificado correctamente', 'top', 'right');
     }
@@ -175,7 +175,7 @@ class Index extends Component
         try {
             $this->menu_service->cambiarEstado($this->modelo_menu, $this->modo_modal === 1 ? EstadoEnum::HABILITADO : EstadoEnum::DESHABILITADO);
 
-            $this->dispatch('refrescar_menus');
+            $this->dispatch('refrescarMenus');
 
             $mensaje_t = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Menú ' . ($this->modo_modal == 1 ? 'habilitado' : 'deshabilitado') . ' correctamente', 'top', 'right');
         } catch (Exception $e) {
@@ -223,7 +223,7 @@ class Index extends Component
         try {
             $this->menu_service->eliminar($this->modelo_menu, ['acciones.permisos']); // ['acciones', 'tipoAcciones]
 
-            $this->dispatch('refrescar_menus');
+            $this->dispatch('refrescarMenus');
 
             $mensaje_t = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Menú eliminado correctamente', 'top', 'right');
         } catch (Exception $e) {
@@ -282,11 +282,8 @@ class Index extends Component
     }
 
     #[Computed()]
-    public function acciones_menu()
+    public function accionesMenu()
     {
-        // Devolver todas las acciones disponibles para el select en el modal.
-        // Intentar varias formas de localizar el catálogo padre "ACCION" para
-        // ser más tolerantes a diferencias en la base de datos (p. ej. "ACCIONES").
         try {
             $padre = $this->catalogo_service->buscarPadre(CatalogoEnum::ACCION->value);
         } catch (\Throwable $e) {

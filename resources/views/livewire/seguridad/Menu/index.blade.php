@@ -84,7 +84,7 @@
         select2('acciones', 8, 'modal-menu', true);
     });
 
-    window.addEventListener('errores_validacion', (e) => {
+    window.addEventListener('erroresValidacion', (e) => {
         Object.keys(e.detail.validacion).forEach(function(clave) {
             $(`.${clave}`).addClass('is-invalid');
         });

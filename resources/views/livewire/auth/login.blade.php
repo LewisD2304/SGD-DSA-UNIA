@@ -1,5 +1,5 @@
 <div class="w-lg-500px p-10">
-    <form method="POST" wire:submit.prevent="iniciar_sesion" class="form w-100" novalidate="novalidate" autocomplete="off">
+    <form method="POST" wire:submit.prevent="iniciarSesion" class="form w-100" novalidate="novalidate" autocomplete="off">
         @csrf
         <div class="text-center mb-11">
             <h1 class="text-gray-900 fw-bolder mb-3">
@@ -61,11 +61,11 @@
         <div class="d-grid mb-10">
             <button type="submit" id="kt_sign_in_submit" class="btn btn-primary">
                 <!--begin::Indicator label (ocultar cuando cargando)-->
-                <span class="indicator-label" wire:loading.remove wire:target="iniciar_sesion">
+                <span class="indicator-label" wire:loading.remove wire:target="iniciarSesion">
                     Ingresar
                 </span>
 
-                <span class="indicator-progress" wire:loading wire:target="iniciar_sesion">
+                <span class="indicator-progress" wire:loading wire:target="iniciarSesion">
                     Cargando...
                     <span>
                         <x-spinner style="width: 20px; height: 20px;"/>

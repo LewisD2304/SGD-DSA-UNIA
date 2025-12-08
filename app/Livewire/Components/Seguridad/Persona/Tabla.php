@@ -17,6 +17,7 @@ class Tabla extends Component
     public $mostrarPaginate = 10;
     #[Url('buscar')]
     public $buscar = '';
+    public $permisos = [];
 
     protected PersonaService $personaService;
 
@@ -171,6 +172,21 @@ class Tabla extends Component
             </div>
         </div>
         HTML;
+    }
+
+    public function mount()
+    {
+        $menuService = resolve(\App\Services\Seguridad\MenuService::class);
+        $menu = $menuService->listarAccionesPorNombreMenu('PERSONAS');
+
+        if ($menu) {
+            foreach ($menu->acciones as $accion) {
+                $nombre_accion = str_replace(' ', '_', strtoupper($accion->tipoAccion->descripcion_catalogo));
+                if ($nombre_accion !== 'LISTAR') {
+                    $this->permisos[$nombre_accion] = \Illuminate\Support\Facades\Gate::allows('autorizacion', [$nombre_accion, $menu->nombre_menu]);
+                }
+            }
+        }
     }
 
     public function render()

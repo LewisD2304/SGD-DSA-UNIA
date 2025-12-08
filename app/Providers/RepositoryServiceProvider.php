@@ -39,6 +39,12 @@ class RepositoryServiceProvider extends ServiceProvider
             'App\Repositories\Seguridad\Persona\PersonaRepository'
         );
 
+        // Permiso
+        $this->app->bind(
+            'App\Repositories\Seguridad\Permiso\PermisoRepositoryInterface',
+            'App\Repositories\Seguridad\Permiso\PermisoRepository'
+        );
+
         /*******************************************************************
          * Configuracion
          *******************************************************************/

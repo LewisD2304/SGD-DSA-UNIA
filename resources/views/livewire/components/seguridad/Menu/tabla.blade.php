@@ -14,26 +14,28 @@
                 </div>
 
                 <div class="d-flex my-2">
-                    <button
-                        type="button"
-                        class="btn btn-primary px-4 px-sm-6"
-                        x-data="{ cargando: false }"
-                        @click="cargando = true; $dispatch('abrirModalMenu');"
-                        @cargando.window="cargando = false"
-                        :disabled="cargando"
-                    >
-                        <template x-if="!cargando">
-                            <i class="ki-outline ki-plus fs-2 px-0"></i>
-                        </template>
-                        <template x-if="cargando">
-                            <span>
-                                <x-spinner style="width: 20px; height: 20px;"/>
+                    @can('autorizacion', ['REGISTRAR', 'MENÚ'])
+                        <button
+                            type="button"
+                            class="btn btn-primary px-4 px-sm-6"
+                            x-data="{ cargando: false }"
+                            @click="cargando = true; $dispatch('abrirModalMenu');"
+                            @cargando.window="cargando = false"
+                            :disabled="cargando"
+                        >
+                            <template x-if="!cargando">
+                                <i class="ki-outline ki-plus fs-2 px-0"></i>
+                            </template>
+                            <template x-if="cargando">
+                                <span>
+                                    <x-spinner style="width: 20px; height: 20px;"/>
+                                </span>
+                            </template>
+                            <span class="d-none d-sm-inline">
+                                Nuevo
                             </span>
-                        </template>
-                        <span class="d-none d-sm-inline">
-                            Nuevo
-                        </span>
-                    </button>
+                        </button>
+                    @endcan
                 </div>
             </div>
 
@@ -99,28 +101,7 @@
                                                 x-data="{ cargando_opciones: false }"
                                                 onclick="event.stopPropagation();"
                                             >
-                                                <div
-                                                    class="menu-item px-3"
-                                                    x-data="{ cargando: false }"
-                                                    @cargando.window="cargando = false, cargando_opciones = false"
-                                                    :class="{ 'item-disabled': cargando_opciones }"
-                                                >
-                                                    <a
-                                                        class="menu-link px-3"
-                                                        @click="cargando = true; cargando_opciones = true; $dispatch('abrirModalMenu', { id_menu: {{ $item->id_menu }} });"
-                                                        :disabled="cargando"
-                                                        :class="{ 'active': cargando }"
-                                                        onclick="event.stopPropagation();"
-                                                    >
-                                                        <span>Modificar</span>
-                                                        <template x-if="cargando">
-                                                            <span>
-                                                                <x-spinner class="ms-2" style="width: 20px; height: 20px;"/>
-                                                            </span>
-                                                        </template>
-                                                    </a>
-                                                </div>
-                                                @if (limpiarCadena($item->nombre_menu) !== 'MENU')
+                                                @if(!empty($permisos['MODIFICAR']))
                                                     <div
                                                         class="menu-item px-3"
                                                         x-data="{ cargando: false }"
@@ -129,12 +110,12 @@
                                                     >
                                                         <a
                                                             class="menu-link px-3"
-                                                            @click="cargando = true; cargando_opciones = true; $dispatch('abrirModalEstado', { id_menu: {{ $item->id_menu }} });"
+                                                            @click="cargando = true; cargando_opciones = true; $dispatch('abrirModalMenu', { id_menu: {{ $item->id_menu }} });"
                                                             :disabled="cargando"
                                                             :class="{ 'active': cargando }"
                                                             onclick="event.stopPropagation();"
                                                         >
-                                                            Estado
+                                                            <span>Modificar</span>
                                                             <template x-if="cargando">
                                                                 <span>
                                                                     <x-spinner class="ms-2" style="width: 20px; height: 20px;"/>
@@ -142,27 +123,54 @@
                                                             </template>
                                                         </a>
                                                     </div>
-                                                    <div
-                                                        class="menu-item px-3"
-                                                        x-data="{ cargando: false }"
-                                                        @cargando.window="cargando = false, cargando_opciones = false"
-                                                        :class="{ 'item-disabled': cargando_opciones }"
-                                                    >
-                                                        <a
-                                                            class="menu-link px-3 menu-link-danger text-danger"
-                                                            @click="cargando = true; cargando_opciones = true; $dispatch('abrirModalEliminar', { id_menu: {{ $item->id_menu }} });"
-                                                            :disabled="cargando"
-                                                            :class="{ 'active-danger': cargando }"
-                                                            onclick="event.stopPropagation();"
+                                                @endif
+                                                @if (limpiarCadena($item->nombre_menu) !== 'MENU')
+                                                    @if(!empty($permisos['CAMBIAR_ESTADO']))
+                                                        <div
+                                                            class="menu-item px-3"
+                                                            x-data="{ cargando: false }"
+                                                            @cargando.window="cargando = false, cargando_opciones = false"
+                                                            :class="{ 'item-disabled': cargando_opciones }"
                                                         >
-                                                            Eliminar
-                                                            <template x-if="cargando">
-                                                                <span>
-                                                                    <x-spinner class="ms-2" style="width: 20px; height: 20px;"/>
-                                                                </span>
-                                                            </template>
-                                                        </a>
-                                                    </div>
+                                                            <a
+                                                                class="menu-link px-3"
+                                                                @click="cargando = true; cargando_opciones = true; $dispatch('abrirModalEstado', { id_menu: {{ $item->id_menu }} });"
+                                                                :disabled="cargando"
+                                                                :class="{ 'active': cargando }"
+                                                                onclick="event.stopPropagagation();"
+                                                            >
+                                                                Estado
+                                                                <template x-if="cargando">
+                                                                    <span>
+                                                                        <x-spinner class="ms-2" style="width: 20px; height: 20px;"/>
+                                                                    </span>
+                                                                </template>
+                                                            </a>
+                                                        </div>
+                                                    @endif
+                                                    @if(!empty($permisos['ELIMINAR']))
+                                                        <div
+                                                            class="menu-item px-3"
+                                                            x-data="{ cargando: false }"
+                                                            @cargando.window="cargando = false, cargando_opciones = false"
+                                                            :class="{ 'item-disabled': cargando_opciones }"
+                                                        >
+                                                            <a
+                                                                class="menu-link px-3 menu-link-danger text-danger"
+                                                                @click="cargando = true; cargando_opciones = true; $dispatch('abrirModalEliminar', { id_menu: {{ $item->id_menu }} });"
+                                                                :disabled="cargando"
+                                                                :class="{ 'active-danger': cargando }"
+                                                                onclick="event.stopPropagation();"
+                                                            >
+                                                                Eliminar
+                                                                <template x-if="cargando">
+                                                                    <span>
+                                                                        <x-spinner class="ms-2" style="width: 20px; height: 20px;"/>
+                                                                    </span>
+                                                                </template>
+                                                            </a>
+                                                        </div>
+                                                    @endif
                                                 @endif
                                                 </div>
                                         </td>

@@ -13,8 +13,7 @@ class RelacionesMenuException extends \Exception {}
 class MenuService
 {
 
-    public function __construct(private MenuRepositoryInterface $repository)
-    {}
+    public function __construct(private MenuRepositoryInterface $repository) {}
 
     // Listar todos los menus
     public function listar()
@@ -22,7 +21,7 @@ class MenuService
         return $this->repository->listar();
     }
 
-     // Listar acciones de un menu por nombre de menu
+    // Listar acciones de un menu por nombre de menu
     public function listarAccionesPorNombreMenu($nombre_menu)
     {
         return $this->repository->listarAccionesPorNombreMenu($nombre_menu);
@@ -31,8 +30,12 @@ class MenuService
     // Encontrar un menu por id
     public function obtenerPorId(array $relaciones = [], int $id)
     {
+        // Si tu sistema NO usa submenús, nunca cargues hijos inexistentes
+        $relaciones = array_filter($relaciones, fn($rel) => !str_contains($rel, 'hijos'));
+
         return $this->repository->obtenerPorId($id, $relaciones);
     }
+
 
     // Listar menus paginados con relaciones precargadas y búsqueda
     public function listarPaginado(int $paginado = 10, ?string $buscar = null, string $columnaOrden = 'id_rol', string $orden = 'asc', array $relaciones = [])
@@ -172,9 +175,7 @@ class MenuService
     // Eliminar un menu
     public function eliminar(Menu $menu)
     {
-        // if (!Gate::allows('autorizacion', ['ELIMINAR', 'MENÚ'])) {
-        //     throw new \Exception(config('settings.mensaje_error_acceso') . 'eliminar menús' . config('settings.mensaje_final_error_acceso'));
-        // }
+
         DB::beginTransaction();
 
         try {
@@ -182,26 +183,43 @@ class MenuService
             if (limpiarCadena($menu->nombre_menu) === 'MENU') {
                 throw new \Exception('No se puede eliminar el menú principal');
             }
-            //
-            // // Validar si el menú tiene acciones relacionadas en permisos
-            // if ($this->repository->verificarRelaciones($menu, $relaciones)) {
-            //     throw new RelacionesMenuException('No se puede eliminar el menú porque tiene acciones relacionadas en permisos');
-            // }
+
+            // Verificar si el menú tiene permisos asociados
+            $tiene_permisos = DB::table('ta_permiso')
+                ->join('ta_accion', 'ta_permiso.id_accion', '=', 'ta_accion.id_accion')
+                ->where('ta_accion.id_menu', $menu->id_menu)
+                ->exists();
+
+            if ($tiene_permisos) {
+                throw new RelacionesMenuException('No se puede eliminar el menú porque tiene permisos asignados a roles');
+            }
+
+            // Verificar si el menú tiene acciones
+            if ($menu->acciones()->count() > 0) {
+                // Eliminar primero las acciones del menú
+                $menu->acciones()->delete();
+            }
 
             // Eliminar el menu
-            $menu = $this->repository->eliminar($menu);
+            $resultado = $this->repository->eliminar($menu);
+
+            if (!$resultado) {
+                throw new \Exception('No se pudo eliminar el menú de la base de datos');
+            }
 
             DB::commit();
             return $menu;
         } catch (RelacionesMenuException $e) {
             DB::rollBack();
             throw $e;
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            // Mostrar el error específico de la base de datos
+            throw new \Exception('Error de base de datos: ' . $e->getMessage());
         } catch (\Exception $e) {
             DB::rollBack();
-            // Lanzar una excepción si no se puede eliminar
-            throw new \Exception('Ocurrió un error al eliminar el menú');
+            // Lanzar el error original para debugging
+            throw $e;
         }
     }
-
-
 }

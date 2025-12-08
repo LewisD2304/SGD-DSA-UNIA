@@ -78,7 +78,7 @@
                                     aria-label="Acciones"
                                     wire:model="acciones"
                                 >
-                                    @foreach ($this->acciones_menu as $item)
+                                    @foreach ($this->accionesMenu as $item)
                                         <option value="{{ $item->id_catalogo }}">
                                             {{ $item->descripcion_catalogo }}
                                         </option>

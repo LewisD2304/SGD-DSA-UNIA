@@ -27,7 +27,7 @@ class Accion extends Model
     // Relacion de tipo de acción con catálogo
     public function tipoAccion()
     {
-        return $this->belongsTo(Catalogo::class, 'accion_catalogo');
+        return $this->belongsTo(Catalogo::class, 'accion_catalogo', 'id_catalogo');
     }
 
     // Relación: Una Acción está en muchos Permisos
@@ -41,4 +41,5 @@ class Accion extends Model
     {
         return $this->belongsToMany(Rol::class, 'ta_permiso', 'id_accion', 'id_rol');
     }
+
 }

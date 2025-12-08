@@ -27,6 +27,12 @@ class Rol extends Model
         return $this->hasMany(Usuario::class, 'id_rol');
     }
 
+    // Relación: Un Rol tiene muchos Permisos
+    public function permisos()
+    {
+        return $this->hasMany(Permiso::class, 'id_rol');
+    }
+
     // Scope para búsqueda por coincidencia
     public function scopeBuscar($query, $buscar)
     {

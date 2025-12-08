@@ -35,4 +35,7 @@ interface RolRepositoryInterface
 
     // Verificar si un rol existe por nombre de rol
     public function existePorNombreRol(string $nombreRol): bool;
+
+    // Obtener menús asignados a un rol con sus permisos
+    public function obtenerMenusAsignadosConPermisos(int $id_rol);
 }

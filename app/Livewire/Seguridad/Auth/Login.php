@@ -47,7 +47,7 @@ class Login extends Component
     }
 
     // función para iniciar sesión
-    public function iniciar_sesion()
+    public function iniciarSesion()
     {
         $this->validate();
 

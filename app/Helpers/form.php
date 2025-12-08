@@ -50,3 +50,24 @@ if (!function_exists('limpiarCadena')) {
     }
 }
 
+
+if (!function_exists('encriptar')) {
+    function encriptar($id, $connection = null)
+    {
+        return $connection
+            ? Hashids::connection($connection)->encode($id)
+            : Hashids::encode($id);
+    }
+}
+
+if (!function_exists('desencriptar')) {
+    function desencriptar($hash, $connection = null)
+    {
+        $decoded = $connection
+            ? Hashids::connection($connection)->decode($hash)
+            : Hashids::decode($hash);
+
+        return $decoded[0] ?? null;
+    }
+}
+

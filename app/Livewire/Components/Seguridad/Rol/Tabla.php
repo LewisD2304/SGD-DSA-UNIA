@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Components\Seguridad\Rol;
 
+use App\Services\Seguridad\MenuService;
 use App\Services\Seguridad\RolService;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
@@ -17,12 +19,26 @@ class Tabla extends Component
     public $mostrarPaginate = 10;
     #[Url('buscar')]
     public $buscar = '';
+    public $permisos = [];
 
     protected RolService $rolService;
+    protected MenuService $menu_service;
 
     public function __construct()
     {
         $this->rolService = resolve(RolService::class);
+        $this->menu_service = resolve(MenuService::class);
+    }
+
+    public function configurarAcceso($id_rol)
+    {
+        redirect()->route('seguridad.rol.asignar', ['id_rol' => encriptar($id_rol)]);
+    }
+
+    // Función para reiniciar el páginado al buscar
+    public function updatedBuscar()
+    {
+        $this->resetPage();
     }
 
     #[Computed()]
@@ -127,6 +143,30 @@ class Tabla extends Component
             </div>
         </div>
         HTML;
+    }
+
+    public function mount()
+    {
+        // 1. Obtener el menú "ROL" con sus acciones
+        $menu = $this->menu_service->listarAccionesPorNombreMenu('ROLES');
+
+        if ($menu) {
+            foreach ($menu->acciones as $accion) {
+
+                // Acción del catálogo (LISTAR, REGISTRAR, MODIFICAR, ELIMINAR ...)
+                $nombre_accion = str_replace(' ', '_', strtoupper($accion->tipoAccion->descripcion_catalogo));
+
+                // LISTAR no debe bloquear la vista, así que lo ignoramos
+                if ($nombre_accion !== 'LISTAR') {
+
+                    // Verificar si el usuario tiene permiso para esa acción dentro del menú
+                    $this->permisos[$nombre_accion] = Gate::allows(
+                        'autorizacion',
+                        [$nombre_accion, $menu->nombre_menu]
+                    );
+                }
+            }
+        }
     }
 
     public function render()

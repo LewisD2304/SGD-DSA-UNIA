@@ -46,6 +46,7 @@
                             <span class="menu-heading fw-bold text-uppercase fs-7">Módulos</span>
                         </div>
                     </div>
+                    @if(count($menusPermitidos) > 0)
                     <div
                         data-kt-menu-trigger="click"
                         class="menu-item menu-accordion {{ request()->routeIs('seguridad.*') ? 'here show' : '' }}"
@@ -58,52 +59,64 @@
                             <span class="menu-arrow"></span>
                         </span>
                         <div class="menu-sub menu-sub-accordion">
+                            @if(isset($menusPermitidos['MENÚ']))
                             <div class="menu-item">
                                 <a
-                                    class="menu-link {{ request()->routeIs('seguridad.menu.*') || request()->routeIs('seguridad.menu') ? 'active' : '' }}"
-                                    href="{{ route('seguridad.menu.index') }}"
+                                    class="menu-link {{ request()->routeIs($menusPermitidos['MENÚ']['routePattern'].'.*') || request()->routeIs($menusPermitidos['MENÚ']['routePattern']) ? 'active' : '' }}"
+                                    href="{{ route($menusPermitidos['MENÚ']['ruta']) }}"
                                 >
                                     <span class="menu-bullet">
                                         <span class="bullet bullet-dot"></span>
                                     </span>
-                                    <span class="menu-title">Menú</span>
+                                    <span class="menu-title">{{ $menusPermitidos['MENÚ']['nombre'] }}</span>
                                 </a>
                             </div>
+                            @endif
+
+                            @if(isset($menusPermitidos['USUARIOS']))
                             <div class="menu-item">
                                 <a
-                                    class="menu-link {{ request()->routeIs('seguridad.usuario.*') || request()->routeIs('seguridad.usuario') ? 'active' : '' }}"
-                                    href="{{ route('seguridad.usuario.index') }}"
+                                    class="menu-link {{ request()->routeIs($menusPermitidos['USUARIOS']['routePattern'].'.*') || request()->routeIs($menusPermitidos['USUARIOS']['routePattern']) ? 'active' : '' }}"
+                                    href="{{ route($menusPermitidos['USUARIOS']['ruta']) }}"
                                 >
                                     <span class="menu-bullet">
                                         <span class="bullet bullet-dot"></span>
                                     </span>
-                                    <span class="menu-title">Usuarios</span>
+                                    <span class="menu-title">{{ $menusPermitidos['USUARIOS']['nombre'] }}</span>
                                 </a>
                             </div>
+                            @endif
+
+                            @if(isset($menusPermitidos['ROLES']))
                             <div class="menu-item">
                                 <a
-                                    class="menu-link {{ request()->routeIs('seguridad.rol.*') || request()->routeIs('seguridad.rol') ? 'active' : '' }}"
-                                    href="{{ route('seguridad.rol.index') }}"
+                                    class="menu-link {{ request()->routeIs($menusPermitidos['ROLES']['routePattern'].'.*') || request()->routeIs($menusPermitidos['ROLES']['routePattern']) ? 'active' : '' }}"
+                                    href="{{ route($menusPermitidos['ROLES']['ruta']) }}"
                                 >
                                     <span class="menu-bullet">
                                         <span class="bullet bullet-dot"></span>
                                     </span>
-                                    <span class="menu-title">Roles</span>
+                                    <span class="menu-title">{{ $menusPermitidos['ROLES']['nombre'] }}</span>
                                 </a>
                             </div>
+                            @endif
+
+                            @if(isset($menusPermitidos['PERSONAS']))
                             <div class="menu-item">
                                 <a
-                                    class="menu-link {{ request()->routeIs('seguridad.persona.*') || request()->routeIs('seguridad.persona') ? 'active' : '' }}"
-                                    href="{{ route('seguridad.persona.index') }}"
+                                    class="menu-link {{ request()->routeIs($menusPermitidos['PERSONAS']['routePattern'].'.*') || request()->routeIs($menusPermitidos['PERSONAS']['routePattern']) ? 'active' : '' }}"
+                                    href="{{ route($menusPermitidos['PERSONAS']['ruta']) }}"
                                 >
                                     <span class="menu-bullet">
                                         <span class="bullet bullet-dot"></span>
                                     </span>
-                                    <span class="menu-title">Personas</span>
+                                    <span class="menu-title">{{ $menusPermitidos['PERSONAS']['nombre'] }}</span>
                                 </a>
                             </div>
+                            @endif
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

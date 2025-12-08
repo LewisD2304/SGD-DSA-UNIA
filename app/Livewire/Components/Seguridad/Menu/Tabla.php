@@ -18,6 +18,7 @@ class Tabla extends Component
     public $mostrar_paginate = 10;
     #[Url('buscar')]
     public $buscar = '';
+    public $permisos = [];
 
     protected MenuService $menuService;
 
@@ -37,7 +38,7 @@ class Tabla extends Component
         $this->resetPage();
     }
     #[Computed()]
-    #[On('refrescar_menus')]
+    #[On('refrescarMenus')]
     public function menus()
     {
         return $this->menuService->listarPaginado($this->mostrar_paginate, $this->buscar, 'id_menu', 'desc', ['acciones.tipoAccion']);
@@ -180,6 +181,20 @@ class Tabla extends Component
             </div>
         </div>
         HTML;
+    }
+
+    public function mount()
+    {
+        $menu = $this->menuService->listarAccionesPorNombreMenu('MENÚ');
+
+        if ($menu) {
+            foreach ($menu->acciones as $accion) {
+                $nombre_accion = str_replace(' ', '_', strtoupper($accion->tipoAccion->descripcion_catalogo));
+                if ($nombre_accion !== 'LISTAR') {
+                    $this->permisos[$nombre_accion] = Gate::allows('autorizacion', [$nombre_accion, $menu->nombre_menu]);
+                }
+            }
+        }
     }
 
     public function render()
