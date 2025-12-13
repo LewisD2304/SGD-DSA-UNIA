@@ -35,9 +35,9 @@
 										class="form-control text-uppercase @if ($errors->has('numeroDocumento')) is-invalid @elseif($numeroDocumento) is-valid @endif"
 										id="numeroDocumento"
 										autocomplete="off"
-										placeholder="Número documento"
-										wire:model.live="numeroDocumento"
-										maxlength="50"
+									placeholder="Ej: CARTA MULTIPLE Nº 004-2025-UNIA-VRA/DSA"
+									wire:model.live="numeroDocumento"
+									maxlength="100"
 									/>
 									<label for="numeroDocumento">
 										Número documento <span class="text-danger">*</span>
@@ -51,13 +51,14 @@
 							<div class="col-md-6">
 								<div class="form-floating">
 									<input
-										type="text"
-										class="form-control text-uppercase @if ($errors->has('folioDocumento')) is-invalid @elseif($folioDocumento) is-valid @endif"
+										type="number"
+										class="form-control @if ($errors->has('folioDocumento')) is-invalid @elseif($folioDocumento) is-valid @endif"
 										id="folioDocumento"
 										autocomplete="off"
 										placeholder="Folio"
 										wire:model.live="folioDocumento"
-										maxlength="50"
+										min="1"
+										step="1"
 									/>
 									<label for="folioDocumento">
 										Folio <span class="text-danger">*</span>
@@ -73,13 +74,14 @@
 						<div class="mb-3">
 							<div class="form-floating">
 								<textarea
-									class="form-control @if ($errors->has('asuntoDocumento')) is-invalid @elseif($asuntoDocumento) is-valid @endif"
+									class="form-control text-uppercase @if ($errors->has('asuntoDocumento')) is-invalid @elseif($asuntoDocumento) is-valid @endif"
 									id="asuntoDocumento"
 									autocomplete="off"
 									placeholder="Asunto"
 									wire:model.live="asuntoDocumento"
 									maxlength="200"
 									style="height: 100px"
+									@keypress="if (!/[A-Za-z0-9\s,.]/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete') event.preventDefault()"
 								></textarea>
 								<label for="asuntoDocumento">
 									Asunto <span class="text-danger">*</span>

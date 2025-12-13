@@ -129,7 +129,11 @@ class DocumentoService
         DB::beginTransaction();
 
         try {
-            $fechaRecepcion = $fecha?->toDateString() ?? Carbon::now()->toDateString();
+            // Usar Carbon::now() para capturar la fecha y hora actual con la zona horaria del servidor
+            $fechaRecepcion = $fecha ?? Carbon::now();
+
+            // Convertir a formato DATETIME de MySQL: YYYY-MM-DD HH:MM:SS
+            $fechaRecepcionFormato = $fechaRecepcion->format('Y-m-d H:i:s');
 
             // Estado al recepcionar: intentar "RECEPCIONADO", si no existe usar "EN TRÁMITE"
             $estadoRecepcionado = DB::table('ta_estado')
@@ -143,7 +147,7 @@ class DocumentoService
             }
 
             $documento = $this->repository->modificar([
-                'fecha_recepcion_documento' => $fechaRecepcion,
+                'fecha_recepcion_documento' => $fechaRecepcionFormato,
                 'id_estado' => $estadoRecepcionado?->id_estado,
             ], $documento);
 
@@ -153,6 +157,52 @@ class DocumentoService
         } catch (\Exception $e) {
             DB::rollBack();
             throw new \Exception('Ocurrió un error al recepcionar el documento.');
+        }
+    }
+
+    // Derivar un documento a otra área
+    public function derivar(int $idDocumento, int $idAreaDerivar, ?string $observaciones = null)
+    {
+        DB::beginTransaction();
+
+        try {
+            $documento = $this->repository->obtenerPorId($idDocumento);
+
+            if (!$documento) {
+                throw new \Exception('Documento no encontrado.');
+            }
+
+            // Obtener el estado "DERIVADO"
+            $estadoDerivado = DB::table('ta_estado')
+                ->where('nombre_estado', 'DERIVADO')
+                ->first();
+
+            if (!$estadoDerivado) {
+                throw new \Exception('Estado "DERIVADO" no encontrado en la base de datos.');
+            }
+
+            // Actualizar el documento
+            $documento = $this->repository->modificar([
+                'id_area_destino' => $idAreaDerivar,
+                'id_estado' => $estadoDerivado->id_estado,
+                'fecha_recepcion_documento' => null,
+            ], $documento);
+
+            // Registrar el movimiento en ta_movimiento
+            DB::table('ta_movimiento')->insert([
+                'id_documento' => $idDocumento,
+                'id_area_origen' => $documento->id_area_origen,
+                'id_area_destino' => $idAreaDerivar,
+                'observaciones_movimiento' => $observaciones,
+                'fecha_movimiento' => Carbon::now()->format('Y-m-d H:i:s'),
+            ]);
+
+            DB::commit();
+
+            return $documento;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw new \Exception('Ocurrió un error al derivar el documento: '.$e->getMessage());
         }
     }
 }

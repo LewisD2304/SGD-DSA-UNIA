@@ -3,6 +3,7 @@
 namespace App\Livewire\Documentos\Documento;
 
 use App\Enums\EstadoEnum;
+use App\Models\Documento;
 use App\Services\Documento\DocumentoService;
 use App\Services\Documento\ArchivoDocumentoService;
 use App\Services\Configuracion\AreaService;
@@ -25,7 +26,7 @@ class Index extends Component
     public $nombreDocumentoEstado = '';
     public $nombreDocumentoEliminar = '';
 
-    #[Validate('required|max:50|min:1', as: 'numero_documento')]
+    #[Validate('required|max:100|min:1', as: 'numero_documento')]
     public $numeroDocumento = '';
 
     #[Validate('required|max:50|min:1', as: 'folio_documento')]
@@ -48,6 +49,10 @@ class Index extends Component
     public $archivoDocumento = null;
     public $rutaActual = 'gestion.documentos.documentos';
     public $areas = [];
+
+    // Propiedades para derivar documento
+    public $idAreaDerivar = '';
+    public $observacionesDerivar = '';
 
     protected DocumentoService $documentoService;
     protected ArchivoDocumentoService $archivoService;
@@ -92,7 +97,7 @@ class Index extends Component
                 'folioDocumento' => 'required|max:50|min:1',
                 'asuntoDocumento' => 'required|max:200|min:3',
                 'idAreaDestino' => 'required|exists:ta_area,id_area',
-                'fechaRecepcionDocumento' => 'nullable|date',
+                'fechaRecepcionDocumento' => 'nullable|date|before_or_equal:today',
             ];
 
             // Validar archivo solo si se está creando o modificando con nuevo archivo
@@ -341,9 +346,71 @@ class Index extends Component
             'rutaDocumento',
             'archivoDocumento',
             'nombreDocumentoEliminar',
-            'nombreDocumentoEstado'
+            'nombreDocumentoEstado',
+            'idAreaDerivar',
+            'observacionesDerivar'
         ]);
         $this->resetErrorBag();
+    }
+
+    #[On('abrirModalDerivarDocumento')]
+    public function abrirModalDerivarDocumento($id_documento)
+    {
+        $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento);
+
+        $this->numeroDocumento = $this->modeloDocumento->numero_documento;
+        $this->folioDocumento = $this->modeloDocumento->folio_documento;
+        $this->asuntoDocumento = $this->modeloDocumento->asunto_documento;
+        $this->idAreaDestino = $this->modeloDocumento->id_area_destino;
+        $this->idAreaDerivar = '';
+        $this->observacionesDerivar = '';
+
+        $this->dispatch('cargando', cargando: 'false');
+        $this->modalDocumento('#modal-derivar-documento', 'show');
+    }
+
+    public function guardarDerivar()
+    {
+        $this->validate([
+            'idAreaDerivar' => 'required|exists:ta_area,id_area',
+            'observacionesDerivar' => 'nullable|max:200'
+        ], [
+            'idAreaDerivar.required' => 'Debe seleccionar un área de destino',
+            'idAreaDerivar.exists' => 'El área seleccionada no existe',
+            'observacionesDerivar.max' => 'Las observaciones no pueden exceder 200 caracteres'
+        ]);
+
+        $mensajeToastr = null;
+
+        try {
+            $resultado = $this->documentoService->derivar(
+                $this->modeloDocumento->id_documento,
+                $this->idAreaDerivar,
+                $this->observacionesDerivar
+            );
+
+            $this->dispatch('refrescarDocumentos');
+            $mensajeToastr = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Documento derivado correctamente', 'top', 'right');
+        } catch (\Exception $e) {
+            $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');
+        }
+
+        $this->modalDocumento('#modal-derivar-documento', 'hide');
+        $this->reset(['idAreaDerivar', 'observacionesDerivar']);
+
+        if ($mensajeToastr !== null) {
+            $this->dispatch(
+                'toastr',
+                boton_cerrar: $mensajeToastr['boton_cerrar'],
+                progreso_avance: $mensajeToastr['progreso_avance'],
+                duracion: $mensajeToastr['duracion'],
+                titulo: $mensajeToastr['titulo'],
+                tipo: $mensajeToastr['tipo'],
+                mensaje: $mensajeToastr['mensaje'],
+                posicion_y: $mensajeToastr['posicion_y'],
+                posicion_x: $mensajeToastr['posicion_x']
+            );
+        }
     }
 
     public function render()

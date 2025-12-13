@@ -28,7 +28,8 @@
                                         <th class="min-w-250px">ASUNTO</th>
                                         <th class="min-w-150px">REMITENTE</th>
                                         <th class="min-w-150px">DESTINO</th>
-                                        <th class="min-w-125px">FECHA RECEPCIÓN</th>
+                                        <th class="min-w-125px">FECHA DE REGISTRO</th>
+                                        <th class="min-w-125px">FECHA RECEPCION</th>
                                         <th class="min-w-100px">ESTADO</th>
                                         <th class="text-center min-w-100px">ACCIONES</th>
                                     </tr>
@@ -43,7 +44,7 @@
                                         <td>
                                             <div class="fw-bold text-primary">{{ $documento->expediente_documento }}</div>
                                             @if($documento->numero_documento)
-                                                <div class="text-muted fs-7">N°: {{ $documento->numero_documento }}</div>
+                                            <div class="text-muted fs-7">{{ $documento->numero_documento }}</div>
                                             @endif
                                         </td>
 
@@ -59,17 +60,17 @@
                                             <div class="text-gray-800">{{ $documento->areaDestino->nombre_area ?? 'N/A' }}</div>
                                         </td>
 
-                                        <td>
-                                            {{ $documento->fecha_recepcion_documento ? \Carbon\Carbon::parse($documento->fecha_recepcion_documento)->format('d/m/Y') : '-' }}
-                                        </td>
+                                        <td>{{ formatoFechaText($documento->au_fechacr)}}</td>
+
+                                        <td>{{ formatoFechaText($documento->fecha_recepcion_documento)}}</td>
 
                                         <td>
                                             @if($documento->estado)
-                                                <span class="badge badge-light-secondary py-2 px-3">
-                                                    {{ $documento->estado->nombre_estado }}
-                                                </span>
+                                            <span class="badge badge-light-secondary py-2 px-3">
+                                                {{ $documento->estado->nombre_estado }}
+                                            </span>
                                             @else
-                                                <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
+                                            <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
                                             @endif
                                         </td>
 
@@ -82,17 +83,12 @@
                                                 @can('autorizacion',['VER','DOCUMENTOS'])
                                                 <div class="menu-item px-3" x-data="{ cargando: false }" @cargando.window="cargando = false, cargando_opciones = false" :class="{ 'item-disabled': cargando_opciones }">
                                                     <a class="menu-link px-3" @click="cargando = true, cargando_opciones = true" x-bind:class="{ 'pointer-events-none': cargando }" wire:click="$dispatch('abrirModalDetalleDocumento', { id_documento: {{ $documento->id_documento }} })" onclick="event.stopPropagation();">
-                                                        <span x-show="!cargando">
-                                                            <i class="ki-duotone ki-eye fs-2 text-primary me-3">
-                                                                <span class="path1"></span>
-                                                                <span class="path2"></span>
-                                                                <span class="path3"></span>
-                                                            </i>
-                                                            Ver
-                                                        </span>
-                                                        <span x-show="cargando" class="d-flex align-items-center">
-                                                            <x-spinner class="text-primary" style="width: 20px; height: 20px;" />
-                                                        </span>
+                                                        Ver
+                                                        <template x-if="cargando">
+                                                            <span>
+                                                                <x-spinner class="ms-2" style="width: 20px; height: 20px;" />
+                                                            </span>
+                                                        </template>
                                                     </a>
                                                 </div>
                                                 @endcan
@@ -100,61 +96,39 @@
                                                 @can('autorizacion',['MODIFICAR','DOCUMENTOS'])
                                                 <div class="menu-item px-3" x-data="{ cargando: false }" @cargando.window="cargando = false, cargando_opciones = false" :class="{ 'item-disabled': cargando_opciones }">
                                                     <a class="menu-link px-3" @click="cargando = true, cargando_opciones = true" x-bind:class="{ 'pointer-events-none': cargando }" wire:click="$dispatch('abrirModalDocumento', { id_documento: {{ $documento->id_documento }} })" onclick="event.stopPropagation();">
-                                                        <span x-show="!cargando">
-                                                            <i class="ki-duotone ki-notepad-edit fs-2 text-warning me-3">
-                                                                <span class="path1"></span>
-                                                                <span class="path2"></span>
-                                                            </i>
-                                                            Modificar
-                                                        </span>
-                                                        <span x-show="cargando" class="d-flex align-items-center">
-                                                            <x-spinner class="text-warning" style="width: 20px; height: 20px;" />
-                                                        </span>
+                                                        Modificar
+                                                        <template x-if="cargando">
+                                                            <span>
+                                                                <x-spinner class="ms-2" style="width: 20px; height: 20px;" />
+                                                            </span>
+                                                        </template>
                                                     </a>
                                                 </div>
                                                 @endcan
 
                                                 @can('autorizacion',['ELIMINAR','DOCUMENTOS'])
                                                 <div class="menu-item px-3" x-data="{ cargando: false }" @cargando.window="cargando = false, cargando_opciones = false" :class="{ 'item-disabled': cargando_opciones }">
-                                                    <a class="menu-link px-3" @click="cargando = true, cargando_opciones = true" x-bind:class="{ 'pointer-events-none': cargando }" wire:click="$dispatch('abrirModalEliminarDocumento', { id_documento: {{ $documento->id_documento }} })" onclick="event.stopPropagation();">
-                                                        <span x-show="!cargando">
-                                                            <i class="ki-duotone ki-trash fs-2 text-danger me-3">
-                                                                <span class="path1"></span>
-                                                                <span class="path2"></span>
-                                                                <span class="path3"></span>
-                                                                <span class="path4"></span>
-                                                                <span class="path5"></span>
-                                                            </i>
-                                                            Eliminar
-                                                        </span>
-                                                        <span x-show="cargando" class="d-flex align-items-center">
-                                                            <x-spinner class="text-danger" style="width: 20px; height: 20px;" />
-                                                        </span>
+                                                    <a class="menu-link px-3 menu-link-danger text-danger" @click="cargando = true, cargando_opciones = true" x-bind:class="{ 'pointer-events-none': cargando }" wire:click="$dispatch('abrirModalEliminarDocumento', { id_documento: {{ $documento->id_documento }} })" onclick="event.stopPropagation();">
+                                                        Eliminar
+                                                        <template x-if="cargando">
+                                                            <span>
+                                                                <x-spinner class="ms-2" style="width: 20px; height: 20px;" />
+                                                            </span>
+                                                        </template>
                                                     </a>
                                                 </div>
                                                 @endcan
 
-                                                @can('autorizacion',['CAMBIAR ESTADO','DOCUMENTOS'])
+                                                @can('autorizacion',['DERIVAR','DOCUMENTOS'])
                                                 <div class="separator my-2"></div>
                                                 <div class="menu-item px-3" x-data="{ cargando: false }" @cargando.window="cargando = false, cargando_opciones = false" :class="{ 'item-disabled': cargando_opciones }">
-                                                    <a class="menu-link px-3" @click="cargando = true, cargando_opciones = true" x-bind:class="{ 'pointer-events-none': cargando }" wire:click="$dispatch('abrirModalEstadoDocumento', { id_documento: {{ $documento->id_documento }} })" onclick="event.stopPropagation();">
-                                                        <span x-show="!cargando">
-                                                            @if($documento->id_estado == 1)
-                                                            <i class="ki-duotone ki-toggle-on-circle fs-2 text-success me-3">
-                                                                <span class="path1"></span>
-                                                                <span class="path2"></span>
-                                                            </i>
-                                                            @else
-                                                            <i class="ki-duotone ki-toggle-off-circle fs-2 text-danger me-3">
-                                                                <span class="path1"></span>
-                                                                <span class="path2"></span>
-                                                            </i>
-                                                            @endif
-                                                            {{ $documento->id_estado == 1 ? 'Deshabilitar' : 'Habilitar' }}
-                                                        </span>
-                                                        <span x-show="cargando" class="d-flex align-items-center">
-                                                            <x-spinner class="{{ $documento->id_estado == 1 ? 'text-danger' : 'text-success' }}" style="width: 20px; height: 20px;" />
-                                                        </span>
+                                                    <a class="menu-link px-3" @click="cargando = true, cargando_opciones = true" x-bind:class="{ 'pointer-events-none': cargando }" wire:click="$dispatch('abrirModalDerivarDocumento', { id_documento: {{ $documento->id_documento }} })" onclick="event.stopPropagation();">
+                                                        Derivar
+                                                        <template x-if="cargando">
+                                                            <span>
+                                                                <x-spinner class="ms-2" style="width: 20px; height: 20px;" />
+                                                            </span>
+                                                        </template>
                                                     </a>
                                                 </div>
                                                 @endcan

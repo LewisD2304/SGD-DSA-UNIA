@@ -19,6 +19,8 @@ class Tabla extends Component
     #[Url('buscar')]
     public $buscar = '';
     public $permisos = [];
+    public ?int $documentoRecepcionId = null;
+    public ?string $documentoRecepcionTitulo = null;
 
     protected DocumentoService $documentoService;
 
@@ -47,11 +49,30 @@ class Tabla extends Component
         );
     }
 
-    public function recepcionar(int $id_documento)
+    public function solicitarRecepcion(int $id_documento)
     {
         $documento = $this->documentoService->obtenerPorId($id_documento);
 
         if (!$documento) {
+            return;
+        }
+
+        $this->documentoRecepcionId = $documento->id_documento;
+        $this->documentoRecepcionTitulo = $documento->asunto_documento ?? $documento->expediente_documento ?? 'Documento sin asunto';
+
+        $this->dispatch('modal', nombre: '#modal-confirmar-recepcion', accion: 'show');
+    }
+
+    public function confirmarRecepcion()
+    {
+        if (!$this->documentoRecepcionId) {
+            return;
+        }
+
+        $documento = $this->documentoService->obtenerPorId($this->documentoRecepcionId);
+
+        if (!$documento) {
+            $this->cerrarModalRecepcion();
             return;
         }
 
@@ -69,6 +90,14 @@ class Tabla extends Component
             posicion_y: 'top',
             posicion_x: 'right'
         );
+
+        $this->cerrarModalRecepcion();
+    }
+
+    public function cerrarModalRecepcion()
+    {
+        $this->dispatch('modal', nombre: '#modal-confirmar-recepcion', accion: 'hide');
+        $this->reset(['documentoRecepcionId', 'documentoRecepcionTitulo']);
     }
 
     public function placeholder()

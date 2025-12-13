@@ -25,7 +25,7 @@ class DocumentoRepository implements DocumentoRepositoryInterface
     public function generarExpediente(): string
     {
         $anioActual = now()->year;
-        
+
         // Obtener el último expediente del año actual
         $ultimoExpediente = $this->model::where('expediente_documento', 'LIKE', "EXP-%-{$anioActual}")
             ->orderBy('id_documento', 'desc')

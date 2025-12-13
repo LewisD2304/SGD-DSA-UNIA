@@ -38,6 +38,8 @@
                                         placeholder="Número documento"
                                         wire:model.live="numerodocumentoPersona"
                                         maxlength="20"
+                                        inputmode="numeric"
+                                        @keypress="if (!/[0-9]/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete') event.preventDefault()"
                                     />
                                     <label for="numerodocumentoPersona">
                                         Número documento <span class="text-danger">*</span>
@@ -52,12 +54,13 @@
                                 <div class="form-floating">
                                     <input
                                         type="text"
-                                        class="form-control @if ($errors->has('nombresPersona')) is-invalid @elseif($nombresPersona) is-valid @endif"
+                                        class="form-control text-uppercase @if ($errors->has('nombresPersona')) is-invalid @elseif($nombresPersona) is-valid @endif"
                                         id="nombresPersona"
                                         autocomplete="off"
                                         placeholder="Nombres"
                                         wire:model.live="nombresPersona"
                                         maxlength="60"
+                                        @keypress="if (!/[A-Za-z\s]/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete') event.preventDefault()"
                                     />
                                     <label for="nombresPersona">
                                         Nombres <span class="text-danger">*</span>
@@ -90,12 +93,13 @@
                                 <div class="form-floating">
                                     <input
                                         type="text"
-                                        class="form-control @if ($errors->has('apellidoPaternoPersona')) is-invalid @elseif($apellidoPaternoPersona) is-valid @endif"
+                                        class="form-control text-uppercase @if ($errors->has('apellidoPaternoPersona')) is-invalid @elseif($apellidoPaternoPersona) is-valid @endif"
                                         id="apellidoPaternoPersona"
                                         autocomplete="off"
                                         placeholder="Apellido paterno"
                                         wire:model.live="apellidoPaternoPersona"
                                         maxlength="60"
+                                        @keypress="if (!/[A-Za-z\s]/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete') event.preventDefault()"
                                     />
                                     <label for="apellidoPaternoPersona">
                                         Apellido paterno <span class="text-danger">*</span>
@@ -111,12 +115,13 @@
                                     <div class="form-floating">
                                         <input
                                             type="text"
-                                            class="form-control @if ($errors->has('apellidoMaternoPersona')) is-invalid @elseif($apellidoMaternoPersona) is-valid @endif"
+                                            class="form-control text-uppercase @if ($errors->has('apellidoMaternoPersona')) is-invalid @elseif($apellidoMaternoPersona) is-valid @endif"
                                             id="apellidoMaternoPersona"
                                             autocomplete="off"
                                             placeholder="Apellido materno"
                                             wire:model.live="apellidoMaternoPersona"
                                             maxlength="60"
+                                            @keypress="if (!/[A-Za-z\s]/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete') event.preventDefault()"
                                         />
                                         <label for="apellidoMaternoPersona">
                                             Apellido materno <span class="text-danger">*</span>
@@ -146,6 +151,8 @@
                                         placeholder="Celular"
                                         wire:model.live="celularPersona"
                                         maxlength="20"
+                                        inputmode="numeric"
+                                        @keypress="if (!/[0-9]/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete') event.preventDefault()"
                                     />
                                     <label for="celularPersona">
                                         Celular

@@ -7,8 +7,9 @@
 
     <livewire:components.documentos.documento.tabla />
 
-    @include('livewire.components.documentos.documento.modal-documento')
-    @include('livewire.components.documentos.documento.modal-detalle-documento')
-    @include('livewire.components.documentos.documento.modal-estado-documento')
-    @include('livewire.components.documentos.documento.modal-eliminar-documento')
+    @include('livewire.components.Documentos.documento.modal-documento')
+    @include('livewire.components.Documentos.documento.modal-detalle-documento')
+    @include('livewire.components.Documentos.documento.modal-estado-documento')
+    @include('livewire.components.Documentos.documento.modal-eliminar-documento')
+    @include('livewire.components.Documentos.documento.modal-derivar-documento')
 </div>

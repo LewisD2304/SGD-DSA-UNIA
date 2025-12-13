@@ -1,3 +1,4 @@
+<div>
     <div class="row g-5 gx-xl-10 mb-5 mb-xl-10">
         <div class="col-12">
             <div class="card">
@@ -21,7 +22,7 @@
                                         <th class="min-w-150px">DESTINO</th>
                                         <th class="min-w-125px">FECHA RECEPCIÓN</th>
                                         <th class="min-w-100px">ESTADO</th>
-                                        <th class="text-center min-w-150px">ACCIONES</th>
+                                        <th class="text-center min-w-100px">ACCIONES</th>
                                     </tr>
                                 </thead>
                                 <tbody class="text-gray-600" wire:loading.class="opacity-25" wire:target="buscar, gotoPage, previousPage, nextPage">
@@ -49,11 +50,7 @@
                                         <td>
                                             <div class="text-gray-800">{{ $documento->areaDestino->nombre_area ?? 'N/A' }}</div>
                                         </td>
-
-                                        <td>
-                                            {{ $documento->fecha_recepcion_documento ? \Carbon\Carbon::parse($documento->fecha_recepcion_documento)->format('d/m/Y') : '-' }}
-                                        </td>
-
+                                        <td>{{ formatoFechaText($documento->fecha_recepcion_documento)}}</td>
                                         <td>
                                             @if($documento->estado)
                                                 <span class="badge badge-light-secondary py-2 px-3">
@@ -80,7 +77,7 @@
                                                 <button
                                                     type="button"
                                                     class="btn btn-success btn-sm"
-                                                    wire:click="recepcionar({{ $documento->id_documento }})"
+                                                    wire:click="solicitarRecepcion({{ $documento->id_documento }})"
                                                 >
                                                     <i class="ki-outline ki-folder-check fs-4 me-1"></i>
                                                     Recepcionar
@@ -124,3 +121,88 @@
             </div>
         </div>
     </div>
+
+    <div wire:ignore.self class="modal fade" id="modal-confirmar-recepcion" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header placeholder-glow">
+                    <h3 class="fw-bold my-0">Confirmar recepción</h3>
+                    <div
+                        class="btn btn-icon btn-sm btn-active-icon-primary icon-rotate-custom"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"
+                        wire:click="cerrarModalRecepcion"
+                    >
+                        <i class="ki-outline ki-cross fs-1"></i>
+                    </div>
+                </div>
+
+                <form autocomplete="off" novalidate class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit="confirmarRecepcion">
+
+                    <div class="modal-body px-5">
+                        <div class="d-flex flex-column px-5 ">
+
+                            <div class="modal-header text-center flex-column border-0">
+                                <p>
+                                    <i class="ki-duotone ki-information-5 text-warning" style="font-size: 7rem !important;">
+                                        <span class="path1"></span>
+                                        <span class="path2"></span>
+                                        <span class="path3"></span>
+                                    </i>
+                                </p>
+                                <h4 class="modal-title w-100 mt-5">
+                                    ¿Estás seguro de realizar esta acción?
+                                </h4>
+                            </div>
+
+                            <div class="px-4 text-center fs-5">
+                                <p class="text-gray-700">
+                                    Esta acción recepcionará el documento y lo moverá a "Mis documentos".
+                                </p>
+
+                                <div class="d-flex justify-content-center mt-7">
+                                    <div class="fw-bold">Documento:</div>
+                                    <div class="px-2 text-gray-700 text-start">{{ $documentoRecepcionTitulo }}</div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-center">
+                        <button
+                            type="button"
+                            class="btn d-flex align-items-center btn-light-secondary me-4"
+                            data-bs-dismiss="modal"
+                            aria-label="cancel"
+                            wire:click="cerrarModalRecepcion"
+                        >
+                            Cancelar
+                        </button>
+
+                        <button
+                            type="submit"
+                            class="btn d-flex align-items-center btn-warning"
+                            wire:loading.attr="disabled"
+                            wire:target="confirmarRecepcion"
+                        >
+                            <span class="indicator-label" wire:loading.remove wire:target="confirmarRecepcion">
+                                Recepcionar
+                            </span>
+                            <span class="indicator-progress" wire:loading wire:target="confirmarRecepcion">
+                                Cargando...
+                                <span>
+                                    <x-spinner style="width: 20px; height: 20px;"/>
+                                </span>
+                            </span>
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+</div>
