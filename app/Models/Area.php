@@ -18,7 +18,11 @@ class Area extends Model
 
     public function documentos()
     {
-        return $this->hasMany(Puesto::class, 'id_area');
+        return $this->hasMany(Documento::class, 'id_area', 'id_area');
     }
 
+    public function personas()
+    {
+        return $this->hasMany(Persona::class, 'id_area', 'id_area');
+    }
 }

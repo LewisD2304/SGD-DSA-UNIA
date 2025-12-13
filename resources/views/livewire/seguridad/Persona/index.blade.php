@@ -8,6 +8,7 @@
     @endsection
 
     <livewire:components.seguridad.persona.tabla/>
+    
 
     @include('livewire.components.seguridad.persona.modal-persona')
     @include('livewire.components.seguridad.persona.modal-detalle-persona')

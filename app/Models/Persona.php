@@ -30,8 +30,8 @@ class Persona extends Model
         'tipodocuento_catalogo',
         'celular_persona',
         'correo_persona',
-        'estado_persona'
-
+        'estado_persona',
+        'id_area'
     ];
 
     protected $casts = [
@@ -50,6 +50,11 @@ class Persona extends Model
     public function tipoDocumento()
     {
         return $this->belongsTo(Catalogo::class, 'tipodocuento_catalogo');
+    }
+
+    public function area()
+    {
+        return $this->belongsTo(Area::class, 'id_area');
     }
 
     public function usuario()

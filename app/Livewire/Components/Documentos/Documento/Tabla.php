@@ -1,15 +1,14 @@
 <?php
 
-namespace App\Livewire\Components\Seguridad\Persona;
+namespace App\Livewire\Components\Documentos\Documento;
 
-use App\Services\Seguridad\MenuService;
-use App\Services\Seguridad\PersonaService;
-use Illuminate\Support\Facades\Gate;
+use App\Services\Documento\DocumentoService;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\Auth;
 
 class Tabla extends Component
 {
@@ -21,18 +20,31 @@ class Tabla extends Component
     public $buscar = '';
     public $permisos = [];
 
-    protected PersonaService $personaService;
+    protected DocumentoService $documentoService;
 
     public function __construct()
     {
-        $this->personaService = resolve(personaService::class);
+        $this->documentoService = resolve(DocumentoService::class);
     }
 
     #[Computed()]
-    #[On('refrescarPersonas')]
-    public function personas()
+    #[On('refrescarDocumentos')]
+    public function documentos()
     {
-        return $this->personaService->listarPaginado($this->mostrarPaginate, $this->buscar, 'id_persona', 'desc');
+        $areaUsuario = Auth::user()?->persona?->id_area;
+
+        if (!$areaUsuario) {
+            return collect();
+        }
+
+        return $this->documentoService->listarPorArea(
+            idArea: $areaUsuario,
+            paginado: $this->mostrarPaginate,
+            buscar: $this->buscar,
+            columnaOrden: 'au_fechacr',
+            orden: 'desc',
+            relaciones: ['area', 'tipoDocumento', 'estado', 'areaRemitente', 'areaDestino']
+        );
     }
 
     public function placeholder()
@@ -48,7 +60,7 @@ class Tabla extends Component
                                 type="text"
                                 data-kt-user-table-filter="buscar"
                                 class="form-control form-control-solid ps-13 w-xl-350px w-300"
-                                placeholder="Buscar persona"
+                                placeholder="Buscar documento"
                                 disabled
                             />
                         </div>
@@ -74,11 +86,13 @@ class Tabla extends Component
                                     <thead>
                                         <tr class="text-start text-muted fw-bold text-uppercase gs-0">
                                         <th class="w-10px pe-2">N°</th>
-                                        <th class="min-w-200px">NOMBRE COMPLETO</th>
-                                        <th class="min-w-200px">DOCUMENTO</th>
-                                        <th class="min-w-60px">FECHA DE CREACION</th>
-                                        <th class="min-w-60px">ESTADO</th>
-                                        <th class="text-center min-w-60px">ACCIÓN</th>
+                                        <th class="min-w-150px">N° DOCUMENTO</th>
+                                        <th class="min-w-250px">ASUNTO</th>
+                                        <th class="min-w-125px">TIPO</th>
+                                        <th class="min-w-125px">ÁREA</th>
+                                        <th class="min-w-125px">FECHA RECEPCIÓN</th>
+                                        <th class="min-w-100px">ESTADO</th>
+                                        <th class="text-center min-w-100px">ACCIONES</th>
                                     </thead>
                                     <tbody class="text-gray-600 fw-bold placeholder-glow">
                                         <tr>
@@ -123,50 +137,11 @@ class Tabla extends Component
                                                 <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <td>
-                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
-                                            </td>
-                                            <td>
-                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
-                                            </td>
-                                            <td>
-                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
-                                            </td>
-                                            <td>
-                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
-                                            </td>
-                                            <td>
-                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
-                                            </td>
-                                            <td>
-                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
-                                            </td>
-                                            <td>
-                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
-                                            </td>
-                                            <td>
-                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
-                                            </td>
-                                            <td>
-                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
-                                            </td>
-                                            <td>
-                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
-                                            </td>
-                                        </tr>
                                     </tbody>
                                 </table>
+                                <div class="position-absolute top-50 start-50 translate-middle" style="margin-top: 1.06rem;">
+                                    <span class="spinner-border spinner-border-sm align-middle" role="status" aria-hidden="true"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -176,23 +151,8 @@ class Tabla extends Component
         HTML;
     }
 
-    public function mount()
-    {
-        $menuService = resolve(MenuService::class);
-        $menu = $menuService->listarAccionesPorNombreMenu('PERSONAS');
-
-        if ($menu) {
-            foreach ($menu->acciones as $accion) {
-                $nombre_accion = str_replace(' ', '_', strtoupper($accion->tipoAccion->descripcion_catalogo));
-                if ($nombre_accion !== 'LISTAR') {
-                    $this->permisos[$nombre_accion] = Gate::allows('autorizacion', [$nombre_accion, $menu->nombre_menu]);
-                }
-            }
-        }
-    }
-
     public function render()
     {
-        return view('livewire.components.seguridad.persona.tabla');
+        return view('livewire.components.documentos.documento.tabla');
     }
 }

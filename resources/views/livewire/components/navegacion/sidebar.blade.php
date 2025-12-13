@@ -31,7 +31,7 @@
                     class="menu menu-column menu-rounded menu-sub-indention fw-semibold fs-6"
                     id="#kt_app_sidebar_menu"
                     data-kt-menu="true"
-                    data-kt-menu-expand="false"
+                    data-kt-menu-expand="true"
                 >
                     <div class="menu-item">
                         <a class="menu-link {{ request()->routeIs('inicio.index') ? 'active' : '' }}" href="{{ route('inicio.index') }}">
@@ -49,8 +49,8 @@
                     @if(count($menusPermitidos) > 0)
                     <div
                         data-kt-menu-trigger="click"
-                        class="menu-item menu-accordion {{ request()->routeIs('seguridad.*') ? 'here show' : '' }}"
-                    >
+                        class="menu-item menu-accordion {{ request()->routeIs('seguridad.*') ? 'here show' : '' }}">
+
                         <span class="menu-link">
                             <span class="menu-icon">
                                 <i class="ki-outline ki-key fs-2"></i>
@@ -117,6 +117,45 @@
                         </div>
                     </div>
                     @endif
+                    <div
+                        data-kt-menu-trigger="click"
+                        class="menu-item menu-accordion {{ request()->routeIs('documentos.*') ? 'here show' : '' }}">
+
+                        <span class="menu-link">
+                            <span class="menu-icon">
+                                <i class="ki-outline ki-key fs-2"></i>
+                            </span>
+                            <span class="menu-title">Documentos</span>
+                            <span class="menu-arrow"></span>
+                        </span>
+
+                        <div class="menu-sub menu-sub-accordion">
+                            <div class="menu-item">
+                                <a
+                                    class="menu-link {{ request()->routeIs('documentos.documento.*') || request()->routeIs('documentos.documento.index') ? 'active' : '' }}"
+                                    href="{{ route('documentos.documento.index') }}"
+                                >
+                                    <span class="menu-bullet">
+                                        <span class="bullet bullet-dot"></span>
+                                    </span>
+                                    <span class="menu-title">Mis documentos</span>
+                                </a>
+                            </div>
+
+                            <div class="menu-item">
+                                <a
+                                    class="menu-link {{ request()->routeIs('documentos.pendientes.*') || request()->routeIs('documentos.pendientes.index') ? 'active' : '' }}"
+                                    href="{{ route('documentos.pendientes.index') }}"
+                                >
+                                    <span class="menu-bullet">
+                                        <span class="bullet bullet-dot"></span>
+                                    </span>
+                                    <span class="menu-title">Pendientes</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>

@@ -82,7 +82,7 @@ class UsuarioRepository implements UsuarioRepositoryInterface
         }
 
         if ($usuarioModel->estado_usuario === EstadoEnum::DESHABILITADO) {
-            throw new AutenticacionException("Este usuario se encuentra deshabilitado.");
+            throw new AutenticacionException("El usuario y contraseña ingresada es incorrecta.");
         }
 
         // Verificar contraseña hasheada (bcrypt)

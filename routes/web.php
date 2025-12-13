@@ -1,12 +1,15 @@
 <?php
 
 use App\Livewire\Inicio\Index as InicioIndex;
+use App\Livewire\Documentos\Documento\Index as DocumentoIndex;
+use App\Livewire\Documentos\Pendientes\Index as PendientesIndex;
 use App\Livewire\Seguridad\Auth\Login;
 use App\Livewire\Seguridad\Rol\Index as RolIndex;
 use App\Livewire\Seguridad\Rol\ConfiguracionAcceso;
 use App\Livewire\Seguridad\Usuario\Index as UsuarioIndex;
 use App\Livewire\Seguridad\Persona\Index as PersonaIndex;
 use App\Livewire\Seguridad\Menu\Index as MenuIndex;
+use App\Http\Controllers\ArchivoController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -51,6 +54,22 @@ Route::middleware(['throttle:100,1'])->group(function () {
             // Persona
             Route::get('/persona', PersonaIndex::class)->name('persona.index');
         });
+
+        /*
+    |--------------------------------------------------------------------------
+    | MODULO DE GESTION DOCUMENTAL
+    |--------------------------------------------------------------------------
+    */
+
+        Route::prefix('documentos')->name('documentos.')->group(function () {
+            // Documento
+            Route::get('/documento', DocumentoIndex::class)->name('documento.index');
+            // Pendientes
+            Route::get('/pendientes', PendientesIndex::class)->name('pendientes.index');
+        });
+
+        // Descargar archivos
+        Route::get('/archivo/descargar', [ArchivoController::class, 'descargar'])->name('archivo.descargar');
 
 
     });

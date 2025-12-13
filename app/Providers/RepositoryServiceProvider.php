@@ -54,6 +54,24 @@ class RepositoryServiceProvider extends ServiceProvider
             'App\Repositories\Configuracion\Catalogo\CatalogoRepositoryInterface',
             'App\Repositories\Configuracion\Catalogo\CatalogoRepository'
         );
+
+        // Area
+        $this->app->bind(
+            'App\Repositories\Configuracion\Area\AreaRepositoryInterface',
+            'App\Repositories\Configuracion\Area\AreaRepository'
+        );
+
+        /*******************************************************************
+         * Documentos
+         *******************************************************************/
+
+        // Documento
+        $this->app->bind(
+            'App\\Repositories\\Documentos\\Documento\\DocumentoRepositoryInterface',
+            'App\\Repositories\\Documentos\\Documento\\DocumentoRepository'
+        );
+
+
     }
 
     public function boot(): void

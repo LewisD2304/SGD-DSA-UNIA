@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EstadoEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\AuditoriaTrait;
@@ -21,6 +22,10 @@ class Documento extends Model
 
     protected $fillable = [
         'numero_documento',
+        'expediente_documento',
+        'folio_documento',
+        'id_area_remitente',
+        'id_area_destino',
         'fecha_despacho_documento',
         'fecha_emision_documento',
         'fecha_recepcion_documento',
@@ -29,7 +34,7 @@ class Documento extends Model
         'id_estado',
         'tipo_documento_catalogo',
         'ruta_documento',
-        'id_persona',
+        'nombre_archivo_original',
         'id_area'
     ];
 
@@ -42,13 +47,41 @@ class Documento extends Model
         'au_usuarioel'
     ];
 
+
+    public function scopeBuscar($query, $buscar)
+    {
+        if ($buscar == null ) {
+            return $query;
+        }
+
+        return $query->where(function ($query) use ($buscar) {
+            $query->where('numero_documento', 'LIKE', "%$buscar%")
+                ->orWhere('expediente_documento', 'LIKE', "%$buscar%")
+                ->orWhere('folio_documento', 'LIKE', "%$buscar%")
+                ->orWhere('asunto_documento', 'LIKE', "%$buscar%");
+        });
+    }
+
+    public function scopeEstado($query, $estado)
+    {
+        if ($estado == null) {
+            return $query;
+        }
+
+        return $query->where('id_estado', $estado);
+    }
+
     //RELACIONES
     public function area() {
         return $this->belongsTo(Area::class, 'id_area');
     }
 
-    public function persona() {
-        return $this->belongsTo(Persona::class, 'id_persona');
+    public function areaRemitente() {
+        return $this->belongsTo(Area::class, 'id_area_remitente');
+    }
+
+    public function areaDestino() {
+        return $this->belongsTo(Area::class, 'id_area_destino');
     }
 
     public function estado() {

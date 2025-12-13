@@ -49,16 +49,18 @@ class Index extends Component
     // Guardar una persona nuevo o modificado
     public function guardarPersona()
     {
-        // Limpiar cadenas
-        $this->nombresPersona = limpiarCadena($this->nombresPersona, false);
-        $this->apellidoPaternoPersona = limpiarCadena($this->apellidoPaternoPersona, false);
-        $this->apellidoMaternoPersona = limpiarCadena($this->apellidoMaternoPersona, false);
-        $this->celularPersona = limpiarCadena($this->celularPersona, false);
-        $this->correoPersona = limpiarCadena($this->correoPersona, false);
+
 
         $mensajeToastr = NULL;
 
         try {
+
+            // Limpiar cadenas
+            $this->nombresPersona = limpiarCadena($this->nombresPersona, false);
+            $this->apellidoPaternoPersona = limpiarCadena($this->apellidoPaternoPersona, false);
+            $this->apellidoMaternoPersona = limpiarCadena($this->apellidoMaternoPersona, false);
+            $this->celularPersona = limpiarCadena($this->celularPersona, false);
+            $this->correoPersona = limpiarCadena($this->correoPersona, false);
 
             $this->validate([
                 'numerodocumentoPersona' => [
@@ -131,7 +133,7 @@ class Index extends Component
             'correo_persona' => $this->correoPersona,
         ], $this->modeloPersona);
 
-        $this->dispatch('refrescarPersona');
+        $this->dispatch('refrescarPersonas');
 
         return mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Persona modificada correctamente', 'top', 'right');
     }

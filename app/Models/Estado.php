@@ -16,16 +16,23 @@ class Estado extends Model
         'accion_estado'
     ];
 
-    // Opcional: Transiciones que SALEN de este estado
-    public function transicionesSalientes()
-    {
+    public function documentos() {
+        return $this->hasMany(Documento::class, 'id_estado');
+    }
+
+    public function movimientos() {
+        return $this->hasMany(Movimiento::class, 'id_estado');
+    }
+
+    public function transicionesSalientes() {
         return $this->hasMany(Transicion::class, 'id_estado_actual_transicion');
     }
 
-    // Opcional: Transiciones que LLEGAN a este estado
-    public function transicionesEntrantes()
-    {
+    public function transicionesEntrantes(){
         return $this->hasMany(Transicion::class, 'id_estado_siguiente_transicion');
     }
+
+
+
 
 }

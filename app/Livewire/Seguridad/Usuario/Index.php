@@ -7,6 +7,7 @@ use App\Services\Seguridad\PersonaService;
 use App\Services\Seguridad\UsuarioService;
 use App\Services\Seguridad\RolService;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -94,7 +95,7 @@ class Index extends Component
             } else {
                 $mensajeToastr = $this->modificar();
             }
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             // Capturar errores de validación
             foreach ($e->errors() as $field => $messages) {
                 foreach ($messages as $message) {
