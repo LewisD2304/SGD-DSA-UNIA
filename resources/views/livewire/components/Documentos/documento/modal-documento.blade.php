@@ -135,26 +135,6 @@
 							</div>
 						</div>
 
-						<!-- Fecha recepción -->
-						<div class="mb-3">
-							<div class="form-floating">
-								<input
-									type="date"
-									class="form-control @if ($errors->has('fechaRecepcionDocumento')) is-invalid @elseif($fechaRecepcionDocumento) is-valid @endif"
-									id="fechaRecepcionDocumento"
-									autocomplete="off"
-									placeholder="Fecha recepción"
-									wire:model.live="fechaRecepcionDocumento"
-								/>
-								<label for="fechaRecepcionDocumento">
-									Fecha recepción
-								</label>
-								@error('fechaRecepcionDocumento')
-									<div class="invalid-feedback">{{ $message }}</div>
-								@enderror
-							</div>
-						</div>
-
 						<!-- Adjuntar documento -->
 						<div class="mb-3">
 							<label for="archivoDocumento" class="form-label">

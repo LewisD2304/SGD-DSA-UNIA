@@ -16,6 +16,7 @@ use Livewire\WithFileUploads;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 
+
 #[Layout('components.layouts.app')]
 class Index extends Component
 {
@@ -40,9 +41,6 @@ class Index extends Component
     #[Validate('required|exists:ta_area,id_area', as: 'área destino')]
     public $idAreaDestino = '';
 
-    #[Validate('nullable|date', as: 'fecha_recepcion_documento')]
-    public $fechaRecepcionDocumento = '';
-
     #[Validate('max:250', as: 'ruta_documento')]
     public $rutaDocumento = '';
 
@@ -57,6 +55,7 @@ class Index extends Component
     protected DocumentoService $documentoService;
     protected ArchivoDocumentoService $archivoService;
     protected AreaService $areaService;
+
 
     public function __construct()
     {
@@ -97,7 +96,6 @@ class Index extends Component
                 'folioDocumento' => 'required|numeric|min:1|max:999999',
                 'asuntoDocumento' => 'required|max:200|min:3',
                 'idAreaDestino' => 'required|exists:ta_area,id_area',
-                'fechaRecepcionDocumento' => 'nullable|date|before_or_equal:today',
             ];
 
             // Validar archivo solo si se está creando o modificando con nuevo archivo
@@ -173,7 +171,6 @@ class Index extends Component
             'folio_documento' => $this->folioDocumento,
             'asunto_documento' => $this->asuntoDocumento,
             'id_area_destino' => $this->idAreaDestino,
-            'fecha_recepcion_documento' => $this->fechaRecepcionDocumento ?: null,
         ];
 
         // Si hay un nuevo archivo, modificarlo
@@ -209,7 +206,6 @@ class Index extends Component
             $this->folioDocumento = $this->modeloDocumento->folio_documento;
             $this->asuntoDocumento = $this->modeloDocumento->asunto_documento;
             $this->idAreaDestino = $this->modeloDocumento->id_area_destino;
-            $this->fechaRecepcionDocumento = $this->modeloDocumento->fecha_recepcion_documento;
             $this->rutaDocumento = $this->modeloDocumento->ruta_documento;
         } else {
             $this->tituloModal = 'Registrar nuevo documento';
@@ -338,7 +334,6 @@ class Index extends Component
             'folioDocumento',
             'asuntoDocumento',
             'idAreaDestino',
-            'fechaRecepcionDocumento',
             'rutaDocumento',
             'archivoDocumento',
             'nombreDocumentoEliminar',

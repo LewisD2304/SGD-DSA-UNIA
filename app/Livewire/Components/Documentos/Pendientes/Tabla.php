@@ -23,6 +23,7 @@ class Tabla extends Component
     public ?string $documentoRecepcionTitulo = null;
 
     protected DocumentoService $documentoService;
+    protected $paginationTheme = 'bootstrap';
 
     public function __construct()
     {
