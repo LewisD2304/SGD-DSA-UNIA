@@ -73,7 +73,7 @@
                         <div class="form-floating mb-3">
                             <input
                                 type="text"
-                                class="form-control text-lowercase @if ($errors->has('nombreUsuario')) is-invalid @elseif($nombreUsuario) is-valid @endif"
+                                class="form-control text-uppercase @if ($errors->has('nombreUsuario')) is-invalid @elseif($nombreUsuario) is-valid @endif"
                                 id="nombreUsuario"
                                 autocomplete="off"
                                 placeholder="Nombre de usuario"

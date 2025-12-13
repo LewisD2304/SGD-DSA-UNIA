@@ -18,7 +18,7 @@
                 </div>
 
                 <div class="card-body py-4">
-                    <div lass="dataTables_wrapper dt-bootstrap4 no-footer">
+                    <div class="dataTables_wrapper dt-bootstrap4 no-footer">
                         <div class="table-responsive">
                             <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable no-footer">
                                 <thead>

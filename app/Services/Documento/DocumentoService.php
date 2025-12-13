@@ -34,7 +34,7 @@ class DocumentoService
         return $this->repository->listarPaginado($paginado, $buscar, $columnaOrden, $orden, $relaciones);
     }
 
-    // Listar solo documentos pendientes (sin fecha de recepción)
+    // Listar solo documentos pendientes
     public function listarPendientesPaginado(int $paginado = 10, ?string $buscar = null, string $columnaOrden = 'id_persona', string $orden = 'asc', array $relaciones = [])
     {
         return $this->repository->listarPendientesPaginado($paginado, $buscar, $columnaOrden, $orden, $relaciones);
@@ -188,13 +188,10 @@ class DocumentoService
                 'fecha_recepcion_documento' => null,
             ], $documento);
 
-            // Registrar el movimiento en ta_movimiento
+            // Registrar el movimiento en ta_movimiento (solo con campos existentes)
             DB::table('ta_movimiento')->insert([
                 'id_documento' => $idDocumento,
-                'id_area_origen' => $documento->id_area_origen,
-                'id_area_destino' => $idAreaDerivar,
-                'observaciones_movimiento' => $observaciones,
-                'fecha_movimiento' => Carbon::now()->format('Y-m-d H:i:s'),
+                'id_estado' => $estadoDerivado->id_estado
             ]);
 
             DB::commit();

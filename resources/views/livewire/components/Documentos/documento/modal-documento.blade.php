@@ -52,19 +52,22 @@
 								<div class="form-floating">
 									<input
 										type="number"
-										class="form-control @if ($errors->has('folioDocumento')) is-invalid @elseif($folioDocumento) is-valid @endif"
+										class="form-control @if ($errors->has('folioDocumento')) is-invalid @elseif($folioDocumento && $folioDocumento >= 1) is-valid @elseif($folioDocumento && $folioDocumento < 1) is-invalid @endif"
 										id="folioDocumento"
 										autocomplete="off"
 										placeholder="Folio"
 										wire:model.live="folioDocumento"
 										min="1"
 										step="1"
+										@keydown.minus.prevent
 									/>
 									<label for="folioDocumento">
 										Folio <span class="text-danger">*</span>
 									</label>
 									@error('folioDocumento')
 										<div class="invalid-feedback">{{ $message }}</div>
+									@elseif($folioDocumento && $folioDocumento < 1)
+										<div class="invalid-feedback d-block">El folio no puede ser negativo</div>
 									@enderror
 								</div>
 							</div>

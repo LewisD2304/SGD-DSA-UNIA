@@ -94,7 +94,7 @@ class Index extends Component
                     Rule::unique('ta_documento', 'numero_documento')
                         ->ignore($this->modeloDocumento->id_documento ?? null, 'id_documento'),
                 ],
-                'folioDocumento' => 'required|max:50|min:1',
+                'folioDocumento' => 'required|numeric|min:1|max:999999',
                 'asuntoDocumento' => 'required|max:200|min:3',
                 'idAreaDestino' => 'required|exists:ta_area,id_area',
                 'fechaRecepcionDocumento' => 'nullable|date|before_or_equal:today',
@@ -139,7 +139,6 @@ class Index extends Component
         $rutaArchivo = null;
 
         // Guardar archivo físico si existe
-        $nombreArchivoOriginal = null;
         if ($this->archivoDocumento) {
             $infoArchivo = $this->archivoService->guardarArchivo(
                 archivo: $this->archivoDocumento,
@@ -148,7 +147,6 @@ class Index extends Component
 
             if ($infoArchivo) {
                 $rutaArchivo = $infoArchivo['ruta_archivo'];
-                $nombreArchivoOriginal = $infoArchivo['nombre_archivo_original'];
             }
         }
 
@@ -161,7 +159,6 @@ class Index extends Component
             // Al crear, siempre queda pendiente: fecha de recepción en NULL hasta que el destino recepcione
             'fecha_recepcion_documento' => null,
             'ruta_documento' => $rutaArchivo,
-            'nombre_archivo_original' => $nombreArchivoOriginal,
         ]);
 
         $this->dispatch('refrescarDocumentos');
@@ -189,7 +186,6 @@ class Index extends Component
 
             if ($infoArchivo) {
                 $datos['ruta_documento'] = $infoArchivo['ruta_archivo'];
-                $datos['nombre_archivo_original'] = $infoArchivo['nombre_archivo_original'];
             }
         }
 

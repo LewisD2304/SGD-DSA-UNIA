@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Usuario;
+
 return [
 
     /*
@@ -63,7 +65,7 @@ return [
         'users' => [
             'driver' => 'eloquent',
             // Usar el modelo Usuario para autenticación (tabla `ta_usuario`).
-            'model' => App\Models\Usuario::class,
+            'model' => Usuario::class,
         ],
     ],
 

@@ -64,7 +64,7 @@ class Index extends Component
 
         try {
             // Limpiar de cadena
-            $this->nombreUsuario = limpiarCadena($this->nombreUsuario, false);
+            $this->nombreUsuario = strtoupper(limpiarCadena($this->nombreUsuario, false));
             $this->claveUsuario = limpiarCadena($this->claveUsuario ?? '', true, true, false);
 
             $this->validate([

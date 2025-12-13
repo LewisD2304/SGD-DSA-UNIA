@@ -87,9 +87,7 @@ class ArchivoDocumentoService
             if (Str::startsWith($ruta, 'temporal/') && Storage::disk($disco)->exists($ruta)) {
                 Storage::disk($disco)->delete($ruta);
             }
-        } catch (\Throwable $e) {
-            // Silenciar error si no se puede eliminar
-        }
+        } catch (\Throwable $e) {}
     }
 
     /**

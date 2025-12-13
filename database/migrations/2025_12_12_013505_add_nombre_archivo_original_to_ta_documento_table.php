@@ -11,9 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('ta_documento', function (Blueprint $table) {
-            $table->string('nombre_archivo_original', 255)->nullable()->after('ruta_documento');
-        });
+        // Migración vacía: usar solo ruta_documento para todo
     }
 
     /**
@@ -21,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('ta_documento', function (Blueprint $table) {
-            $table->dropColumn('nombre_archivo_original');
-        });
+        // Nada que revertir
     }
 };
