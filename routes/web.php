@@ -8,8 +8,10 @@ use App\Livewire\Seguridad\Rol\Index as RolIndex;
 use App\Livewire\Seguridad\Rol\ConfiguracionAcceso;
 use App\Livewire\Seguridad\Usuario\Index as UsuarioIndex;
 use App\Livewire\Seguridad\Persona\Index as PersonaIndex;
+use App\Livewire\Seguridad\Catalogo\Index as CatalogoIndex;
 use App\Livewire\Seguridad\Menu\Index as MenuIndex;
 use App\Http\Controllers\ArchivoController;
+use App\Models\Catalogo;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,13 +48,13 @@ Route::middleware(['throttle:100,1'])->group(function () {
             Route::get('/menu', MenuIndex::class)->name('menu.index');
             // Usuarios
             Route::get('/usuario', UsuarioIndex::class)->name('usuario.index');
-
             // Rol
             Route::get('/rol', RolIndex::class)->name('rol.index');
             Route::get('/rol/{id_rol}/configuracion-acceso', ConfiguracionAcceso::class)->name('rol.asignar');
-
             // Persona
             Route::get('/persona', PersonaIndex::class)->name('persona.index');
+            // Catalogo
+            Route::get('/catalogo', CatalogoIndex::class)->name('catalogo.index');
         });
 
         /*

@@ -32,9 +32,9 @@ class MenuRepository implements MenuRepositoryInterface
     public function listarAccionesPorNombreMenu($nombre_menu)
     {
         return $this->model::query()
-            ->where('nombre_menu', $nombre_menu)
+            ->whereRaw('UPPER(TRIM(nombre_menu)) = ?', [strtoupper(trim($nombre_menu))])
             ->estado(EstadoEnum::HABILITADO)
-            ->with('acciones')
+            ->with(['acciones', 'acciones.tipoAccion'])
             ->first();
     }
 
@@ -46,7 +46,7 @@ class MenuRepository implements MenuRepositoryInterface
             ->pluck('id_accion');
 
         if ($acciones_a_eliminar->isEmpty()) {
-            return false; // No hay acciones a eliminar
+            return false;
         }
 
         // Verificar si alguna de las acciones tiene permisos asociados
@@ -55,7 +55,7 @@ class MenuRepository implements MenuRepositoryInterface
             ->exists();
 
         if ($tiene_permisos) {
-            return true; // Hay permisos asociados a las acciones a eliminar
+            return true;
         }
     }
 

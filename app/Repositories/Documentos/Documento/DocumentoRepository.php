@@ -32,7 +32,7 @@ class DocumentoRepository implements DocumentoRepositoryInterface
             ->first();
 
         if ($ultimoExpediente) {
-            // Extraer el número del expediente (EXP-001-2025 -> 001)
+            // Extraer el número del expediente
             preg_match('/EXP-(\d+)-/', $ultimoExpediente->expediente_documento, $matches);
             $ultimoNumero = isset($matches[1]) ? intval($matches[1]) : 0;
             $nuevoNumero = $ultimoNumero + 1;

@@ -21,6 +21,7 @@ class Tabla extends Component
     public $permisos = [];
 
     protected MenuService $menuService;
+    protected $paginationTheme = 'bootstrap';
 
     public function __construct()
     {

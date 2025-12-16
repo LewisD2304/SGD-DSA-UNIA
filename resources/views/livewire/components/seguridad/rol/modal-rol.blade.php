@@ -30,6 +30,7 @@
                                 placeholder="Nombre del rol"
                                 wire:model.live="nombreRol"
                                 maxlength="60"
+                                oninput="this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '')"
                             />
                             <label for="nombreRol">
                                 Nombre del rol <span class="text-danger">*</span>

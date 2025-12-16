@@ -72,7 +72,7 @@ class CatalogoService
     // Registrar un nuevo catálogo
     public function registrar(array $datos)
     {
-        if (!Gate::allows('autorizacion', ['REGISTRAR', 'CATÁLOGO'])) {
+        if (!Gate::allows('autorizacion', ['REGISTRAR', 'CATALOGO'])) {
             throw new \Exception(config('settings.mensaje_error_acceso') . 'registrar catálogos' . config('settings.mensaje_final_error_acceso'));
         }
         DB::beginTransaction();
@@ -93,7 +93,7 @@ class CatalogoService
     // Modificar un catálogo
     public function modificar(array $datos, Catalogo $catalogo)
     {
-        if (!Gate::allows('autorizacion', ['MODIFICAR', 'CATÁLOGO'])) {
+        if (!Gate::allows('autorizacion', ['MODIFICAR', 'CATALOGO'])) {
             throw new \Exception(config('settings.mensaje_error_acceso') . 'modificar catálogos' . config('settings.mensaje_final_error_acceso'));
         }
         DB::beginTransaction();
@@ -114,7 +114,7 @@ class CatalogoService
     // Cambiar el estado de un catálogo
     public function cambiarEstado(Catalogo $catalogo, $estado)
     {
-        if (!Gate::allows('autorizacion', ['CAMBIAR ESTADO', 'CATÁLOGO'])) {
+        if (!Gate::allows('autorizacion', ['CAMBIAR ESTADO', 'CATALOGO'])) {
             throw new \Exception(config('settings.mensaje_error_acceso') . 'cambiar el estado de catálogos' . config('settings.mensaje_final_error_acceso'));
         }
         DB::beginTransaction();
@@ -135,7 +135,7 @@ class CatalogoService
     // Eliminar un catálogo
     public function eliminar(Catalogo $catalogo)
     {
-        if (!Gate::allows('autorizacion', ['ELIMINAR', 'CATÁLOGO'])) {
+        if (!Gate::allows('autorizacion', ['ELIMINAR', 'CATALOGO'])) {
             throw new \Exception(config('settings.mensaje_error_acceso') . 'eliminar catálogos' . config('settings.mensaje_final_error_acceso'));
         }
         DB::beginTransaction();

@@ -27,7 +27,7 @@ class PermisoRepository implements PermisoRepositoryInterface
                     $q->where('descripcion_catalogo', strtoupper($accion));
                 })
                 ->whereHas('menu', function ($q) use ($menu) {
-                    $q->where('nombre_menu', strtoupper($menu));
+                    $q->whereRaw('UPPER(TRIM(nombre_menu)) = ?', [strtoupper(trim($menu))]);
                 });
             })
             ->exists();
@@ -46,9 +46,6 @@ class PermisoRepository implements PermisoRepositoryInterface
 
     /**
      * Guardar permisos de un rol para un menú específico
-     * @param int $id_rol ID del rol
-     * @param int $id_menu ID del menú
-     * @param array $acciones_seleccionadas Array de id_accion seleccionados
      */
     public function guardarPermisos(int $id_rol, int $id_menu, array $acciones_seleccionadas)
     {

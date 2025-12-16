@@ -14,8 +14,6 @@ use Illuminate\Support\Facades\Hash;
 
 class UsuarioRepository implements UsuarioRepositoryInterface
 {
-    //TODAS LAS CONSULTAS SE VAN HACER ACA, NADA EN EL CONTROLADOR !!! =D
-    //EN EL SERVICIO ESTÁ TODA LA LOGICA
 
     use BaseRepositoryTrait;
     protected $model;
@@ -74,7 +72,6 @@ class UsuarioRepository implements UsuarioRepositoryInterface
     // Intentar autenticar un usuario y retornar el modelo autenticado
     public function autenticar(string $usuario, string $password): ?Usuario
     {
-        // Buscar por nombre_usuario en mayúsculas, coherente con almacenamiento
         $usuarioModel = $this->buscarPorNombreUsuario($usuario);
 
         if (!$usuarioModel) {

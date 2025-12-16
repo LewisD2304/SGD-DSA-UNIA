@@ -114,6 +114,20 @@
                                 </a>
                             </div>
                             @endif
+
+                            @if(isset($menusPermitidos['CATALOGO']))
+                            <div class="menu-item">
+                                <a
+                                    class="menu-link {{ request()->routeIs($menusPermitidos['CATALOGO']['routePattern'].'.*') || request()->routeIs($menusPermitidos['CATALOGO']['routePattern']) ? 'active' : '' }}"
+                                    href="{{ route($menusPermitidos['CATALOGO']['ruta']) }}"
+                                >
+                                    <span class="menu-bullet">
+                                        <span class="bullet bullet-dot"></span>
+                                    </span>
+                                    <span class="menu-title">{{ $menusPermitidos['CATALOGO']['nombre'] }}</span>
+                                </a>
+                            </div>
+                            @endif
                         </div>
                     </div>
                     @endif

@@ -23,6 +23,7 @@ class Tabla extends Component
 
     protected RolService $rolService;
     protected MenuService $menu_service;
+    protected $paginationTheme = 'bootstrap';
 
     public function __construct()
     {

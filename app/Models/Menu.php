@@ -22,7 +22,6 @@ class Menu extends Model
         'estado_menu' => EstadoEnum::class,
     ];
 
-    // Relación: Un Menú tiene muchas Acciones (botones/enlaces dentro de él)
     public function acciones()
     {
         return $this->hasMany(Accion::class, 'id_menu');

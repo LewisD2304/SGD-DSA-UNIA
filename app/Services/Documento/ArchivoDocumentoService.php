@@ -36,7 +36,7 @@ class ArchivoDocumentoService
         $nombreOriginal = pathinfo($archivo->getClientOriginalName(), PATHINFO_FILENAME);
         $extension = $archivo->getClientOriginalExtension();
 
-        // Sanitizar nombre: eliminar caracteres especiales, reemplazar espacios con guiones
+        //eliminar caracteres especiales, reemplazar espacios con guiones
         $nombreSanitizado = preg_replace('/[^a-zA-Z0-9_-]/', '', str_replace(' ', '-', $nombreOriginal));
 
         // Timestamp corto para evitar duplicados: YYYYMMDDHHMM

@@ -16,13 +16,13 @@ class Permiso extends Model
         'id_rol'
     ];
 
-    // Relación: Pertenece a una Acción
+    // Pertenece a una Acción
     public function accion()
     {
         return $this->belongsTo(Accion::class, 'id_accion');
     }
 
-    // Relación: Pertenece a un Rol
+    // Pertenece a un Rol
     public function rol()
     {
         return $this->belongsTo(Rol::class, 'id_rol');

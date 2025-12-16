@@ -33,7 +33,7 @@
                             >
                                 <option value="">Buscar persona</option>
                                 @forelse($this->listaPersona() as $persona)
-                                    <option value="{{ $persona->id_persona }}">{{ strtoupper($persona->nombres_persona) }}</option>
+                                    <option value="{{ $persona->id_persona }}">{{ strtoupper($persona->nombres_persona) }} {{ strtoupper($persona->apellido_paterno_persona) }} {{ strtoupper($persona->apellido_materno_persona) }}</option>
                                 @empty
                                     <option value="" disabled>No hay personas</option>
                                 @endforelse

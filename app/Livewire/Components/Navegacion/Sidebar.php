@@ -65,6 +65,11 @@ class Sidebar extends Component
                 'ruta' => 'documentos.pendientes.index',
                 'routePattern' => 'documentos.pendientes'
             ],
+            'CATALOGO' => [
+                'nombre' => 'Catalogo',
+                'ruta' => 'seguridad.catalogo.index',
+                'routePattern' => 'seguridad.catalogo'
+            ],
         ];
 
         // Filtrar menús según permisos (acción LISTAR)
