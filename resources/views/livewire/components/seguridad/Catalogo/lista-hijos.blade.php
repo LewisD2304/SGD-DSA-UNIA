@@ -338,6 +338,7 @@
                                     placeholder="Descripción larga"
                                     wire:model.live="descripcion_larga"
                                     maxlength="100"
+                                    oninput="this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '')"
                                 />
                                 <label for="descripcion_larga">
                                     Descripción larga <span class="text-danger">*</span>
@@ -356,6 +357,7 @@
                                     placeholder="Descripción corta"
                                     wire:model.live="descripcion_corta"
                                     maxlength="100"
+                                    oninput="this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '')"
                                 />
                                 <label for="descripcion_corta">
                                     Descripción corta <span class="text-danger">*</span>

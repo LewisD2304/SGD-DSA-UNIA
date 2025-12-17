@@ -176,6 +176,7 @@
                                     placeholder="Nombre tabla"
                                     wire:model.live="nombre_tabla"
                                     maxlength="100"
+                                    oninput="this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '')"
                                 />
                                 <label for="nombre_tabla">
                                     Nombre <span class="text-danger">*</span>
@@ -193,6 +194,7 @@
                                     placeholder="Abreviatura"
                                     wire:model.live="nombre_corto"
                                     maxlength="100"
+                                    oninput="this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '')"
                                 />
                                 <label for="nombre_corto">
                                     Abreviatura <span class="text-danger">*</span>

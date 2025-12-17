@@ -110,11 +110,11 @@ class MenuService
             $acciones_agregar  = array_diff($acciones, $acciones_actuales);
 
             // Validar si alguna de las acciones a eliminar está relacionada en permiso
-            // $acciones_en_permiso = $this->repository->verificarAccionesEliminables($menu, $acciones_eliminar);
-            //
-            // if ($acciones_en_permiso) {
-            //     throw new RelacionesMenuException('No se pueden quitar acciones que están relacionadas en permisos');
-            // }
+             $acciones_en_permiso = $this->repository->verificarAccionesEliminables($menu, $acciones_eliminar);
+
+             if ($acciones_en_permiso) {
+                 throw new RelacionesMenuException('No se pueden quitar acciones que están relacionadas en permisos');
+             }
 
             // Eliminar acciones que ya no están en la lista
             if ($acciones_eliminar) {
