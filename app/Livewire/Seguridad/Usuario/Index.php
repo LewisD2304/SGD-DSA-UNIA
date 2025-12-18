@@ -299,6 +299,11 @@ class Index extends Component
         $this->resetErrorBag();
     }
 
+    public function toJSON()
+    {
+        return;
+    }
+
     public function render()
     {
         return view('livewire.seguridad.usuario.index');

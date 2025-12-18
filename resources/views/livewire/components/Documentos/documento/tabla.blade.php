@@ -25,6 +25,7 @@
                                     <tr class="text-start text-muted fw-bold text-uppercase gs-0">
                                         <th class="w-10px pe-2">N°</th>
                                         <th class="min-w-125px">EXPEDIENTE</th>
+                                        <th class="min-w-250px">TIPO DE DOCUMENTO</th>
                                         <th class="min-w-250px">ASUNTO</th>
                                         <th class="min-w-150px">REMITENTE</th>
                                         <th class="min-w-150px">DESTINO</th>
@@ -47,9 +48,11 @@
                                             <div class="text-muted fs-7">{{ $documento->numero_documento }}</div>
                                             @endif
                                         </td>
-
                                         <td>
-                                            <div class="text-gray-800">{{ Str::limit($documento->asunto_documento, 60) }}</div>
+                                            <div class="text-gray-800">{{ $documento->tipoDocumento->descripcion_catalogo ?? 'N/A' }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="text-gray-800">{{ Str::limit($documento->asunto_documento, 100) }}</div>
                                         </td>
 
                                         <td>

@@ -7,6 +7,7 @@ use App\Models\Documento;
 use App\Services\Documento\DocumentoService;
 use App\Services\Documento\ArchivoDocumentoService;
 use App\Services\Configuracion\AreaService;
+use App\Services\Configuracion\Catalogo\CatalogoService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
@@ -41,12 +42,16 @@ class Index extends Component
     #[Validate('required|exists:ta_area,id_area', as: 'área destino')]
     public $idAreaDestino = '';
 
+    #[Validate('required|exists:ta_catalogo,id_catalogo', as: 'tipo de documento')]
+    public $tipoDocumentoCatalogo = '';
+
     #[Validate('max:250', as: 'ruta_documento')]
     public $rutaDocumento = '';
 
     public $archivoDocumento = null;
     public $rutaActual = 'gestion.documentos.documentos';
     public $areas = [];
+    public $tiposDocumento = [];
 
     // Propiedades para derivar documento
     public $idAreaDerivar = '';
@@ -55,13 +60,14 @@ class Index extends Component
     protected DocumentoService $documentoService;
     protected ArchivoDocumentoService $archivoService;
     protected AreaService $areaService;
-
+    protected CatalogoService $catalogoService;
 
     public function __construct()
     {
         $this->documentoService = resolve(DocumentoService::class);
         $this->archivoService = resolve(ArchivoDocumentoService::class);
         $this->areaService = resolve(AreaService::class);
+        $this->catalogoService = resolve(CatalogoService::class);
     }
 
     public function mount()
@@ -75,6 +81,12 @@ class Index extends Component
         $this->areas = $todasLasAreas->filter(function($area) {
             return $area->id_area !== $this->idAreaRemitente;
         })->values();
+
+        // Obtener tipos de documento del catálogo (hijos de TIPO DOCUMENTO)
+        $tipoDocumentoPadre = $this->catalogoService->buscarPadre('TD');
+        if ($tipoDocumentoPadre) {
+            $this->tiposDocumento = $this->catalogoService->listarHijos($tipoDocumentoPadre->id_catalogo, [], 0);
+        }
     }
 
     public function guardarDocumento()
@@ -96,6 +108,7 @@ class Index extends Component
                 'folioDocumento' => 'required|numeric|min:1|max:999999',
                 'asuntoDocumento' => 'required|max:200|min:3',
                 'idAreaDestino' => 'required|exists:ta_area,id_area',
+                'tipoDocumentoCatalogo' => 'required|exists:ta_catalogo,id_catalogo',
             ];
 
             // Validar archivo solo si se está creando o modificando con nuevo archivo
@@ -154,6 +167,7 @@ class Index extends Component
             'asunto_documento' => $this->asuntoDocumento,
             'id_area_remitente' => $this->idAreaRemitente,
             'id_area_destino' => $this->idAreaDestino,
+            'tipo_documento_catalogo' => $this->tipoDocumentoCatalogo,
             // Al crear, siempre queda pendiente: fecha de recepción en NULL hasta que el destino recepcione
             'fecha_recepcion_documento' => null,
             'ruta_documento' => $rutaArchivo,
@@ -171,6 +185,7 @@ class Index extends Component
             'folio_documento' => $this->folioDocumento,
             'asunto_documento' => $this->asuntoDocumento,
             'id_area_destino' => $this->idAreaDestino,
+            'tipo_documento_catalogo' => $this->tipoDocumentoCatalogo,
         ];
 
         // Si hay un nuevo archivo, modificarlo
@@ -204,6 +219,7 @@ class Index extends Component
             $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento);
             $this->numeroDocumento = $this->modeloDocumento->numero_documento;
             $this->folioDocumento = $this->modeloDocumento->folio_documento;
+            $this->tipoDocumentoCatalogo = $this->modeloDocumento->tipo_documento_catalogo;
             $this->asuntoDocumento = $this->modeloDocumento->asunto_documento;
             $this->idAreaDestino = $this->modeloDocumento->id_area_destino;
             $this->rutaDocumento = $this->modeloDocumento->ruta_documento;
@@ -334,6 +350,7 @@ class Index extends Component
             'folioDocumento',
             'asuntoDocumento',
             'idAreaDestino',
+            'tipoDocumentoCatalogo',
             'rutaDocumento',
             'archivoDocumento',
             'nombreDocumentoEliminar',
