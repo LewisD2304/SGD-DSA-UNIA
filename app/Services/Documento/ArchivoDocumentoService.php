@@ -57,15 +57,17 @@ class ArchivoDocumentoService
      */
     protected function obtenerRutaCompleta(string $ruta, string $nombreFinal): array
     {
-        // Convertir puntos a slashes y capitalizar cada segmento
-        $ruta = collect(explode('.', $ruta))
-            ->map(fn($segmento) => ucfirst($segmento))
-            ->implode('/');
+        // La ruta viene en formato con puntos: gestion.documentos.documentos
+        // Convertir a slashes: gestion/documentos/documentos
+        $carpetaCompleta = str_replace('.', '/', $ruta) . '/';
 
-        $carpetaCompleta = rtrim($ruta, '/') . '/';
+        // La ruta relativa es la carpeta + nombre del archivo
         $rutaRelativa = $carpetaCompleta . $nombreFinal;
 
-        return compact('carpetaCompleta', 'rutaRelativa');
+        return [
+            'carpetaCompleta' => $carpetaCompleta,
+            'rutaRelativa' => $rutaRelativa,
+        ];
     }
 
     /**
@@ -73,8 +75,9 @@ class ArchivoDocumentoService
      */
     protected function asegurarDirectorio(string $carpetaCompleta, $storage): void
     {
-        if (!is_dir($storage->path($carpetaCompleta)) && !mkdir($storage->path($carpetaCompleta), 0755, true) && !is_dir($storage->path($carpetaCompleta))) {
-            throw new \Exception("No se pudo crear la carpeta '{$carpetaCompleta}'.");
+        // Usar makeDirectory en lugar de mkdir directo
+        if (!$storage->exists($carpetaCompleta)) {
+            $storage->makeDirectory($carpetaCompleta, 0755, true);
         }
     }
 
@@ -184,5 +187,38 @@ class ArchivoDocumentoService
         }
 
         return $storage->size($ruta);
+    }
+
+    /**
+     * Guardar múltiples archivos y retornar información para BD
+     */
+    public function guardarMultiplesArchivos(array $archivos, string $ruta, int $idDocumento, ?string $disco = 'share'): array
+    {
+        $archivosGuardados = [];
+        $storage = Storage::disk($disco);
+
+        foreach ($archivos as $index => $archivo) {
+            // Generar información del archivo
+            $info = $this->generarInfoArchivo($archivo);
+            $rutaCompleta = $this->obtenerRutaCompleta($ruta, $info['nombreFinal']);
+
+            // Asegurar directorio
+            $this->asegurarDirectorio($rutaCompleta['carpetaCompleta'], $storage);
+
+            // Guardar archivo físico
+            if ($storage->putFileAs($rutaCompleta['carpetaCompleta'], $archivo, $info['nombreFinal'])) {
+                $archivosGuardados[] = [
+                    'id_documento' => $idDocumento,
+                    'nombre_original' => $info['nombreOriginal'] . '.' . $info['extension'],
+                    'nombre_archivo' => $info['nombreFinal'],
+                    'ruta_archivo' => $rutaCompleta['rutaRelativa'], // ruta completa con nombre de archivo
+                    'extension' => $info['extension'],
+                    'tamanio' => $archivo->getSize(),
+                    'orden' => $index + 1,
+                ];
+            }
+        }
+
+        return $archivosGuardados;
     }
 }

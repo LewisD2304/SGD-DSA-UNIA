@@ -12,4 +12,5 @@
     @include('livewire.components.Documentos.documento.modal-estado-documento')
     @include('livewire.components.Documentos.documento.modal-eliminar-documento')
     @include('livewire.components.Documentos.documento.modal-derivar-documento')
+    @include('livewire.components.Documentos.documento.modal-rectificar-documento')
 </div>

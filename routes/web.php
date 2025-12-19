@@ -10,8 +10,7 @@ use App\Livewire\Seguridad\Usuario\Index as UsuarioIndex;
 use App\Livewire\Seguridad\Persona\Index as PersonaIndex;
 use App\Livewire\Seguridad\Catalogo\Index as CatalogoIndex;
 use App\Livewire\Seguridad\Menu\Index as MenuIndex;
-use App\Http\Controllers\ArchivoController;
-use App\Models\Catalogo;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -36,13 +35,13 @@ Route::middleware(['throttle:100,1'])->group(function () {
 
         Route::get('/inicio', InicioIndex::class)->name('inicio.index');
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | MODULO DE SEGURIDAD
     |--------------------------------------------------------------------------
     */
 
-    // Seguridad
+        // Seguridad
         Route::prefix('seguridad')->name('seguridad.')->group(function () {
             // Menú
             Route::get('/menu', MenuIndex::class)->name('menu.index');
@@ -70,9 +69,27 @@ Route::middleware(['throttle:100,1'])->group(function () {
             Route::get('/pendientes', PendientesIndex::class)->name('pendientes.index');
         });
 
-        // Descargar archivos
-        Route::get('/archivo/descargar', [ArchivoController::class, 'descargar'])->name('archivo.descargar');
 
+        // Servir archivos desde el disco 'share' (funciona para Disco D, C, o donde sea)
+        Route::get('/storage/shared/{path}', function ($path) {
 
+            // 1. Decodificar la ruta (espacios y tildes)
+            $path = urldecode($path);
+
+            // 2. Limpieza de seguridad
+            $keyword = 'storage/shared/';
+            if (strpos($path, $keyword) !== false) {
+                $parts = explode($keyword, $path);
+                $path = end($parts);
+            }
+
+            // 3. VERIFICAR Y SERVIR USANDO EL DISCO 'share'
+            if (Storage::disk('share')->exists($path)) {
+                return response()->file(Storage::disk('share')->path($path));
+            }
+
+            // Si no existe, abortamos
+            abort(404);
+        })->where('path', '.*')->name('archivo.ver');
     });
 });

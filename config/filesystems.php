@@ -50,6 +50,8 @@ return [
         'share' => [
             'driver' => 'local',
             'root' => env('SHARED_STORAGE_PATH', storage_path('app/shared')),
+            'url' => env('APP_URL').'/shared',
+            'visibility' => 'public',
             'throw' => false,
             'report' => false,
         ],
@@ -82,6 +84,7 @@ return [
 
     'links' => [
         public_path('storage') => storage_path('app/public'),
+        public_path('shared') => storage_path('app/shared'),
     ],
 
 ];

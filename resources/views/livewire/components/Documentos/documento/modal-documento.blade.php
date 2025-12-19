@@ -1,5 +1,9 @@
+@php
+    use Illuminate\Support\Facades\Storage;
+@endphp
+
 <div wire:ignore.self class="modal fade" id="modal-documento" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered mw-650px">
+    <div class="modal-dialog modal-dialog-centered mw-900px">
         <div class="modal-content">
 
             <div class="modal-header placeholder-glow">
@@ -111,32 +115,121 @@
                         @enderror
                     </div>
 
-                    <!-- Adjuntar documento -->
+                    <!-- Adjuntar documentos -->
                     <div class="mb-3">
-                        <label for="archivoDocumento" class="form-label">
-                            Adjuntar documento (PDF, PNG, máx. 10MB) <span class="text-danger">*</span>
+                        <label for="archivosDocumento" class="form-label">
+                            Adjuntar documentos (PDF, PNG, Excel, Word - máx. 10MB c/u) <span class="text-danger">*</span>
                         </label>
-                        <input type="file" class="form-control @if ($errors->has('archivoDocumento')) is-invalid @elseif($archivoDocumento) is-valid @endif" id="archivoDocumento" accept=".pdf,.png,.jpg,.jpeg" wire:model="archivoDocumento" />
-                        @error('archivoDocumento')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <input
+                            type="file"
+                            class="form-control @error('archivosDocumento.*') is-invalid @enderror"
+                            id="archivosDocumento"
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            wire:model="archivosDocumento"
+                            multiple
+                        />
+                        @error('archivosDocumento.*')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
 
-                        @if($archivoDocumento)
-                        <div class="mt-2 text-muted">
-                            <i class="ki-outline ki-file fs-3 me-1"></i>
-                            <span>{{ $archivoDocumento->getClientOriginalName() }}</span>
-                            <span class="text-muted ms-1">({{ number_format($archivoDocumento->getSize() / 1024, 2) }} KB)</span>
-                        </div>
-                        @elseif($modoModal == 2 && $modeloDocumento && $modeloDocumento->ruta_documento)
-                        <div class="mt-2 text-muted">
-                            <i class="ki-outline ki-file-check fs-3 me-1 text-success"></i>
-                            <span>Archivo actual: {{ basename($modeloDocumento->ruta_documento) }}</span>
+                        <!-- Archivos en cola para subir -->
+                        @if(!empty($archivosDocumento))
+                        <div class="mt-4">
+                            <div class="fw-bold text-dark mb-3">
+                                <i class="ki-outline ki-file-up fs-3 me-2"></i> Archivos a subir ({{ count($archivosDocumento) }})
+                            </div>
+                            <div class="row g-3">
+                                @foreach($archivosDocumento as $index => $archivo)
+                                <div class="col-md-6 col-lg-4" wire:key="nuevo-archivo-{{ $index }}">
+                                    <div class="card shadow-sm border border-gray-300 h-100">
+                                        <div class="card-body p-4 d-flex flex-column">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="symbol symbol-50px me-3">
+                                                    <span class="symbol-label bg-light-primary">
+                                                        <i class="ki-outline ki-file-sheet fs-2x text-primary"></i>
+                                                    </span>
+                                                </div>
+                                                <div class="flex-grow-1 overflow-hidden">
+                                                    <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivo->getClientOriginalName() }}">
+                                                        {{ Str::limit($archivo->getClientOriginalName(), 20) }}
+                                                    </div>
+                                                    <div class="text-muted fs-7">
+                                                        {{ number_format($archivo->getSize() / 1024, 0) }} KB
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex gap-2 mt-auto">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-light-danger flex-fill"
+                                                    wire:click="eliminarArchivo({{ $index }})"
+                                                >
+                                                    <i class="ki-outline ki-trash fs-5"></i> Quitar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
                         </div>
                         @endif
 
-                        <div wire:loading wire:target="archivoDocumento" class="mt-2 text-primary">
-                            <span class="spinner-border spinner-border-sm me-1"></span>
-                            Cargando archivo...
+                        <!-- Archivos ya guardados (modo edición) -->
+                        @if($modoModal == 2 && !empty($archivosExistentes) && count($archivosExistentes) > 0)
+                        <div class="mt-4">
+                            <div class="separator my-4"></div>
+                            <div class="fw-bold text-dark mb-3">
+                                <i class="ki-outline ki-file-check fs-3 me-2 text-success"></i> Archivos guardados ({{ count($archivosExistentes) }})
+                            </div>
+                            <div class="row g-3">
+                                @foreach($archivosExistentes as $archivoExistente)
+                                <div class="col-md-6 col-lg-4" wire:key="archivo-{{ $archivoExistente->id_archivo_documento }}">
+                                    <div class="card shadow-sm border border-success border-2 h-100">
+                                        <div class="card-body p-4 d-flex flex-column">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="symbol symbol-50px me-3">
+                                                    <span class="symbol-label bg-light-{{ $archivoExistente->color }}">
+                                                        <i class="ki-outline {{ $archivoExistente->icono }} fs-2x text-{{ $archivoExistente->color }}"></i>
+                                                    </span>
+                                                </div>
+                                                <div class="flex-grow-1 overflow-hidden">
+                                                    <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivoExistente->nombre_original }}">
+                                                        {{ Str::limit($archivoExistente->nombre_original, 20) }}
+                                                    </div>
+                                                    <div class="text-muted fs-7">
+                                                        {{ $archivoExistente->tamanio_formateado }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex gap-2 mt-auto">
+                                                <a
+                                                    href="{{ route('archivo.ver', ['path' => $archivoExistente->ruta_archivo]) }}"
+                                                    target="_blank"
+                                                    class="btn btn-sm btn-light-success flex-fill"
+                                                >
+                                                    <i class="ki-outline ki-eye fs-5"></i> Ver
+                                                </a>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-light-danger"
+                                                    wire:click="eliminarArchivoExistente({{ $archivoExistente->id_archivo_documento }})"
+                                                    wire:confirm="¿Estás seguro de eliminar este archivo?"
+                                                >
+                                                    <i class="ki-outline ki-trash fs-5"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
+                        <div wire:loading wire:target="archivosDocumento" class="mt-3 text-primary">
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            Cargando archivos...
                         </div>
                     </div>
 

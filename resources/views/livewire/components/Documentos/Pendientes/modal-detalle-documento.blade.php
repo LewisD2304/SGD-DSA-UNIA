@@ -1,5 +1,9 @@
+@php
+use Illuminate\Support\Facades\Storage;
+@endphp
+
 <div wire:ignore.self class="modal fade" id="modal-detalle-documento" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered mw-650px">
+    <div class="modal-dialog modal-dialog-centered mw-900px">
         <div class="modal-content">
 
             <div class="modal-header">
@@ -7,11 +11,7 @@
                     Detalle del documento
                 </h3>
 
-                <div
-                    class="btn btn-icon btn-sm btn-active-icon-primary icon-rotate-custom"
-                    data-bs-dismiss="modal"
-                    aria-label="Close"
-                >
+                <div class="btn btn-icon btn-sm btn-active-icon-primary icon-rotate-custom" data-bs-dismiss="modal" aria-label="Close">
                     <i class="ki-outline ki-cross fs-1"></i>
                 </div>
             </div>
@@ -39,6 +39,11 @@
                     </div>
 
                     <div class="mb-3">
+                        <div class="fw-bold text-gray-600 mb-1">Tipo de documento:</div>
+                        <div class="text-gray-800">{{ $modeloDocumento->tipoDocumento->descripcion_catalogo ?? 'N/A' }}</div>
+                    </div>
+
+                    <div class="mb-3">
                         <div class="fw-bold text-gray-600 mb-1">Asunto:</div>
                         <div class="text-gray-800">{{ $modeloDocumento->asunto_documento }}</div>
                     </div>
@@ -50,21 +55,42 @@
                     </div>
                     @endif
 
-                    @if($modeloDocumento->ruta_documento)
+                    <!-- ARCHIVOS ADJUNTOS -->
+                    @if($modeloDocumento->archivos && count($modeloDocumento->archivos) > 0)
                     <div class="mb-3">
-                        <div class="fw-bold text-gray-600 mb-1">Archivo adjunto:</div>
-                        <div>
-                            <a
-                                href="{{ route('archivo.descargar', [
-                                    'ruta' => $modeloDocumento->ruta_documento,
-                                    'nombre' => $modeloDocumento->nombre_archivo_original ?? 'documento.pdf'
-                                ]) }}"
-                                target="_blank"
-                                class="btn btn-sm btn-light-primary"
-                            >
-                                <i class="ki-outline ki-file fs-3 me-1"></i>
-                                {{ $modeloDocumento->nombre_archivo_original ?? 'Ver documento' }}
-                            </a>
+                        <div class="separator my-4"></div>
+                        <div class="fw-bold text-dark mb-3">
+                            <i class="ki-outline ki-file-check fs-3 me-2 text-success"></i> Archivos adjuntos ({{ count($modeloDocumento->archivos) }})
+                        </div>
+                        <div class="row g-3">
+                            @foreach($modeloDocumento->archivos as $archivo)
+                            <div class="col-md-6 col-lg-4" wire:key="archivo-{{ $archivo->id_archivo_documento }}">
+                                <div class="card shadow-sm border border-gray-300 h-100">
+                                    <div class="card-body p-4 d-flex flex-column">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="symbol symbol-50px me-3">
+                                                <span class="symbol-label bg-light-{{ $archivo->color }}">
+                                                    <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
+                                                </span>
+                                            </div>
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivo->nombre_original }}">
+                                                    {{ Str::limit($archivo->nombre_original, 20) }}
+                                                </div>
+                                                <div class="text-muted fs-7">
+                                                    {{ $archivo->tamanio_formateado }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2 mt-auto">
+                                            <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-sm btn-light-success flex-fill">
+                                                <i class="ki-outline ki-eye fs-5"></i> Ver
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
                         </div>
                     </div>
                     @endif
@@ -73,11 +99,21 @@
                         <div class="fw-bold text-gray-600 mb-1">Estado:</div>
                         <div>
                             @if($modeloDocumento->estado)
-                                <span class="badge badge-light-{{ $modeloDocumento->id_estado == 1 ? 'success' : 'danger' }} py-2 px-3">
-                                    {{ $modeloDocumento->estado->nombre_estado }}
-                                </span>
+                            @php
+                            $nombreEstado = strtoupper($modeloDocumento->estado->nombre_estado);
+                            $colorEstado = match($nombreEstado) {
+                            'RECEPCIONADO' => 'success',
+                            'OBSERVADO' => 'danger',
+                            'DERIVADO' => 'secondary',
+                            'ARCHIVADO' => 'primary',
+                            default => 'info'
+                            };
+                            @endphp
+                            <span class="badge badge-light-{{ $colorEstado }} py-2 px-3">
+                                {{ $modeloDocumento->estado->nombre_estado }}
+                            </span>
                             @else
-                                <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
+                            <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
                             @endif
                         </div>
                     </div>
@@ -88,11 +124,7 @@
             </div>
 
             <div class="modal-footer flex-center border-0">
-                <button
-                    type="button"
-                    class="btn btn-light"
-                    data-bs-dismiss="modal"
-                >
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                     Cerrar
                 </button>
             </div>

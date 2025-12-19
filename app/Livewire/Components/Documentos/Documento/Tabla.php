@@ -35,7 +35,7 @@ class Tabla extends Component
         $areaUsuario = Auth::user()?->persona?->id_area;
 
         if (!$areaUsuario) {
-            return collect();
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->mostrarPaginate);
         }
 
         return $this->documentoService->listarPorArea(

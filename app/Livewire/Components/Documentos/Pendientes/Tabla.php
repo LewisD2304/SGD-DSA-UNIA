@@ -3,6 +3,7 @@
 namespace App\Livewire\Components\Documentos\Pendientes;
 
 use App\Services\Documento\DocumentoService;
+use App\Models\Transicion;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
@@ -32,12 +33,13 @@ class Tabla extends Component
 
     #[Computed()]
     #[On('refrescarDocumentos')]
+    #[On('refrescarDocumentosPendientes')]
     public function documentos()
     {
         $areaUsuario = Auth::user()?->persona?->id_area;
 
         if (!$areaUsuario) {
-            return collect();
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->mostrarPaginate);
         }
 
         return $this->documentoService->listarPendientesPorArea(
@@ -77,20 +79,61 @@ class Tabla extends Component
             return;
         }
 
-        $this->documentoService->recepcionar($documento);
+        try {
+            // Buscar la transición RECEPCIONAR según el estado actual del documento
+            $transicion = Transicion::where('evento_transicion', 'RECEPCIONAR')
+                ->where('id_estado_actual_transicion', $documento->id_estado)
+                ->first();
 
-        $this->dispatch('refrescarDocumentos');
-        $this->dispatch(
-            'toastr',
-            boton_cerrar: false,
-            progreso_avance: true,
-            duracion: '3000',
-            titulo: 'Éxito',
-            tipo: 'success',
-            mensaje: 'Documento recepcionado y movido a Mis documentos',
-            posicion_y: 'top',
-            posicion_x: 'right'
-        );
+            if (!$transicion) {
+                $this->dispatch(
+                    'toastr',
+                    boton_cerrar: false,
+                    progreso_avance: true,
+                    duracion: '5000',
+                    titulo: 'Error',
+                    tipo: 'error',
+                    mensaje: 'No se puede recepcionar el documento en su estado actual',
+                    posicion_y: 'top',
+                    posicion_x: 'right'
+                );
+                $this->cerrarModalRecepcion();
+                return;
+            }
+
+            // Usar procesarTransicion
+            $this->documentoService->procesarTransicion(
+                $documento->id_documento,
+                $transicion->id_transicion,
+                []
+            );
+
+            $this->dispatch('refrescarDocumentos');
+            $this->dispatch('refrescarDocumentosPendientes');
+            $this->dispatch(
+                'toastr',
+                boton_cerrar: false,
+                progreso_avance: true,
+                duracion: '3000',
+                titulo: 'Éxito',
+                tipo: 'success',
+                mensaje: 'Documento recepcionado correctamente',
+                posicion_y: 'top',
+                posicion_x: 'right'
+            );
+        } catch (\Exception $e) {
+            $this->dispatch(
+                'toastr',
+                boton_cerrar: false,
+                progreso_avance: true,
+                duracion: '5000',
+                titulo: 'Error',
+                tipo: 'error',
+                mensaje: $e->getMessage(),
+                posicion_y: 'top',
+                posicion_x: 'right'
+            );
+        }
 
         $this->cerrarModalRecepcion();
     }
@@ -99,6 +142,14 @@ class Tabla extends Component
     {
         $this->dispatch('modal', nombre: '#modal-confirmar-recepcion', accion: 'hide');
         $this->reset(['documentoRecepcionId', 'documentoRecepcionTitulo']);
+    }
+
+    // Obtener transiciones disponibles para un documento según su estado actual
+    public function obtenerTransicionesDisponibles($idEstado)
+    {
+        return Transicion::where('id_estado_actual_transicion', $idEstado)
+            ->with(['estadoActual', 'estadoSiguiente'])
+            ->get();
     }
 
     public function placeholder()

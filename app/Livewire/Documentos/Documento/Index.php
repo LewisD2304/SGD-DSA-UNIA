@@ -48,7 +48,8 @@ class Index extends Component
     #[Validate('max:250', as: 'ruta_documento')]
     public $rutaDocumento = '';
 
-    public $archivoDocumento = null;
+    public $archivosDocumento = [];
+    public $archivosExistentes = [];
     public $rutaActual = 'gestion.documentos.documentos';
     public $areas = [];
     public $tiposDocumento = [];
@@ -78,7 +79,7 @@ class Index extends Component
 
         // Listar todas las áreas para el select de destino, EXCEPTO la del usuario
         $todasLasAreas = $this->areaService->listarActivas();
-        $this->areas = $todasLasAreas->filter(function($area) {
+        $this->areas = $todasLasAreas->filter(function ($area) {
             return $area->id_area !== $this->idAreaRemitente;
         })->values();
 
@@ -111,9 +112,10 @@ class Index extends Component
                 'tipoDocumentoCatalogo' => 'required|exists:ta_catalogo,id_catalogo',
             ];
 
-            // Validar archivo solo si se está creando o modificando con nuevo archivo
-            if ($this->modoModal == 1 || $this->archivoDocumento) {
-                $reglas['archivoDocumento'] = 'required|file|mimes:pdf,png,jpg,jpeg|max:10240'; // 10MB
+            // Validar archivos (múltiples) solo si se está creando o modificando con nuevos archivos
+            if ($this->modoModal == 1 || !empty($this->archivosDocumento)) {
+                $reglas['archivosDocumento'] = 'required|array|min:1';
+                $reglas['archivosDocumento.*'] = 'file|mimes:pdf,png,jpg,jpeg|max:10240'; // Solo PDF e imágenes, 10MB cada uno
             }
 
             $this->validate($reglas);
@@ -147,31 +149,31 @@ class Index extends Component
 
     public function registrar()
     {
-        $rutaArchivo = null;
-
-        // Guardar archivo físico si existe
-        if ($this->archivoDocumento) {
-            $infoArchivo = $this->archivoService->guardarArchivo(
-                archivo: $this->archivoDocumento,
-                ruta: $this->rutaActual
-            );
-
-            if ($infoArchivo) {
-                $rutaArchivo = $infoArchivo['ruta_archivo'];
-            }
-        }
-
-        $this->documentoService->registrar([
+        // Registrar documento primero
+        $documento = $this->documentoService->registrar([
             'numero_documento' => $this->numeroDocumento,
             'folio_documento' => $this->folioDocumento,
             'asunto_documento' => $this->asuntoDocumento,
             'id_area_remitente' => $this->idAreaRemitente,
             'id_area_destino' => $this->idAreaDestino,
             'tipo_documento_catalogo' => $this->tipoDocumentoCatalogo,
-            // Al crear, siempre queda pendiente: fecha de recepción en NULL hasta que el destino recepcione
             'fecha_recepcion_documento' => null,
-            'ruta_documento' => $rutaArchivo,
+            'ruta_documento' => null, // Ya no se usa este campo
         ]);
+
+        // Guardar archivos adjuntos si existen
+        if (!empty($this->archivosDocumento)) {
+            $archivosInfo = $this->archivoService->guardarMultiplesArchivos(
+                archivos: $this->archivosDocumento,
+                ruta: $this->rutaActual,
+                idDocumento: $documento->id_documento
+            );
+
+            // Guardar en BD
+            foreach ($archivosInfo as $archivoInfo) {
+                \App\Models\ArchivoDocumento::create($archivoInfo);
+            }
+        }
 
         $this->dispatch('refrescarDocumentos');
 
@@ -188,20 +190,27 @@ class Index extends Component
             'tipo_documento_catalogo' => $this->tipoDocumentoCatalogo,
         ];
 
-        // Si hay un nuevo archivo, modificarlo
-        if ($this->archivoDocumento) {
-            $infoArchivo = $this->archivoService->modificarArchivo(
-                archivo: $this->archivoDocumento,
+        // Modificar documento
+        $this->documentoService->modificar($datos, $this->modeloDocumento);
+
+        // Guardar nuevos archivos si existen
+        if (!empty($this->archivosDocumento)) {
+            // Obtener el orden máximo actual
+            $ordenMaximo = \App\Models\ArchivoDocumento::where('id_documento', $this->modeloDocumento->id_documento)
+                ->max('orden') ?? 0;
+
+            $archivosInfo = $this->archivoService->guardarMultiplesArchivos(
+                archivos: $this->archivosDocumento,
                 ruta: $this->rutaActual,
-                rutaAnterior: $this->modeloDocumento->ruta_documento
+                idDocumento: $this->modeloDocumento->id_documento
             );
 
-            if ($infoArchivo) {
-                $datos['ruta_documento'] = $infoArchivo['ruta_archivo'];
+            // Actualizar orden desde el último existente
+            foreach ($archivosInfo as $index => $archivoInfo) {
+                $archivoInfo['orden'] = $ordenMaximo + $index + 1;
+                \App\Models\ArchivoDocumento::create($archivoInfo);
             }
         }
-
-        $this->documentoService->modificar($datos, $this->modeloDocumento);
 
         $this->dispatch('refrescarDocumentos');
 
@@ -216,13 +225,14 @@ class Index extends Component
         if (!is_null($id_documento)) {
             $this->tituloModal = 'Modificar documento';
             $this->modoModal = 2;
-            $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento);
+            $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento, ['archivos']);
             $this->numeroDocumento = $this->modeloDocumento->numero_documento;
             $this->folioDocumento = $this->modeloDocumento->folio_documento;
             $this->tipoDocumentoCatalogo = $this->modeloDocumento->tipo_documento_catalogo;
             $this->asuntoDocumento = $this->modeloDocumento->asunto_documento;
             $this->idAreaDestino = $this->modeloDocumento->id_area_destino;
             $this->rutaDocumento = $this->modeloDocumento->ruta_documento;
+            $this->archivosExistentes = $this->modeloDocumento->archivos ?? collect();
         } else {
             $this->tituloModal = 'Registrar nuevo documento';
             $this->modoModal = 1;
@@ -325,7 +335,7 @@ class Index extends Component
     public function abrirModalDetalleDocumento($id_documento)
     {
         $this->limpiarModal();
-        $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento);
+        $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento, ['estado', 'tipoDocumento', 'archivos']);
 
         $this->dispatch('cargando', cargando: 'false');
         $this->modalDocumento('#modal-detalle-documento', 'show');
@@ -352,7 +362,8 @@ class Index extends Component
             'idAreaDestino',
             'tipoDocumentoCatalogo',
             'rutaDocumento',
-            'archivoDocumento',
+            'archivosDocumento',
+            'archivosExistentes',
             'nombreDocumentoEliminar',
             'nombreDocumentoEstado',
             'idAreaDerivar',
@@ -361,10 +372,58 @@ class Index extends Component
         $this->resetErrorBag();
     }
 
+    public function eliminarArchivo($index)
+    {
+        if (isset($this->archivosDocumento[$index])) {
+            unset($this->archivosDocumento[$index]);
+            $this->archivosDocumento = array_values($this->archivosDocumento);
+        }
+    }
+
+    public function eliminarArchivoExistente($idArchivo)
+    {
+        try {
+            $archivo = \App\Models\ArchivoDocumento::find($idArchivo);
+            if ($archivo) {
+                // Eliminar archivo físico
+                $this->archivoService->eliminarArchivo($archivo->ruta_archivo);
+                // Eliminar registro de BD
+                $archivo->delete();
+
+                // Actualizar lista
+                $this->archivosExistentes = collect($this->archivosExistentes)->reject(fn($item) => $item->id_archivo_documento == $idArchivo)->values()->all();
+
+                $this->dispatch(
+                    'toastr',
+                    boton_cerrar: false,
+                    progreso_avance: true,
+                    duracion: '3000',
+                    titulo: 'Éxito',
+                    tipo: 'success',
+                    mensaje: 'Archivo eliminado correctamente',
+                    posicion_y: 'top',
+                    posicion_x: 'right'
+                );
+            }
+        } catch (\Exception $e) {
+            $this->dispatch(
+                'toastr',
+                boton_cerrar: false,
+                progreso_avance: true,
+                duracion: '5000',
+                titulo: 'Error',
+                tipo: 'error',
+                mensaje: 'Error al eliminar archivo: ' . $e->getMessage(),
+                posicion_y: 'top',
+                posicion_x: 'right'
+            );
+        }
+    }
+
     #[On('abrirModalDerivarDocumento')]
     public function abrirModalDerivarDocumento($id_documento)
     {
-        $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento);
+        $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento, ['tipoDocumento', 'areaRemitente', 'areaDestino', 'estado']);
 
         $this->numeroDocumento = $this->modeloDocumento->numero_documento;
         $this->folioDocumento = $this->modeloDocumento->folio_documento;
@@ -381,21 +440,43 @@ class Index extends Component
     {
         $this->validate([
             'idAreaDerivar' => 'required|exists:ta_area,id_area',
-            'observacionesDerivar' => 'nullable|max:200'
+            'observacionesDerivar' => 'nullable|max:500'
         ], [
             'idAreaDerivar.required' => 'Debe seleccionar un área de destino',
             'idAreaDerivar.exists' => 'El área seleccionada no existe',
-            'observacionesDerivar.max' => 'Las observaciones no pueden exceder 200 caracteres'
+            'observacionesDerivar.max' => 'Las observaciones no pueden exceder 500 caracteres'
         ]);
 
         $mensajeToastr = null;
 
         try {
-            $resultado = $this->documentoService->derivar(
-                $this->modeloDocumento->id_documento,
-                $this->idAreaDerivar,
-                $this->observacionesDerivar
-            );
+            if (!$this->modeloDocumento) {
+                throw new \Exception('No se encontró el documento a derivar');
+            }
+
+            // Buscar la transición DERIVAR según el estado actual del documento
+            $transicion = \App\Models\Transicion::where('evento_transicion', 'DERIVAR')
+                ->where('id_estado_actual_transicion', $this->modeloDocumento->id_estado)
+                ->first();
+
+            if (!$transicion) {
+                // Si no hay transición definida, derivar usando el servicio directo
+                $resultado = $this->documentoService->derivar(
+                    $this->modeloDocumento->id_documento,
+                    $this->idAreaDerivar,
+                    $this->observacionesDerivar
+                );
+            } else {
+                // Usar el servicio de procesarTransicion
+                $resultado = $this->documentoService->procesarTransicion(
+                    $this->modeloDocumento->id_documento,
+                    $transicion->id_transicion,
+                    [
+                        'id_area_destino' => $this->idAreaDerivar,
+                        'observacion' => $this->observacionesDerivar
+                    ]
+                );
+            }
 
             $this->dispatch('refrescarDocumentos');
             $mensajeToastr = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Documento derivado correctamente', 'top', 'right');
@@ -404,6 +485,81 @@ class Index extends Component
         }
 
         $this->modalDocumento('#modal-derivar-documento', 'hide');
+        $this->reset(['idAreaDerivar', 'observacionesDerivar']);
+
+        if ($mensajeToastr !== null) {
+            $this->dispatch(
+                'toastr',
+                boton_cerrar: $mensajeToastr['boton_cerrar'],
+                progreso_avance: $mensajeToastr['progreso_avance'],
+                duracion: $mensajeToastr['duracion'],
+                titulo: $mensajeToastr['titulo'],
+                tipo: $mensajeToastr['tipo'],
+                mensaje: $mensajeToastr['mensaje'],
+                posicion_y: $mensajeToastr['posicion_y'],
+                posicion_x: $mensajeToastr['posicion_x']
+            );
+        }
+    }
+
+    // Método para rectificar (devolver con observaciones)
+    #[On('abrirModalRectificarDocumento')]
+    public function abrirModalRectificarDocumento($id_documento)
+    {
+        $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento);
+
+        $this->numeroDocumento = $this->modeloDocumento->numero_documento;
+        $this->folioDocumento = $this->modeloDocumento->folio_documento;
+        $this->asuntoDocumento = $this->modeloDocumento->asunto_documento;
+        $this->idAreaDestino = $this->modeloDocumento->id_area_destino;
+        $this->idAreaDerivar = '';
+        $this->observacionesDerivar = '';
+
+        $this->dispatch('cargando', cargando: 'false');
+        $this->modalDocumento('#modal-rectificar-documento', 'show');
+    }
+
+    public function guardarRectificar()
+    {
+        $this->validate([
+            'idAreaDerivar' => 'required|exists:ta_area,id_area',
+            'observacionesDerivar' => 'required|max:500'
+        ], [
+            'idAreaDerivar.required' => 'Debe seleccionar un área de destino',
+            'idAreaDerivar.exists' => 'El área seleccionada no existe',
+            'observacionesDerivar.required' => 'Las observaciones son obligatorias',
+            'observacionesDerivar.max' => 'Las observaciones no pueden exceder 500 caracteres'
+        ]);
+
+        $mensajeToastr = null;
+
+        try {
+            // Buscar la transición DEVOLVER según el estado actual del documento
+            $transicion = \App\Models\Transicion::where('evento_transicion', 'DEVOLVER')
+                ->where('id_estado_actual_transicion', $this->modeloDocumento->id_estado)
+                ->first();
+
+            if (!$transicion) {
+                throw new \Exception('No se puede devolver el documento en su estado actual');
+            }
+
+            // Usar el servicio de procesarTransicion
+            $resultado = $this->documentoService->procesarTransicion(
+                $this->modeloDocumento->id_documento,
+                $transicion->id_transicion,
+                [
+                    'id_area_destino' => $this->idAreaDerivar,
+                    'observacion' => $this->observacionesDerivar
+                ]
+            );
+
+            $this->dispatch('refrescarDocumentos');
+            $mensajeToastr = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Documento devuelto correctamente', 'top', 'right');
+        } catch (\Exception $e) {
+            $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');
+        }
+
+        $this->modalDocumento('#modal-rectificar-documento', 'hide');
         $this->reset(['idAreaDerivar', 'observacionesDerivar']);
 
         if ($mensajeToastr !== null) {

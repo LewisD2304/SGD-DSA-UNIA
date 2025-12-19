@@ -39,7 +39,6 @@ class Documento extends Model
     ];
 
     protected $hidden = [
-        'au_fechacr',
         'au_fechamd',
         'au_fechael',
         'au_usuariocr',
@@ -96,5 +95,7 @@ class Documento extends Model
         return $this->hasMany(Movimiento::class, 'id_documento');
     }
 
-
+    public function archivos() {
+        return $this->hasMany(ArchivoDocumento::class, 'id_documento', 'id_documento')->orderBy('orden');
+    }
 }

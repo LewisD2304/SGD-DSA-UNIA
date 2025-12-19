@@ -22,7 +22,8 @@ class Movimiento extends Model
     protected $fillable = [
         'tipo_cargo_catalogo',
         'id_documento',
-        'id_estado'
+        'id_estado',
+        'observacion_doc_movimiento'
     ];
 
     protected $hidden = [

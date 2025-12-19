@@ -7,4 +7,5 @@
 
     <livewire:components.documentos.pendientes.tabla />
     @include('livewire.components.documentos.pendientes.modal-detalle-documento')
+    @include('livewire.components.documentos.pendientes.modal-accion-documento')
 </div>

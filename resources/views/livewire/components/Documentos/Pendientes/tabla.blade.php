@@ -35,7 +35,7 @@
                                         <td>
                                             <div class="fw-bold text-primary">{{ $documento->expediente_documento }}</div>
                                             @if($documento->numero_documento)
-                                                <div class="text-muted fs-7">N°: {{ $documento->numero_documento }}</div>
+                                            <div class="text-muted fs-7">N°: {{ $documento->numero_documento }}</div>
                                             @endif
                                         </td>
 
@@ -51,44 +51,69 @@
                                             <div class="text-gray-800">{{ $documento->areaDestino->nombre_area ?? 'N/A' }}</div>
                                         </td>
                                         <td>{{ formatoFechaText($documento->fecha_recepcion_documento)}}</td>
+
                                         <td>
                                             @if($documento->estado)
-                                                <span class="badge badge-light-secondary py-2 px-3">
-                                                    {{ $documento->estado->nombre_estado }}
-                                                </span>
+                                            @php
+                                            $nombreEstado = strtoupper($documento->estado->nombre_estado);
+                                            $colorEstado = match($nombreEstado) {
+                                            'RECEPCIONADO' => 'success',
+                                            'OBSERVADO' => 'danger',
+                                            'DERIVADO' => 'secondary',
+                                            'ARCHIVADO' => 'primary',
+                                            default => 'info'
+                                            };
+                                            @endphp
+                                            <span class="badge badge-light-{{ $colorEstado }} py-2 px-3">
+                                                {{ $documento->estado->nombre_estado }}
+                                            </span>
                                             @else
-                                                <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
-                                            @endif
-                                        </td>
-
+                                            <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
+                                            @endif </td>
                                         <td class="text-center">
-                                            <div class="d-flex justify-content-center gap-2">
+                                            <div class="d-flex justify-content-center gap-2 flex-wrap">
                                                 @can('autorizacion',['VER','DOCUMENTOS'])
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-light btn-sm"
-                                                    wire:click="$dispatch('abrirModalDetalleDocumento', { id_documento: {{ $documento->id_documento }} })"
-                                                >
-                                                    <i class="ki-outline ki-eye fs-4 me-1"></i>
-                                                    Ver
+                                                <button type="button" class="btn btn-light btn-sm" wire:click="$dispatch('abrirModalDetalleDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                    <i class="ki-outline ki-eye fs-4 me-1"></i> Ver
                                                 </button>
                                                 @endcan
 
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-success btn-sm"
-                                                    wire:click="solicitarRecepcion({{ $documento->id_documento }})"
-                                                >
-                                                    <i class="ki-outline ki-folder-check fs-4 me-1"></i>
-                                                    Recepcionar
+                                                @php
+                                                $transiciones = $this->obtenerTransicionesDisponibles($documento->id_estado);
+                                                @endphp
+
+                                                @foreach($transiciones as $transicion)
+                                                @php
+                                                $evento = strtoupper($transicion->evento_transicion);
+                                                $accion = strtolower($evento);
+
+                                                $config = [
+                                                'RECEPCIONAR' => ['color' => 'success', 'icono' => 'folder-check', 'texto' => 'Recepcionar'],
+                                                'DEVOLVER' => ['color' => 'danger', 'icono' => 'arrow-left', 'texto' => 'Devolver'],
+                                                'DERIVAR' => ['color' => 'primary', 'icono' => 'arrow-right', 'texto' => 'Derivar'],
+                                                'SUBSANAR' => ['color' => 'warning', 'icono' => 'document-check', 'texto' => 'Subsanar']
+                                                ];
+
+                                                $btnConfig = $config[$evento] ?? ['color' => 'secondary', 'icono' => 'abstract-26', 'texto' => $evento];
+                                                @endphp
+
+                                                @if($evento === 'RECEPCIONAR')
+                                                <button type="button" class="btn btn-{{ $btnConfig['color'] }} btn-sm" wire:click="solicitarRecepcion({{ $documento->id_documento }})">
+                                                    <i class="ki-outline ki-{{ $btnConfig['icono'] }} fs-4 me-1"></i>
+                                                    {{ $btnConfig['texto'] }}
                                                 </button>
+                                                @else
+                                                <button type="button" class="btn btn-{{ $btnConfig['color'] }} btn-sm" wire:click="$dispatch('abrirModalAccion', { id_documento: {{ $documento->id_documento }}, accion: '{{ $accion }}' })">
+                                                    <i class="ki-outline ki-{{ $btnConfig['icono'] }} fs-4 me-1"></i>
+                                                    {{ $btnConfig['texto'] }}
+                                                </button>
+                                                @endif @endforeach
                                             </div>
                                         </td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="8" class="text-center py-8 text-muted">
-                                            <!-- Mostrar mensaje si no hay registros -->
+                                        <td colspan="9" class="text-center py-8 text-muted">
                                             <div x-data="{ cargado: false, modo: localStorage.getItem('data-bs-theme-mode') || 'light' }" x-init="cargado = true">
                                                 <template x-if="cargado">
                                                     <x-blank-state-table mensaje="No se encontraron registros" />
@@ -128,17 +153,12 @@
 
                 <div class="modal-header placeholder-glow">
                     <h3 class="fw-bold my-0">Confirmar recepción</h3>
-                    <div
-                        class="btn btn-icon btn-sm btn-active-icon-primary icon-rotate-custom"
-                        data-bs-dismiss="modal"
-                        aria-label="Close"
-                        wire:click="cerrarModalRecepcion"
-                    >
+                    <div class="btn btn-icon btn-sm btn-active-icon-primary icon-rotate-custom" data-bs-dismiss="modal" aria-label="Close">
                         <i class="ki-outline ki-cross fs-1"></i>
                     </div>
                 </div>
 
-                <form autocomplete="off" novalidate class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit="confirmarRecepcion">
+                <form autocomplete="off" novalidate class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit.prevent="confirmarRecepcion">
 
                     <div class="modal-body px-5">
                         <div class="d-flex flex-column px-5 ">
@@ -171,29 +191,18 @@
                     </div>
 
                     <div class="modal-footer d-flex justify-content-center">
-                        <button
-                            type="button"
-                            class="btn d-flex align-items-center btn-light-secondary me-4"
-                            data-bs-dismiss="modal"
-                            aria-label="cancel"
-                            wire:click="cerrarModalRecepcion"
-                        >
+                        <button type="button" class="btn d-flex align-items-center btn-light-secondary me-4" data-bs-dismiss="modal" aria-label="cancel">
                             Cancelar
                         </button>
 
-                        <button
-                            type="submit"
-                            class="btn d-flex align-items-center btn-warning"
-                            wire:loading.attr="disabled"
-                            wire:target="confirmarRecepcion"
-                        >
+                        <button type="submit" class="btn d-flex align-items-center btn-warning" wire:loading.attr="disabled" wire:target="confirmarRecepcion">
                             <span class="indicator-label" wire:loading.remove wire:target="confirmarRecepcion">
                                 Recepcionar
                             </span>
                             <span class="indicator-progress" wire:loading wire:target="confirmarRecepcion">
                                 Cargando...
                                 <span>
-                                    <x-spinner style="width: 20px; height: 20px;"/>
+                                    <x-spinner style="width: 20px; height: 20px;" />
                                 </span>
                             </span>
                         </button>

@@ -26,111 +26,45 @@
 							<i class="ki-outline ki-document me-2"></i> Información del documento
 						</div>
 
-						<!-- Número documento y Folio -->
-						<div class="row g-3 mb-3">
-							<div class="col-md-6">
-								<div class="form-floating">
-									<input
-										type="text"
-										class="form-control bg-light"
-										id="numeroDocumento"
-										readonly
-										value="{{ $numeroDocumento }}"
-									/>
-									<label for="numeroDocumento">
-										Número documento
-									</label>
-								</div>
-							</div>
+						<!-- Expediente -->
+						<div class="mb-3">
+							<div class="fw-bold text-gray-600 mb-1">Expediente:</div>
+							<div class="text-gray-800">{{ $modeloDocumento?->expediente_documento ?? 'N/A' }}</div>
+						</div>
 
-							<div class="col-md-6">
-								<div class="form-floating">
-									<input
-										type="text"
-										class="form-control bg-light"
-										id="folioDocumento"
-										readonly
-										value="{{ $folioDocumento }}"
-									/>
-									<label for="folioDocumento">
-										Folio
-									</label>
-								</div>
-							</div>
+						<!-- Tipo de documento -->
+						<div class="mb-3">
+							<div class="fw-bold text-gray-600 mb-1">Tipo de documento:</div>
+							<div class="text-gray-800">{{ $modeloDocumento?->tipoDocumento->descripcion_catalogo ?? 'N/A' }}</div>
 						</div>
 
 						<!-- Asunto -->
 						<div class="mb-3">
-							<div class="form-floating">
-								<textarea
-									class="form-control bg-light"
-									id="asuntoDocumento"
-									readonly
-									style="height: 80px"
-								>{{ $asuntoDocumento }}</textarea>
-								<label for="asuntoDocumento">
-									Asunto
-								</label>
-							</div>
+							<div class="fw-bold text-gray-600 mb-1">Asunto:</div>
+							<div class="text-gray-800">{{ $asuntoDocumento }}</div>
 						</div>
 
-						<!-- Área actual destino -->
+						<!-- Remitente -->
 						<div class="mb-3">
-							<div class="form-floating">
-								<input
-									type="text"
-									class="form-control bg-light"
-									id="idAreaDestino"
-									readonly
-									value="{{ $modeloDocumento?->areaDestino->nombre_area ?? 'Sin área' }}"
-								/>
-								<label for="idAreaDestino">
-									Área actual
-								</label>
-							</div>
+							<div class="fw-bold text-gray-600 mb-1">Remitente:</div>
+							<div class="text-gray-800">{{ $modeloDocumento?->areaRemitente->nombre_area ?? 'N/A' }}</div>
 						</div>
 
-						<!-- Derivar a área (select de áreas) -->
+						<!-- Enviar a (select de áreas) -->
 						<div class="mb-3">
-							<div class="form-floating">
-								<select
-									class="form-select @if ($errors->has('idAreaDerivar')) is-invalid @elseif($idAreaDerivar) is-valid @endif"
-									id="idAreaDerivar"
-									wire:model.live="idAreaDerivar"
-								>
-									<option value="">Seleccione un área de destino</option>
-									@foreach($areas as $area)
-										<option value="{{ $area->id_area }}">{{ $area->nombre_area }}</option>
-									@endforeach
-								</select>
-								<label for="idAreaDerivar">
-									Derivar a <span class="text-danger">*</span>
-								</label>
-								@error('idAreaDerivar')
-									<div class="invalid-feedback">{{ $message }}</div>
-								@enderror
-							</div>
-						</div>
-
-						<!-- Observaciones -->
-						<div class="mb-3">
-							<div class="form-floating">
-								<textarea
-									class="form-control text-uppercase @if ($errors->has('observacionesDerivar')) is-invalid @elseif($observacionesDerivar) is-valid @endif"
-									id="observacionesDerivar"
-									placeholder="Observaciones"
-									wire:model.live="observacionesDerivar"
-									maxlength="200"
-									style="height: 100px"
-								></textarea>
-								<label for="observacionesDerivar">
-									Observaciones
-								</label>
-								@error('observacionesDerivar')
-									<div class="invalid-feedback">{{ $message }}</div>
-								@enderror
-								<small class="text-muted">{{ strlen($observacionesDerivar) }}/200 caracteres</small>
-							</div>
+							<label class="required fw-semibold fs-6 mb-2">Enviar a</label>
+							<select
+								wire:model="idAreaDerivar"
+								class="form-select form-select-solid @if ($errors->has('idAreaDerivar')) is-invalid @endif"
+							>
+								<option value="">Seleccione un área de destino</option>
+								@foreach($areas as $area)
+									<option value="{{ $area->id_area }}">{{ $area->nombre_area }}</option>
+								@endforeach
+							</select>
+							@error('idAreaDerivar')
+								<div class="text-danger fs-7 mt-1">{{ $message }}</div>
+							@enderror
 						</div>
 
 					</div>
