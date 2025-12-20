@@ -59,18 +59,20 @@ class Index extends Component
 
     public function ejecutarAccion()
     {
+        // 1. DEFINIR REGLAS DE VALIDACIÓN
         $reglas = [];
 
-        // Si es derivar o devolver, requiere área de destino
+        // CASO A: Si la acción es DERIVAR o DEVOLVER
         if (in_array($this->accionActual, ['derivar', 'devolver'])) {
             $reglas['idAreaDerivar'] = 'required|exists:ta_area,id_area';
         }
 
-        // Si es devolver o subsanar, las observaciones son obligatorias
+        // CASO B: Si la acción es DEVOLVER o SUBSANAR
         if (in_array($this->accionActual, ['devolver', 'subsanar'])) {
             $reglas['observacionesDerivar'] = 'required|max:500';
         }
 
+        // 2. EJECUTAR VALIDACIÓN
         if (!empty($reglas)) {
             $this->validate($reglas, [
                 'idAreaDerivar.required' => 'Debe seleccionar un área de destino',
@@ -83,25 +85,31 @@ class Index extends Component
         $mensajeToastr = null;
 
         try {
-            // Obtener la transición correspondiente según la acción
+            // 3. BUSCAR LA TRANSICIÓN
             $transicion = $this->obtenerTransicion();
 
+            // Si la base de datos dice que no existe esa transición, detenemos todo por seguridad.
             if (!$transicion) {
                 throw new \Exception('No se encontró una transición válida para esta acción');
             }
 
-            // Ejecutar la acción según el tipo
+            // 4. PROCESAR LA TRANSICIÓN (LA MAGIA)
             $resultado = $this->documentoService->procesarTransicion(
                 $this->modeloDocumento->id_documento,
                 $transicion->id_transicion,
                 [
-                    'id_area_destino' => $this->idAreaDerivar,
-                    'observacion' => $this->observacionesDerivar
+                    'id_area_destino' => $this->idAreaDerivar, // Solo se usa si es derivar/devolver
+                    'observacion' => $this->observacionesDerivar // Solo se usa si hay observación
                 ]
             );
 
+            // 5. ACTUALIZAR LA VISTA
+            // Emitimos eventos para que las tablas se recarguen sin refrescar la página
             $this->dispatch('refrescarDocumentosPendientes');
+
+            // Mensaje de éxito
             $mensajeToastr = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Acción ejecutada correctamente', 'top', 'right');
+
         } catch (\Exception $e) {
             $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');
         }

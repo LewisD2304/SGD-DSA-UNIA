@@ -1,14 +1,4 @@
-<div
-    id="kt_app_sidebar"
-    class="app-sidebar flex-column"
-    data-kt-drawer="true"
-    data-kt-drawer-name="app-sidebar"
-    data-kt-drawer-activate="{default: true, lg: false}"
-    data-kt-drawer-overlay="true"
-    data-kt-drawer-width="225px"
-    data-kt-drawer-direction="start"
-    data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle"
->
+<div id="kt_app_sidebar" class="app-sidebar flex-column" data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="225px" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
     <div class="app-sidebar-logo px-6 mt-2" id="kt_app_sidebar_logo">
         <a href="{{ route('inicio.index') }}" class="m-auto">
             <img alt="Logo" src="{{ asset('assets/media/logo-unia.webp') }}" class="h-50px app-sidebar-logo-default" />
@@ -16,23 +6,8 @@
     </div>
     <div class="app-sidebar-menu overflow-hidden flex-column-fluid">
         <div id="kt_app_sidebar_menu_wrapper" class="app-sidebar-wrapper">
-            <div
-                id="kt_app_sidebar_menu_scroll"
-                class="scroll-y my-5 mx-3"
-                data-kt-scroll="true"
-                data-kt-scroll-activate="true"
-                data-kt-scroll-height="auto"
-                data-kt-scroll-dependencies="#kt_app_sidebar_logo, #kt_app_sidebar_footer"
-                data-kt-scroll-wrappers="#kt_app_sidebar_menu"
-                data-kt-scroll-offset="5px"
-                data-kt-scroll-save-state="true"
-            >
-                <div
-                    class="menu menu-column menu-rounded menu-sub-indention fw-semibold fs-6"
-                    id="#kt_app_sidebar_menu"
-                    data-kt-menu="true"
-                    data-kt-menu-expand="true"
-                >
+            <div id="kt_app_sidebar_menu_scroll" class="scroll-y my-5 mx-3" data-kt-scroll="true" data-kt-scroll-activate="true" data-kt-scroll-height="auto" data-kt-scroll-dependencies="#kt_app_sidebar_logo, #kt_app_sidebar_footer" data-kt-scroll-wrappers="#kt_app_sidebar_menu" data-kt-scroll-offset="5px" data-kt-scroll-save-state="true">
+                <div class="menu menu-column menu-rounded menu-sub-indention fw-semibold fs-6" id="#kt_app_sidebar_menu" data-kt-menu="true" data-kt-menu-expand="true">
                     <div class="menu-item">
                         <a class="menu-link {{ request()->routeIs('inicio.index') ? 'active' : '' }}" href="{{ route('inicio.index') }}">
                             <span class="menu-icon">
@@ -47,9 +22,7 @@
                         </div>
                     </div>
                     @if(count($menusPermitidos) > 0)
-                    <div
-                        data-kt-menu-trigger="click"
-                        class="menu-item menu-accordion {{ request()->routeIs('seguridad.*') ? 'here show' : '' }}">
+                    <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('seguridad.*') ? 'here show' : '' }}">
 
                         <span class="menu-link">
                             <span class="menu-icon">
@@ -61,10 +34,7 @@
                         <div class="menu-sub menu-sub-accordion">
                             @if(isset($menusPermitidos['MENÚ']))
                             <div class="menu-item">
-                                <a
-                                    class="menu-link {{ request()->routeIs($menusPermitidos['MENÚ']['routePattern'].'.*') || request()->routeIs($menusPermitidos['MENÚ']['routePattern']) ? 'active' : '' }}"
-                                    href="{{ route($menusPermitidos['MENÚ']['ruta']) }}"
-                                >
+                                <a class="menu-link {{ request()->routeIs($menusPermitidos['MENÚ']['routePattern'].'.*') || request()->routeIs($menusPermitidos['MENÚ']['routePattern']) ? 'active' : '' }}" href="{{ route($menusPermitidos['MENÚ']['ruta']) }}">
                                     <span class="menu-bullet">
                                         <span class="bullet bullet-dot"></span>
                                     </span>
@@ -75,10 +45,7 @@
 
                             @if(isset($menusPermitidos['USUARIOS']))
                             <div class="menu-item">
-                                <a
-                                    class="menu-link {{ request()->routeIs($menusPermitidos['USUARIOS']['routePattern'].'.*') || request()->routeIs($menusPermitidos['USUARIOS']['routePattern']) ? 'active' : '' }}"
-                                    href="{{ route($menusPermitidos['USUARIOS']['ruta']) }}"
-                                >
+                                <a class="menu-link {{ request()->routeIs($menusPermitidos['USUARIOS']['routePattern'].'.*') || request()->routeIs($menusPermitidos['USUARIOS']['routePattern']) ? 'active' : '' }}" href="{{ route($menusPermitidos['USUARIOS']['ruta']) }}">
                                     <span class="menu-bullet">
                                         <span class="bullet bullet-dot"></span>
                                     </span>
@@ -89,10 +56,7 @@
 
                             @if(isset($menusPermitidos['ROLES']))
                             <div class="menu-item">
-                                <a
-                                    class="menu-link {{ request()->routeIs($menusPermitidos['ROLES']['routePattern'].'.*') || request()->routeIs($menusPermitidos['ROLES']['routePattern']) ? 'active' : '' }}"
-                                    href="{{ route($menusPermitidos['ROLES']['ruta']) }}"
-                                >
+                                <a class="menu-link {{ request()->routeIs($menusPermitidos['ROLES']['routePattern'].'.*') || request()->routeIs($menusPermitidos['ROLES']['routePattern']) ? 'active' : '' }}" href="{{ route($menusPermitidos['ROLES']['ruta']) }}">
                                     <span class="menu-bullet">
                                         <span class="bullet bullet-dot"></span>
                                     </span>
@@ -103,10 +67,7 @@
 
                             @if(isset($menusPermitidos['PERSONAS']))
                             <div class="menu-item">
-                                <a
-                                    class="menu-link {{ request()->routeIs($menusPermitidos['PERSONAS']['routePattern'].'.*') || request()->routeIs($menusPermitidos['PERSONAS']['routePattern']) ? 'active' : '' }}"
-                                    href="{{ route($menusPermitidos['PERSONAS']['ruta']) }}"
-                                >
+                                <a class="menu-link {{ request()->routeIs($menusPermitidos['PERSONAS']['routePattern'].'.*') || request()->routeIs($menusPermitidos['PERSONAS']['routePattern']) ? 'active' : '' }}" href="{{ route($menusPermitidos['PERSONAS']['ruta']) }}">
                                     <span class="menu-bullet">
                                         <span class="bullet bullet-dot"></span>
                                     </span>
@@ -117,10 +78,7 @@
 
                             @if(isset($menusPermitidos['CATALOGO']))
                             <div class="menu-item">
-                                <a
-                                    class="menu-link {{ request()->routeIs($menusPermitidos['CATALOGO']['routePattern'].'.*') || request()->routeIs($menusPermitidos['CATALOGO']['routePattern']) ? 'active' : '' }}"
-                                    href="{{ route($menusPermitidos['CATALOGO']['ruta']) }}"
-                                >
+                                <a class="menu-link {{ request()->routeIs($menusPermitidos['CATALOGO']['routePattern'].'.*') || request()->routeIs($menusPermitidos['CATALOGO']['routePattern']) ? 'active' : '' }}" href="{{ route($menusPermitidos['CATALOGO']['ruta']) }}">
                                     <span class="menu-bullet">
                                         <span class="bullet bullet-dot"></span>
                                     </span>
@@ -131,9 +89,7 @@
                         </div>
                     </div>
                     @endif
-                    <div
-                        data-kt-menu-trigger="click"
-                        class="menu-item menu-accordion {{ request()->routeIs('documentos.*') ? 'here show' : '' }}">
+                    <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('documentos.*') ? 'here show' : '' }}">
 
                         <span class="menu-link">
                             <span class="menu-icon">
@@ -145,10 +101,7 @@
 
                         <div class="menu-sub menu-sub-accordion">
                             <div class="menu-item">
-                                <a
-                                    class="menu-link {{ request()->routeIs('documentos.documento.*') || request()->routeIs('documentos.documento.index') ? 'active' : '' }}"
-                                    href="{{ route('documentos.documento.index') }}"
-                                >
+                                <a class="menu-link {{ request()->routeIs('documentos.documento.*') || request()->routeIs('documentos.documento.index') ? 'active' : '' }}" href="{{ route('documentos.documento.index') }}">
                                     <span class="menu-bullet">
                                         <span class="bullet bullet-dot"></span>
                                     </span>
@@ -157,14 +110,23 @@
                             </div>
 
                             <div class="menu-item">
-                                <a
-                                    class="menu-link {{ request()->routeIs('documentos.pendientes.*') || request()->routeIs('documentos.pendientes.index') ? 'active' : '' }}"
-                                    href="{{ route('documentos.pendientes.index') }}"
-                                >
+                                <a class="menu-link {{ request()->routeIs('documentos.pendientes.*') || request()->routeIs('documentos.pendientes.index') ? 'active' : '' }}" href="{{ route('documentos.pendientes.index') }}">
                                     <span class="menu-bullet">
                                         <span class="bullet bullet-dot"></span>
                                     </span>
+
                                     <span class="menu-title">Pendientes</span>
+
+                                    <livewire:components.navegacion.sidebar-badge />
+                                </a>
+                            </div>
+
+                            <div class="menu-item">
+                                <a class="menu-link {{ request()->routeIs('documentos.historial.*') || request()->routeIs('documentos.historial.index') ? 'active' : '' }}" href="{{ route('documentos.historial.index') }}">
+                                    <span class="menu-bullet">
+                                        <span class="bullet bullet-dot"></span>
+                                    </span>
+                                    <span class="menu-title">Historial</span>
                                 </a>
                             </div>
                         </div>

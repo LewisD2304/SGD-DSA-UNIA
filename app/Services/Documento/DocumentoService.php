@@ -2,15 +2,17 @@
 
 namespace App\Services\Documento;
 
+use App\Models\ArchivoDocumento;
 use App\Models\Documento;
 use App\Repositories\Documentos\Documento\DocumentoRepositoryInterface;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class DocumentoService
 {
-     public function __construct(private DocumentoRepositoryInterface $repository){}
+    public function __construct(private DocumentoRepositoryInterface $repository) {}
 
     // Listar todos los documentos
     public function listar()
@@ -81,7 +83,7 @@ class DocumentoService
             return $documento;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception('Error al registrar el documento.'.$e->getMessage());
+            throw new \Exception('Error al registrar el documento.' . $e->getMessage());
         }
     }
 
@@ -117,111 +119,135 @@ class DocumentoService
             return $documento;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception('Ocurrió un error al eliminar el documento: '.$e->getMessage());
+            throw new \Exception('Ocurrió un error al eliminar el documento: ' . $e->getMessage());
         }
     }
 
-    // Recepcionar un documento pendiente
     public function recepcionar(Documento $documento, ?Carbon $fecha = null)
     {
         DB::beginTransaction();
 
         try {
-            // Usar Carbon::now() para capturar la fecha y hora actual con la zona horaria del servidor
             $fechaRecepcion = $fecha ?? Carbon::now();
+            $usuario = Auth::user();
 
-            // Convertir a formato DATETIME de MySQL: YYYY-MM-DD HH:MM:SS
-            $fechaRecepcionFormato = $fechaRecepcion->format('Y-m-d H:i:s');
+            // 1. VALIDACIÓN DE SEGURIDAD DEL PERFIL (CRÍTICO)
+            // Verificamos que el usuario tenga persona y área asignada.
+            // Si esto falla, es la razón por la que no se guardaba con "otros perfiles".
+            if (!$usuario->persona || !$usuario->persona->id_area) {
+                throw new \Exception("El usuario {$usuario->nombre_usuario} no tiene un Área o Persona asignada en el sistema.");
+            }
 
-            // Estado al recepcionar: intentar "RECEPCIONADO", si no existe usar "EN TRÁMITE"
-            $estadoRecepcionado = DB::table('ta_estado')
-                ->where('nombre_estado', 'RECEPCIONADO')
+            $idAreaDestino = $usuario->persona->id_area;
+            $idAreaOrigen  = $documento->id_area_remitente;
+
+            // Si el documento no tiene remitente (es huérfano), usamos el área actual para evitar error SQL
+            if (!$idAreaOrigen) {
+                // Opcional: Lanza error o usa un valor por defecto
+                $idAreaOrigen = $idAreaDestino;
+            }
+
+            // 2. OBTENER EL ESTADO "EN TRÁMITE"
+            $estadoEnTramite = DB::table('ta_estado')
+                ->where(function ($query) {
+                    $query->where('nombre_estado', 'LIKE', 'EN TRÁMITE')
+                        ->orWhere('nombre_estado', 'LIKE', 'EN TRAMITE');
+                })
                 ->first();
 
-            if (!$estadoRecepcionado) {
-                $estadoRecepcionado = DB::table('ta_estado')
-                    ->where('nombre_estado', 'EN TRÁMITE')
-                    ->first();
+            if (!$estadoEnTramite) {
+                throw new \Exception('El estado "EN TRÁMITE" no existe en la base de datos.');
             }
 
-            if (!$estadoRecepcionado) {
-                throw new \Exception('No se encontró un estado válido para recepcionar (RECEPCIONADO o EN TRÁMITE).');
-            }
+            // 3. REGISTRAR HISTORIAL (TA_MOVIMIENTO)
+            DB::table('ta_movimiento')->insert([
+                'id_documento'               => $documento->id_documento,
+                'id_estado'                  => $estadoEnTramite->id_estado,
+                'id_area_origen'             => $idAreaOrigen,  // De dónde viene
+                'id_area_destino'            => $idAreaDestino, // Quién lo tiene ahora (YO)
+                'observacion_doc_movimiento' => 'RECEPCIÓN: Documento puesto en trámite por ' . ($usuario->nombre_usuario ?? $usuario->name),
+                'au_usuariocr'               => $usuario->nombre_usuario ?? 'SISTEMA',
+                'au_fechacr'                 => Carbon::now(),
+            ]);
 
-            $documento = $this->repository->modificar([
-                'fecha_recepcion_documento' => $fechaRecepcionFormato,
-                'id_estado' => $estadoRecepcionado->id_estado,
-            ], $documento);
+            // 4. ACTUALIZAR EL DOCUMENTO
+            // Es vital actualizar el "id_area_asignada" (si tu tabla lo tiene) para saber dónde está el documento ahora.
+            $datosActualizar = [
+                'fecha_recepcion_documento' => $fechaRecepcion->format('Y-m-d H:i:s'),
+                'id_estado'                 => $estadoEnTramite->id_estado,
+            ];
+
+            // SI tu tabla documentos tiene campo para saber en qué área está actualmente, actualízalo:
+            // 'id_area_asignada' => $idAreaDestino
+
+            $this->repository->modificar($datosActualizar, $documento);
 
             DB::commit();
-
             return $documento;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception('Ocurrió un error al recepcionar el documento.');
+            // Esto escribirá el error real en tu archivo laravel.log (storage/logs/)
+            Log::error("Error recepcionar perfil {$usuario->id}: " . $e->getMessage());
+            throw $e;
         }
     }
 
     // Derivar un documento a otra área
-    public function derivar(int $idDocumento, int $idAreaDerivar, ?string $observaciones = null)
+    public function derivar(int $idDocumento, int $idAreaDestino, ?string $observaciones = null, array $nuevosArchivos = [])
     {
         DB::beginTransaction();
 
         try {
             $documento = $this->repository->obtenerPorId($idDocumento);
+            $usuario = Auth::user();
+            $idAreaOrigen = $usuario->persona->id_area; // Mi área actual
 
-            if (!$documento) {
-                throw new \Exception('Documento no encontrado.');
+            if (!$documento) throw new \Exception('Documento no encontrado.');
+
+            // 1. Guardar Archivos Nuevos
+            if (!empty($nuevosArchivos)) {
+                $archivoService = resolve(\App\Services\Documento\ArchivoDocumentoService::class);
+                $archivosInfo = $archivoService->guardarMultiplesArchivos($nuevosArchivos, 'gestion/documentos/documentos', $documento->id_documento);
+                foreach ($archivosInfo as $info) {
+                    \App\Models\ArchivoDocumento::create($info);
+                }
             }
 
-            // Log para debug
-            Log::info('Derivando documento', [
-                'id_documento' => $idDocumento,
-                'area_destino_anterior' => $documento->id_area_destino,
-                'area_destino_nueva' => $idAreaDerivar,
-                'estado_actual' => $documento->id_estado
-            ]);
+            // 2. Obtener estado DERIVADO (ID 1)
+            $estadoDerivado = DB::table('ta_estado')->where('nombre_estado', 'DERIVADO')->first();
+            if (!$estadoDerivado) throw new \Exception('Estado DERIVADO no existe.');
 
-            // Obtener el estado "DERIVADO"
-            $estadoDerivado = DB::table('ta_estado')
-                ->where('nombre_estado', 'DERIVADO')
-                ->first();
-
-            if (!$estadoDerivado) {
-                throw new \Exception('Estado "DERIVADO" no encontrado en la base de datos.');
-            }
-
-            // Actualizar el documento
-            $documento = $this->repository->modificar([
-                'id_area_destino' => $idAreaDerivar,
-                'id_estado' => $estadoDerivado->id_estado,
-                'fecha_recepcion_documento' => null,
-            ], $documento);
-
-            // Log después de actualizar
-            Log::info('Documento actualizado', [
-                'id_documento' => $documento->id_documento,
-                'id_area_destino' => $documento->id_area_destino,
-                'id_estado' => $documento->id_estado,
-                'fecha_recepcion' => $documento->fecha_recepcion_documento
-            ]);
-
-            // Registrar el movimiento en ta_movimiento con campos de auditoría
+            // 3. REGISTRAR HISTORIAL (Congelado)
             DB::table('ta_movimiento')->insert([
-                'id_documento' => $idDocumento,
-                'id_estado' => $estadoDerivado->id_estado,
+                'id_documento'    => $idDocumento,
+                'id_estado'       => $estadoDerivado->id_estado,
+                'id_area_origen'  => $idAreaOrigen,  // DE
+                'id_area_destino' => $idAreaDestino, // PARA
                 'observacion_doc_movimiento' => $observaciones,
-                'au_fechacr' => Carbon::now(),
-                'au_fechamd' => Carbon::now(),
+                'au_usuariocr'    => $usuario->nombre_usuario,
+                'au_fechacr'      => Carbon::now(),
             ]);
+
+            // 4. ACTUALIZAR EL DOCUMENTO (Cambio de manos)
+            $this->repository->modificar([
+                'id_area_remitente' => $idAreaOrigen,      // Nuevo remitente (YO)
+                'id_area_destino'   => $idAreaDestino,     // Nuevo destino (ÉL)
+                'id_estado'         => $estadoDerivado->id_estado,
+
+                'fecha_recepcion_documento' => null,       // Se limpia (a la espera de recepción)
+
+                // AQUÍ ESTÁ TU CAMPO SOLICITADO:
+                'fecha_emision_documento'   => Carbon::now(), // Fecha de salida del área
+
+                'observacion_documento'     => $observaciones
+            ], $documento);
 
             DB::commit();
 
             return $documento;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error al derivar documento', ['error' => $e->getMessage()]);
-            throw new \Exception('Ocurrió un error al derivar el documento: '.$e->getMessage());
+            throw new \Exception('Error al derivar: ' . $e->getMessage());
         }
     }
 
@@ -290,7 +316,48 @@ class DocumentoService
             return $documento;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception('Ocurrió un error al procesar la transición: '.$e->getMessage());
+            throw new \Exception('Ocurrió un error al procesar la transición: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Obtener historial de documentos derivados por un área
+     */
+    public function obtenerHistorialDerivaciones(int $idArea, ?string $buscar = null)
+    {
+        $query = Documento::with(['estado', 'areaRemitente', 'areaDestino'])
+            ->where('id_area_remitente', $idArea)
+            ->where('id_area_destino', '!=', $idArea) // Documentos enviados a otras áreas
+            ->orderBy('au_fechacr', 'desc');
+
+        if ($buscar) {
+            $query->where(function ($q) use ($buscar) {
+                $q->where('numero_documento', 'LIKE', "%$buscar%")
+                    ->orWhere('expediente_documento', 'LIKE', "%$buscar%")
+                    ->orWhere('folio_documento', 'LIKE', "%$buscar%")
+                    ->orWhere('asunto_documento', 'LIKE', "%$buscar%");
+            });
+        }
+
+        return $query->paginate(10);
+    }
+
+    /**
+     * Cuenta los documentos pendientes en el área especificada
+     */
+    public function contarPendientesPorArea($idArea)
+    {
+        return Documento::where('id_area_destino', $idArea)
+            ->whereHas('estado', function ($q) {
+
+                $q->whereIn('nombre_estado', [
+                    'DERIVADO',
+                    'SUBSANADO',
+                    'RETORNADO',
+                    'PARA ARCHIVAR'
+                ]);
+            })
+            ->count();
+    }
 }
+

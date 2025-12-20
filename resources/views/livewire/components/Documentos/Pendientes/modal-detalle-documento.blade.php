@@ -48,6 +48,15 @@ use Illuminate\Support\Facades\Storage;
                         <div class="text-gray-800">{{ $modeloDocumento->asunto_documento }}</div>
                     </div>
 
+                    @if($modeloDocumento->observacion_documento)
+                    <div class="mb-3">
+                        <div class="fw-bold text-gray-600 mb-1">Observación:</div>
+                        <div class="text-gray-800 text-uppercase">
+                            {{ $modeloDocumento->observacion_documento }}
+                        </div>
+                    </div>
+                    @endif
+
                     @if($modeloDocumento->fecha_recepcion_documento)
                     <div class="mb-3">
                         <div class="fw-bold text-gray-600 mb-1">Fecha recepción:</div>

@@ -3,7 +3,8 @@
 namespace App\Livewire\Documentos\Documento;
 
 use App\Enums\EstadoEnum;
-use App\Models\Documento;
+use App\Models\ArchivoDocumento;
+use App\Models\Transicion;
 use App\Services\Documento\DocumentoService;
 use App\Services\Documento\ArchivoDocumentoService;
 use App\Services\Configuracion\AreaService;
@@ -16,7 +17,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Validation\ValidationException;
 
 #[Layout('components.layouts.app')]
 class Index extends Component
@@ -31,11 +32,13 @@ class Index extends Component
     #[Validate('required|max:100|min:1', as: 'numero_documento')]
     public $numeroDocumento = '';
 
-    #[Validate('required|max:50|min:1', as: 'folio_documento')]
     public $folioDocumento = '';
 
     #[Validate('required|max:200|min:3', as: 'asunto_documento')]
     public $asuntoDocumento = '';
+
+    #[Validate('required|max:200|min:3', as: 'observacion_documento')]
+    public $observacionDocumento = '';
 
     public $idAreaRemitente; // Se obtiene del usuario logueado
 
@@ -75,12 +78,13 @@ class Index extends Component
     {
         // Obtener área del usuario logueado
         $usuario = Auth::user();
-        $this->idAreaRemitente = $usuario->persona->id_area ?? null;
+        // Casteamos a entero para evitar problemas de comparación estricta (string vs int)
+        $this->idAreaRemitente = (int) ($usuario->persona->id_area ?? 0);
 
         // Listar todas las áreas para el select de destino, EXCEPTO la del usuario
         $todasLasAreas = $this->areaService->listarActivas();
         $this->areas = $todasLasAreas->filter(function ($area) {
-            return $area->id_area !== $this->idAreaRemitente;
+            return (int) $area->id_area !== $this->idAreaRemitente;
         })->values();
 
         // Obtener tipos de documento del catálogo (hijos de TIPO DOCUMENTO)
@@ -95,10 +99,34 @@ class Index extends Component
         $this->numeroDocumento = limpiarCadena($this->numeroDocumento, false);
         $this->folioDocumento = limpiarCadena($this->folioDocumento, false);
         $this->asuntoDocumento = limpiarCadena($this->asuntoDocumento, false);
+        $this->observacionDocumento = limpiarCadena($this->observacionDocumento, false);
 
         $mensajeToastr = null;
 
         try {
+            // ==============================================================================
+            // 1. SOLUCIÓN AL ERROR SQL: ASIGNAR REMITENTE AUTOMÁTICAMENTE
+            // ==============================================================================
+            // Obtenemos el área del usuario logueado.
+            // Usamos el operador ?? null por si la relación persona o area no existe.
+            $areaUsuario = Auth::user()->persona->id_area ?? null;
+
+            // Validamos que el usuario tenga un área antes de continuar.
+            if (!$areaUsuario) {
+                throw new \Exception('Su usuario no tiene un Área asignada, por lo tanto no puede registrar documentos.');
+            }
+
+            // Asignamos el valor a la propiedad del componente para que se guarde en la BD.
+            $this->idAreaRemitente = $areaUsuario;
+
+
+            // ==============================================================================
+            // 2. LÓGICA DE VALIDACIÓN (Tu código original continúa aquí)
+            // ==============================================================================
+            $tieneArchivos = !empty($this->archivosDocumento) || !empty($this->archivosExistentes);
+
+            $reglaFolio = $tieneArchivos ? 'required|numeric|min:1|max:999999' : 'nullable|numeric|min:1|max:999999';
+
             $reglas = [
                 'numeroDocumento' => [
                     'required',
@@ -106,15 +134,16 @@ class Index extends Component
                     Rule::unique('ta_documento', 'numero_documento')
                         ->ignore($this->modeloDocumento->id_documento ?? null, 'id_documento'),
                 ],
-                'folioDocumento' => 'required|numeric|min:1|max:999999',
+                'folioDocumento' => $reglaFolio,
                 'asuntoDocumento' => 'required|max:200|min:3',
                 'idAreaDestino' => 'required|exists:ta_area,id_area',
                 'tipoDocumentoCatalogo' => 'required|exists:ta_catalogo,id_catalogo',
+                'observacionDocumento' => 'nullable|max:500',
             ];
 
             // Validar archivos (múltiples) solo si se está creando o modificando con nuevos archivos
             if ($this->modoModal == 1 || !empty($this->archivosDocumento)) {
-                $reglas['archivosDocumento'] = 'required|array|min:1';
+                $reglas['archivosDocumento'] = 'nullable|array';
                 $reglas['archivosDocumento.*'] = 'file|mimes:pdf,png,jpg,jpeg|max:10240'; // Solo PDF e imágenes, 10MB cada uno
             }
 
@@ -125,24 +154,39 @@ class Index extends Component
             } else {
                 $mensajeToastr = $this->modificar();
             }
+
+            $this->modalDocumento('#modal-documento', 'hide');
+            $this->limpiarModal();
+
+            if ($mensajeToastr !== null) {
+                $this->dispatch(
+                    'toastr',
+                    boton_cerrar: $mensajeToastr['boton_cerrar'],
+                    progreso_avance: $mensajeToastr['progreso_avance'],
+                    duracion: $mensajeToastr['duracion'],
+                    titulo: $mensajeToastr['titulo'],
+                    tipo: $mensajeToastr['tipo'],
+                    mensaje: $mensajeToastr['mensaje'],
+                    posicion_y: $mensajeToastr['posicion_y'],
+                    posicion_x: $mensajeToastr['posicion_x']
+                );
+            }
+        } catch (ValidationException $e) {
+
+            $this->setErrorBag($e->validator->getMessageBag());
+            $this->dispatch('errores_validacion', validacion: $this->getErrorBag()->messages());
         } catch (\Exception $e) {
-            $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');
-        }
-
-        $this->modalDocumento('#modal-documento', 'hide');
-        $this->limpiarModal();
-
-        if ($mensajeToastr !== null) {
+            // CAPTURAR OTROS ERRORES (BD, Lógica)
             $this->dispatch(
                 'toastr',
-                boton_cerrar: $mensajeToastr['boton_cerrar'],
-                progreso_avance: $mensajeToastr['progreso_avance'],
-                duracion: $mensajeToastr['duracion'],
-                titulo: $mensajeToastr['titulo'],
-                tipo: $mensajeToastr['tipo'],
-                mensaje: $mensajeToastr['mensaje'],
-                posicion_y: $mensajeToastr['posicion_y'],
-                posicion_x: $mensajeToastr['posicion_x']
+                boton_cerrar: false,
+                progreso_avance: true,
+                duracion: '5000',
+                titulo: 'Error',
+                tipo: 'error',
+                mensaje: $e->getMessage(),
+                posicion_y: 'top',
+                posicion_x: 'right'
             );
         }
     }
@@ -154,6 +198,7 @@ class Index extends Component
             'numero_documento' => $this->numeroDocumento,
             'folio_documento' => $this->folioDocumento,
             'asunto_documento' => $this->asuntoDocumento,
+            'observacion_documento' => $this->observacionDocumento,
             'id_area_remitente' => $this->idAreaRemitente,
             'id_area_destino' => $this->idAreaDestino,
             'tipo_documento_catalogo' => $this->tipoDocumentoCatalogo,
@@ -171,7 +216,7 @@ class Index extends Component
 
             // Guardar en BD
             foreach ($archivosInfo as $archivoInfo) {
-                \App\Models\ArchivoDocumento::create($archivoInfo);
+                ArchivoDocumento::create($archivoInfo);
             }
         }
 
@@ -186,6 +231,7 @@ class Index extends Component
             'numero_documento' => $this->numeroDocumento,
             'folio_documento' => $this->folioDocumento,
             'asunto_documento' => $this->asuntoDocumento,
+            'observacion_documento' => $this->observacionDocumento,
             'id_area_destino' => $this->idAreaDestino,
             'tipo_documento_catalogo' => $this->tipoDocumentoCatalogo,
         ];
@@ -196,7 +242,7 @@ class Index extends Component
         // Guardar nuevos archivos si existen
         if (!empty($this->archivosDocumento)) {
             // Obtener el orden máximo actual
-            $ordenMaximo = \App\Models\ArchivoDocumento::where('id_documento', $this->modeloDocumento->id_documento)
+            $ordenMaximo = ArchivoDocumento::where('id_documento', $this->modeloDocumento->id_documento)
                 ->max('orden') ?? 0;
 
             $archivosInfo = $this->archivoService->guardarMultiplesArchivos(
@@ -208,7 +254,7 @@ class Index extends Component
             // Actualizar orden desde el último existente
             foreach ($archivosInfo as $index => $archivoInfo) {
                 $archivoInfo['orden'] = $ordenMaximo + $index + 1;
-                \App\Models\ArchivoDocumento::create($archivoInfo);
+                ArchivoDocumento::create($archivoInfo);
             }
         }
 
@@ -230,6 +276,7 @@ class Index extends Component
             $this->folioDocumento = $this->modeloDocumento->folio_documento;
             $this->tipoDocumentoCatalogo = $this->modeloDocumento->tipo_documento_catalogo;
             $this->asuntoDocumento = $this->modeloDocumento->asunto_documento;
+            $this->observacionDocumento = $this->modeloDocumento->observacion_documento;
             $this->idAreaDestino = $this->modeloDocumento->id_area_destino;
             $this->rutaDocumento = $this->modeloDocumento->ruta_documento;
             $this->archivosExistentes = $this->modeloDocumento->archivos ?? collect();
@@ -359,6 +406,7 @@ class Index extends Component
             'numeroDocumento',
             'folioDocumento',
             'asuntoDocumento',
+            'observacionDocumento',
             'idAreaDestino',
             'tipoDocumentoCatalogo',
             'rutaDocumento',
@@ -455,7 +503,7 @@ class Index extends Component
             }
 
             // Buscar la transición DERIVAR según el estado actual del documento
-            $transicion = \App\Models\Transicion::where('evento_transicion', 'DERIVAR')
+            $transicion = Transicion::where('evento_transicion', 'DERIVAR')
                 ->where('id_estado_actual_transicion', $this->modeloDocumento->id_estado)
                 ->first();
 
@@ -535,7 +583,7 @@ class Index extends Component
 
         try {
             // Buscar la transición DEVOLVER según el estado actual del documento
-            $transicion = \App\Models\Transicion::where('evento_transicion', 'DEVOLVER')
+            $transicion = Transicion::where('evento_transicion', 'DEVOLVER')
                 ->where('id_estado_actual_transicion', $this->modeloDocumento->id_estado)
                 ->first();
 

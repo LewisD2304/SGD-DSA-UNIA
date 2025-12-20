@@ -10,7 +10,7 @@ class Movimiento extends Model
 {
     use AuditoriaTrait, softDeletes;
 
-     const CREATED_AT = 'au_fechacr';
+    const CREATED_AT = 'au_fechacr';
     const UPDATED_AT = 'au_fechamd';
     const DELETED_AT = 'au_fechael';
 
@@ -23,7 +23,9 @@ class Movimiento extends Model
         'tipo_cargo_catalogo',
         'id_documento',
         'id_estado',
-        'observacion_doc_movimiento'
+        'observacion_doc_movimiento',
+        'id_area_origen',
+        'id_area_destino'
     ];
 
     protected $hidden = [
@@ -35,12 +37,12 @@ class Movimiento extends Model
         'au_usuarioel'
     ];
 
-    public function documento() { return $this->belongsTo(Documento::class, 'id_documento'); }
-    public function estado() { return $this->belongsTo(Estado::class, 'id_estado'); }
-
-
-
-
-
-
+    public function documento()
+    {
+        return $this->belongsTo(Documento::class, 'id_documento');
+    }
+    public function estado()
+    {
+        return $this->belongsTo(Estado::class, 'id_estado');
+    }
 }

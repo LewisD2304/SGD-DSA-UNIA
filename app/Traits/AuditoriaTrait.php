@@ -6,10 +6,7 @@ use Illuminate\Support\Facades\Auth;
 
 trait AuditoriaTrait
 {
-     /**
-     * Boot del Trait: Se ejecuta automáticamente al usar el Trait.
-     * Reemplaza la necesidad de escribir boot() en cada modelo.
-     */
+
     protected static function bootAuditoriaTrait()
     {
        static::creating(function ($model) {

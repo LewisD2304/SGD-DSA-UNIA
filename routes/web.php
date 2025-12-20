@@ -67,6 +67,8 @@ Route::middleware(['throttle:100,1'])->group(function () {
             Route::get('/documento', DocumentoIndex::class)->name('documento.index');
             // Pendientes
             Route::get('/pendientes', PendientesIndex::class)->name('pendientes.index');
+            // Historial
+            Route::get('/historial', \App\Livewire\Documentos\Historial\Index::class)->name('historial.index');
         });
 
 

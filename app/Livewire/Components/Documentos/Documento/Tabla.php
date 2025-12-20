@@ -152,6 +152,21 @@ class Tabla extends Component
         HTML;
     }
 
+    public function mount()
+    {
+        $menuService = resolve(\App\Services\Seguridad\MenuService::class);
+        $menu = $menuService->listarAccionesPorNombreMenu('DOCUMENTOS');
+
+        if ($menu) {
+            foreach ($menu->acciones as $accion) {
+                $nombre_accion = str_replace(' ', '_', strtoupper($accion->tipoAccion->descripcion_catalogo));
+                if ($nombre_accion !== 'LISTAR') {
+                    $this->permisos[$nombre_accion] = \Illuminate\Support\Facades\Gate::allows('autorizacion', [$nombre_accion, $menu->nombre_menu]);
+                }
+            }
+        }
+    }
+
     public function render()
     {
         return view('livewire.components.documentos.documento.tabla');
