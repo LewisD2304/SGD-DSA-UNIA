@@ -79,7 +79,26 @@
                                                 @endcan
 
                                                 @php
+                                                // Verificar si el documento viene de vuelta a Mesa de Partes (área creadora original)
+                                                $areaUsuario = Auth::user()->persona->id_area ?? null;
+                                                $esCreadorOriginal = ($documento->id_area_remitente == $areaUsuario &&
+                                                                     $documento->id_area_destino == $areaUsuario);
+
                                                 $transiciones = $this->obtenerTransicionesDisponibles($documento->id_estado);
+
+                                                // Si es Mesa de Partes (creador original que recibe documento de vuelta)
+                                                // solo mostrar RECEPCIONAR (que se mostrará como Archivar)
+                                                if ($esCreadorOriginal) {
+                                                    $transiciones = $transiciones->filter(function($t) {
+                                                        return strtoupper($t->evento_transicion) === 'RECEPCIONAR';
+                                                    });
+                                                } else {
+                                                    // Para otras áreas, EXCLUIR las transiciones EN TRAMITE y ARCHIVADO
+                                                    $transiciones = $transiciones->filter(function($t) {
+                                                        $evento = strtoupper($t->evento_transicion);
+                                                        return !in_array($evento, ['EN TRAMITE', 'EN TRÁMITE', 'ARCHIVADO']);
+                                                    });
+                                                }
                                                 @endphp
 
                                                 @foreach($transiciones as $transicion)
@@ -88,7 +107,7 @@
                                                 $accion = strtolower($evento);
 
                                                 $config = [
-                                                'RECEPCIONAR' => ['color' => 'success', 'icono' => 'folder-check', 'texto' => 'Recepcionar'],
+                                                'RECEPCIONAR' => ['color' => 'success', 'icono' => 'folder-check', 'texto' => $esCreadorOriginal ? 'Archivar' : 'Recepcionar'],
                                                 'DEVOLVER' => ['color' => 'danger', 'icono' => 'arrow-left', 'texto' => 'Devolver'],
                                                 'DERIVAR' => ['color' => 'primary', 'icono' => 'arrow-right', 'texto' => 'Derivar'],
                                                 'SUBSANAR' => ['color' => 'warning', 'icono' => 'document-check', 'texto' => 'Subsanar']
@@ -178,7 +197,11 @@
 
                             <div class="px-4 text-center fs-5">
                                 <p class="text-gray-700">
-                                    Esta acción recepcionará el documento y lo moverá a "Mis documentos".
+                                    @if($esArchivar)
+                                        Esta acción <strong>archivará</strong> el documento. El documento quedará finalizado y solo podrá ser visualizado.
+                                    @else
+                                        Esta acción recepcionará el documento y lo moverá a "Mis documentos".
+                                    @endif
                                 </p>
 
                                 <div class="d-flex justify-content-center mt-7">
@@ -197,7 +220,7 @@
 
                         <button type="submit" class="btn d-flex align-items-center btn-warning" wire:loading.attr="disabled" wire:target="confirmarRecepcion">
                             <span class="indicator-label" wire:loading.remove wire:target="confirmarRecepcion">
-                                Recepcionar
+                                {{ $esArchivar ? 'Archivar' : 'Recepcionar' }}
                             </span>
                             <span class="indicator-progress" wire:loading wire:target="confirmarRecepcion">
                                 Cargando...

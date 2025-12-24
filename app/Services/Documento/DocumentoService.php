@@ -229,15 +229,15 @@ class DocumentoService
             ]);
 
             // 4. ACTUALIZAR EL DOCUMENTO (Cambio de manos)
+            // IMPORTANTE: No tocar id_area_remitente para conservar el área creadora original
             $this->repository->modificar([
-                'id_area_remitente' => $idAreaOrigen,      // Nuevo remitente (YO)
                 'id_area_destino'   => $idAreaDestino,     // Nuevo destino (ÉL)
                 'id_estado'         => $estadoDerivado->id_estado,
 
                 'fecha_recepcion_documento' => null,       // Se limpia (a la espera de recepción)
 
-                // AQUÍ ESTÁ TU CAMPO SOLICITADO:
-                'fecha_emision_documento'   => Carbon::now(), // Fecha de salida del área
+                // Fecha de salida del área
+                'fecha_emision_documento'   => Carbon::now(),
 
                 'observacion_documento'     => $observaciones
             ], $documento);
@@ -289,8 +289,13 @@ class DocumentoService
 
             // Si la transición es DERIVAR, actualizar área destino y limpiar fecha recepción
             if (strtoupper($transicion->evento_transicion) === 'DERIVAR' && isset($datos['id_area_destino'])) {
+                $usuario = Auth::user();
+                $idAreaOrigen = $usuario->persona->id_area ?? null;
+
+                // Actualizar el nuevo destino y limpiar recepción
                 $datosDocumento['id_area_destino'] = $datos['id_area_destino'];
                 $datosDocumento['fecha_recepcion_documento'] = null;
+                $datosDocumento['fecha_emision_documento'] = Carbon::now();
             }
 
             // Si la transición es DEVOLVER y hay área destino
@@ -302,14 +307,30 @@ class DocumentoService
             // Actualizar el documento
             $documento = $this->repository->modificar($datosDocumento, $documento);
 
-            // Registrar el movimiento con las observaciones
-            DB::table('ta_movimiento')->insert([
+            // Preparar datos del movimiento
+            $usuario = Auth::user();
+            $datosMovimiento = [
                 'id_documento' => $idDocumento,
-                'id_estado' => $transicion->id_estado_siguiente_transicion,
+                'id_estado' => $datosDocumento['id_estado'] ?? $transicion->id_estado_siguiente_transicion,
                 'observacion_doc_movimiento' => $datos['observacion'] ?? null,
                 'au_fechacr' => Carbon::now(),
                 'au_fechamd' => Carbon::now(),
-            ]);
+            ];
+
+            // Si es DERIVAR, registrar origen y destino
+            if (strtoupper($transicion->evento_transicion) === 'DERIVAR' && isset($datos['id_area_destino'])) {
+                $datosMovimiento['id_area_origen'] = $usuario->persona->id_area ?? null;
+                $datosMovimiento['id_area_destino'] = $datos['id_area_destino'];
+            }
+
+            // Si es RECEPCIONAR, registrar áreas
+            if (strtoupper($transicion->evento_transicion) === 'RECEPCIONAR') {
+                $datosMovimiento['id_area_origen'] = $documento->id_area_remitente;
+                $datosMovimiento['id_area_destino'] = $usuario->persona->id_area ?? null;
+            }
+
+            // Registrar el movimiento
+            DB::table('ta_movimiento')->insert($datosMovimiento);
 
             DB::commit();
 

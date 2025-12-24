@@ -22,6 +22,7 @@ class Tabla extends Component
     public $permisos = [];
     public ?int $documentoRecepcionId = null;
     public ?string $documentoRecepcionTitulo = null;
+    public bool $esArchivar = false; // Para saber si es archivar o recepcionar
 
     protected DocumentoService $documentoService;
     protected $paginationTheme = 'bootstrap';
@@ -63,6 +64,11 @@ class Tabla extends Component
         $this->documentoRecepcionId = $documento->id_documento;
         $this->documentoRecepcionTitulo = $documento->asunto_documento ?? $documento->expediente_documento ?? 'Documento sin asunto';
 
+        // Verificar si el usuario actual es el área creadora original (Mesa de Partes)
+        $areaUsuario = Auth::user()->persona->id_area ?? null;
+        $this->esArchivar = ($documento->id_area_remitente == $areaUsuario &&
+                            $documento->id_area_destino == $areaUsuario);
+
         $this->dispatch('modal', nombre: '#modal-confirmar-recepcion', accion: 'show');
     }
 
@@ -80,10 +86,26 @@ class Tabla extends Component
         }
 
         try {
-            // Buscar la transición RECEPCIONAR según el estado actual del documento
-            $transicion = Transicion::where('evento_transicion', 'RECEPCIONAR')
-                ->where('id_estado_actual_transicion', $documento->id_estado)
-                ->first();
+            $areaUsuario = Auth::user()->persona->id_area ?? null;
+            $esArchivar = ($documento->id_area_remitente == $areaUsuario &&
+                          $documento->id_area_destino == $areaUsuario);
+
+            // Si es archivar (Mesa de Partes recibe documento de vuelta)
+            if ($esArchivar) {
+                // Buscar la transición ARCHIVADO
+                $transicion = Transicion::where('evento_transicion', 'ARCHIVADO')
+                    ->where('id_estado_actual_transicion', $documento->id_estado)
+                    ->first();
+
+                $mensajeExito = 'Documento archivado correctamente';
+            } else {
+                // Buscar la transición RECEPCIONAR
+                $transicion = Transicion::where('evento_transicion', 'RECEPCIONAR')
+                    ->where('id_estado_actual_transicion', $documento->id_estado)
+                    ->first();
+
+                $mensajeExito = 'Documento recepcionado correctamente';
+            }
 
             if (!$transicion) {
                 $this->dispatch(
@@ -93,7 +115,7 @@ class Tabla extends Component
                     duracion: '5000',
                     titulo: 'Error',
                     tipo: 'error',
-                    mensaje: 'No se puede recepcionar el documento en su estado actual',
+                    mensaje: 'No se puede ' . ($esArchivar ? 'archivar' : 'recepcionar') . ' el documento en su estado actual',
                     posicion_y: 'top',
                     posicion_x: 'right'
                 );
@@ -117,7 +139,7 @@ class Tabla extends Component
                 duracion: '3000',
                 titulo: 'Éxito',
                 tipo: 'success',
-                mensaje: 'Documento recepcionado correctamente',
+                mensaje: $mensajeExito,
                 posicion_y: 'top',
                 posicion_x: 'right'
             );

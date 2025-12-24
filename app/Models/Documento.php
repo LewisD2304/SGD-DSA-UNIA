@@ -97,4 +97,27 @@ class Documento extends Model
     public function archivos() {
         return $this->hasMany(ArchivoDocumento::class, 'id_documento', 'id_documento')->orderBy('orden');
     }
+
+    /**
+     * Obtener el estado visual según el área del usuario
+     * - Mesa de Partes (creador original): ve "EN TRÁMITE" solo cuando otra área ha recepcionado
+     * - Otras áreas: ven el estado real del documento
+     */
+    public function getEstadoVisual($idAreaUsuario)
+    {
+        // Si el usuario es Mesa de Partes (creador original)
+        // Y el documento ha sido recepcionado por otra área
+        // Y el documento actualmente está en otra área (no en Mesa de Partes)
+        if ($this->id_area_remitente == $idAreaUsuario &&
+            $this->id_area_destino != $idAreaUsuario &&
+            $this->fecha_recepcion_documento !== null && // Ya fue recepcionado por otra área
+            in_array($this->id_estado, [8])) { // 8=RECEPCIONADO
+
+            // Mostrar "EN TRÁMITE" para Mesa de Partes
+            return Estado::where('nombre_estado', 'LIKE', 'EN TR%MITE')->first() ?? $this->estado;
+        }
+
+        // En cualquier otro caso, retornar el estado real
+        return $this->estado;
+    }
 }
