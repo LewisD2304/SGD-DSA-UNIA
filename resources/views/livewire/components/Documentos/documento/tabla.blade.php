@@ -117,11 +117,20 @@
                                                     @endif
 
                                                     @can('autorizacion', ['DERIVAR', 'DOCUMENTOS'])
-                                                    <div class="menu-item px-3">
-                                                        <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalDerivarDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                            <span class="menu-icon"><i class="ki-outline ki-arrow-right fs-3"></i></span> Derivar
-                                                        </a>
-                                                    </div>
+                                                        @php
+                                                            $areaUsuario = Auth::user()->persona->id_area ?? null;
+                                                            // Solo mostrar Derivar si el documento fue RECEPCIONADO por mi área (no si lo creé yo)
+                                                            $puedeDerivar = $areaUsuario &&
+                                                                            $documento->id_area_destino == $areaUsuario &&
+                                                                            $documento->fecha_recepcion_documento !== null;
+                                                        @endphp
+                                                        @if($puedeDerivar)
+                                                        <div class="menu-item px-3">
+                                                            <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalDerivarDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                                <span class="menu-icon"><i class="ki-outline ki-arrow-right fs-3"></i></span> Derivar
+                                                            </a>
+                                                        </div>
+                                                        @endif
                                                     @endcan
 
                                                     @can('autorizacion', ['MODIFICAR', 'DOCUMENTOS'])
