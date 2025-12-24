@@ -33,7 +33,6 @@ class Documento extends Model
         'observacion_documento',
         'id_estado',
         'tipo_documento_catalogo',
-        'ruta_documento',
         'nombre_archivo_original',
         'id_area'
     ];

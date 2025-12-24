@@ -49,7 +49,6 @@ class Index extends Component
     public $tipoDocumentoCatalogo = '';
 
     #[Validate('max:250', as: 'ruta_documento')]
-    public $rutaDocumento = '';
 
     public $archivosDocumento = [];
     public $archivosExistentes = [];
@@ -278,7 +277,6 @@ class Index extends Component
             $this->asuntoDocumento = $this->modeloDocumento->asunto_documento;
             $this->observacionDocumento = $this->modeloDocumento->observacion_documento;
             $this->idAreaDestino = $this->modeloDocumento->id_area_destino;
-            $this->rutaDocumento = $this->modeloDocumento->ruta_documento;
             $this->archivosExistentes = $this->modeloDocumento->archivos ?? collect();
         } else {
             $this->tituloModal = 'Registrar nuevo documento';
@@ -409,7 +407,6 @@ class Index extends Component
             'observacionDocumento',
             'idAreaDestino',
             'tipoDocumentoCatalogo',
-            'rutaDocumento',
             'archivosDocumento',
             'archivosExistentes',
             'nombreDocumentoEliminar',
