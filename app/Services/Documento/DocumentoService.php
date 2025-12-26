@@ -31,25 +31,11 @@ class DocumentoService
         return $this->repository->obtenerPorId($id, $relaciones);
     }
 
-    public function obtenerPorIdParaArea(int $id, int $idAreaUsuario, array $relaciones = [])
+    public function obtenerPorIdParaArea(int $id, int $idAreaUsuario, array $relaciones = [], bool $incluirDerivaciones = false)
     {
         $documento = $this->repository->obtenerPorId($id, $relaciones);
 
         if ($documento && $documento->relationLoaded('archivos')) {
-            // Determinar el área de origen del último DERIVAR hacia cualquier destino
-            $estadoDerivado = DB::table('ta_estado')->where('nombre_estado', 'DERIVADO')->first();
-            $areaOrigenUltimoDerivar = null;
-
-            if ($estadoDerivado) {
-                $ultimoDerivar = DB::table('ta_movimiento')
-                    ->where('id_documento', $documento->id_documento)
-                    ->where('id_estado', $estadoDerivado->id_estado)
-                    ->orderBy('au_fechacr', 'desc')
-                    ->first();
-
-                $areaOrigenUltimoDerivar = $ultimoDerivar->id_area_origen ?? null;
-            }
-
             // Conservar todos los adjuntos para cálculos posteriores
             $todosAdjuntos = $documento->archivos;
 
@@ -64,21 +50,38 @@ class DocumentoService
 
             $documento->setRelation('archivos', $baseAdjuntos);
 
-            // Si el usuario es el destino actual del documento, incluir también los adjuntos subidos por
-            // el área que realizó el último DERIVAR (se envían con todos los cambios de esa área).
-            if ($documento->id_area_destino == $idAreaUsuario && $areaOrigenUltimoDerivar) {
-                $adjuntosExtra = $todosAdjuntos
-                    ->filter(function ($archivo) use ($areaOrigenUltimoDerivar) {
-                        return $archivo->id_area == $areaOrigenUltimoDerivar;
-                    });
+            // Solo incluir archivos de derivaciones cuando se pida explícitamente (Pendientes)
+            // En "Mis Documentos" no se muestran los cambios de otras áreas hasta archivar
+            if ($incluirDerivaciones && $documento->id_area_destino == $idAreaUsuario) {
+                // Determinar el área de origen del último DERIVAR hacia este destino
+                $estadoDerivado = DB::table('ta_estado')->where('nombre_estado', 'DERIVADO')->first();
+                $areaOrigenUltimoDerivar = null;
 
-                $documento->setRelation(
-                    'archivos',
-                    $documento->archivos
-                        ->merge($adjuntosExtra)
-                        ->unique('id_archivo_documento')
-                        ->values()
-                );
+                if ($estadoDerivado) {
+                    $ultimoDerivar = DB::table('ta_movimiento')
+                        ->where('id_documento', $documento->id_documento)
+                        ->where('id_estado', $estadoDerivado->id_estado)
+                        ->orderBy('au_fechacr', 'desc')
+                        ->first();
+
+                    $areaOrigenUltimoDerivar = $ultimoDerivar->id_area_origen ?? null;
+                }
+
+                // Incluir los adjuntos del área que realizó el último DERIVAR
+                if ($areaOrigenUltimoDerivar) {
+                    $adjuntosExtra = $todosAdjuntos
+                        ->filter(function ($archivo) use ($areaOrigenUltimoDerivar) {
+                            return $archivo->id_area == $areaOrigenUltimoDerivar;
+                        });
+
+                    $documento->setRelation(
+                        'archivos',
+                        $documento->archivos
+                            ->merge($adjuntosExtra)
+                            ->unique('id_archivo_documento')
+                            ->values()
+                    );
+                }
             }
         }
 

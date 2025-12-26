@@ -31,10 +31,12 @@ class Index extends Component
         if ($this->documentoService === null) {
             $this->documentoService = resolve(DocumentoService::class);
         }
+        // En Historial mostrar solo los archivos originales, no derivaciones
         $this->modeloDocumento = $this->documentoService->obtenerPorIdParaArea(
             $id_documento,
             $this->idAreaUsuario,
-            ['estado', 'tipoDocumento', 'archivos', 'areaRemitente', 'areaDestino']
+            ['estado', 'tipoDocumento', 'archivos', 'areaRemitente', 'areaDestino'],
+            false // No incluir derivaciones
         );
 
         $this->dispatch('cargando', cargando: 'false');

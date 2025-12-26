@@ -38,7 +38,8 @@ class Index extends Component
         $this->modeloDocumento = $this->documentoService->obtenerPorIdParaArea(
             $id_documento,
             $this->idAreaUsuario,
-            ['estado', 'tipoDocumento', 'archivos']
+            ['estado', 'tipoDocumento', 'archivos'],
+            true // Incluir archivos de derivaciones en Pendientes
         );
 
         $this->dispatch('cargando', cargando: 'false');

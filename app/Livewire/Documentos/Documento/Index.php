@@ -388,7 +388,14 @@ class Index extends Component
     public function abrirModalDetalleDocumento($id_documento)
     {
         $this->limpiarModal();
-        $this->modeloDocumento = $this->documentoService->obtenerPorIdParaArea($id_documento, $this->idAreaRemitente, ['estado', 'tipoDocumento', 'archivos']);
+        // En "Mis Documentos" NO incluir archivos de derivaciones (false por defecto)
+        // Solo se ven los archivos originales hasta que se archive desde Pendientes
+        $this->modeloDocumento = $this->documentoService->obtenerPorIdParaArea(
+            $id_documento,
+            $this->idAreaRemitente,
+            ['estado', 'tipoDocumento', 'archivos'],
+            false // No incluir derivaciones
+        );
 
         $this->dispatch('cargando', cargando: 'false');
         $this->modalDocumento('#modal-detalle-documento', 'show');
