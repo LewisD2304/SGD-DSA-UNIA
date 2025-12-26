@@ -60,7 +60,26 @@ use Illuminate\Support\Facades\Storage;
                     @if($modeloDocumento->fecha_recepcion_documento)
                     <div class="mb-3">
                         <div class="fw-bold text-gray-600 mb-1">Fecha recepción:</div>
-                        <div class="text-gray-800">{{ \Carbon\Carbon::parse($modeloDocumento->fecha_recepcion_documento)->format('d/m/Y') }}</div>
+                        <div class="text-gray-800">{{ formatoFechaText($modeloDocumento->fecha_recepcion_documento) }}</div>
+                    </div>
+                    @endif
+
+                    @php
+                    // 1. Intentamos obtener la fecha del campo específico
+                    $fechaArchivado = $modeloDocumento->fecha_despacho_documento;
+
+                    // 2. Si está vacío, pero el estado es "ARCHIVADO", usamos la fecha de modificación como respaldo
+                    if (!$fechaArchivado && optional($modeloDocumento->estado)->nombre_estado == 'ARCHIVADO') {
+                    $fechaArchivado = $modeloDocumento->au_fechamd ?? $modeloDocumento->updated_at;
+                    }
+                    @endphp
+
+                    @if($fechaArchivado && optional($modeloDocumento->estado)->nombre_estado == 'ARCHIVADO')
+                    <div class="col-md-6">
+                        <div class="fw-bold text-gray-600 mb-1">Fecha archivado:</div>
+                        <div class="text-gray-800">
+                            {{ formatoFechaText($fechaArchivado) }}
+                        </div>
                     </div>
                     @endif
 

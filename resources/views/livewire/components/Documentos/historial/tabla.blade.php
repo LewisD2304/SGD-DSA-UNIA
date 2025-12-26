@@ -5,7 +5,7 @@
                 <div class="d-flex flex-column">
                     <div class="d-flex align-items-center position-relative my-1 me-4 fs-7">
                         <i class="ki-outline ki-magnifier fs-3 position-absolute ms-5"></i>
-                        <input type="text" class="form-control form-control-solid ps-13 w-xl-350px w-300" 
+                        <input type="text" class="form-control form-control-solid ps-13 w-xl-350px w-300"
                                placeholder="Buscar documento" wire:model.live.debounce.500ms="buscar" />
                     </div>
                     <div class="text-muted fs-7 mt-2">
@@ -26,7 +26,8 @@
                                     <th class="min-w-250px">ASUNTO</th>
                                     <th class="min-w-150px">REMITENTE</th>
                                     <th class="min-w-150px">DESTINO</th>
-                                    <th class="min-w-125px">FECHA RECEPCIÓN</th>
+                                    <th class="min-w-125px">FECHA RECEPCION</th>
+                                    <th class="min-w-125px">FECHA EMISION</th>
                                     <th class="min-w-100px">ESTADO</th>
                                     <th class="text-center min-w-70px">VER</th>
                                 </tr>
@@ -35,8 +36,11 @@
                                 @php
                                 $contador = $this->historial->firstItem();
                                 @endphp
-                                @forelse ($this->historial as $documento)
-                                <tr wire:key="historial-{{ $documento->id_documento }}">
+                                @forelse ($this->historial as $movimiento)
+                                @php
+                                    $documento = $movimiento->documento;
+                                @endphp
+                                <tr wire:key="historial-mov-{{ $movimiento->id_movimiento }}">
                                     <td>{{ $contador++ }}</td>
                                     <td>
                                         <div class="fw-bold text-primary">{{ $documento->expediente_documento }}</div>
@@ -53,11 +57,20 @@
                                     <td>
                                         <div class="text-gray-800">{{ $documento->areaDestino->nombre_area ?? 'N/A' }}</div>
                                     </td>
-                                    <td>{{ formatoFechaText($documento->fecha_recepcion_documento)}}</td>
+                                    @php
+                                        $nombreEstadoMov = strtoupper($movimiento->estado->nombre_estado ?? '');
+                                        $esRecepcion = in_array($nombreEstadoMov, ['EN TRÁMITE', 'EN TRAMITE', 'RECEPCIONADO']);
+                                        $esDerivar = $nombreEstadoMov === 'DERIVADO';
+                                    @endphp
+                                    <td>{{ $esRecepcion ? formatoFechaText($movimiento->fecha_recepcion ?? $movimiento->au_fechacr) : '' }}</td>
+                                    <td>{{ $esDerivar ? formatoFechaText($movimiento->au_fechacr) : '' }}</td>
                                     <td>
-                                        @if($documento->estado)
                                         @php
-                                        $nombreEstado = strtoupper($documento->estado->nombre_estado);
+                                        $estadoVis = $movimiento->estado ?: $documento->estado;
+                                        @endphp
+                                        @if($estadoVis)
+                                        @php
+                                        $nombreEstado = strtoupper($estadoVis->nombre_estado);
                                         $colorEstado = match($nombreEstado) {
                                             'RECEPCIONADO' => 'success',
                                             'OBSERVADO' => 'danger',
@@ -67,14 +80,14 @@
                                         };
                                         @endphp
                                         <span class="badge badge-light-{{ $colorEstado }} py-2 px-3">
-                                            {{ $documento->estado->nombre_estado }}
+                                            {{ $estadoVis->nombre_estado }}
                                         </span>
                                         @else
                                         <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
                                         @endif
                                     </td>
                                     <td class="text-center">
-                                        <button 
+                                        <button
                                             type="button"
                                             class="btn btn-icon btn-light-primary btn-sm"
                                             wire:click="$dispatch('abrirModalDetalleDocumento', { id_documento: {{ $documento->id_documento }} })"
@@ -97,7 +110,7 @@
                                 @endforelse
                             </tbody>
                         </table>
-                        <div class="position-absolute top-50 start-50 translate-middle" style="margin-top: 1.06rem;" 
+                        <div class="position-absolute top-50 start-50 translate-middle" style="margin-top: 1.06rem;"
                              wire:loading wire:target="buscar">
                             <x-spinner class="text-primary" style="width: 35px; height: 35px;" />
                         </div>
@@ -106,7 +119,7 @@
                             @if ($this->historial->hasPages())
                             <div class="d-flex justify-content-between">
                                 <div class="d-flex align-items-center">
-                                    Mostrando {{ $this->historial->firstItem() }} - {{ $this->historial->lastItem() }} 
+                                    Mostrando {{ $this->historial->firstItem() }} - {{ $this->historial->lastItem() }}
                                     de {{ $this->historial->total() }} registros
                                 </div>
                                 <div class="pagination pagination-lg">{{ $this->historial->links() }}</div>
@@ -114,7 +127,7 @@
                             @else
                             <div class="d-flex justify-content-between py-2">
                                 <div class="d-flex align-items-center text-muted">
-                                    Mostrando {{ $this->historial->firstItem() }} - {{ $this->historial->lastItem() }} 
+                                    Mostrando {{ $this->historial->firstItem() }} - {{ $this->historial->lastItem() }}
                                     de {{ $this->historial->total() }} registros
                                 </div>
                             </div>

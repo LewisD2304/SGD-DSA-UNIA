@@ -30,7 +30,6 @@
                                         <th class="min-w-150px">REMITENTE</th>
                                         <th class="min-w-150px">DESTINO</th>
                                         <th class="min-w-125px">FECHA DE CREACION</th>
-                                        <th class="min-w-125px">FECHA RECEPCIÓN</th>
                                         <th class="min-w-100px">ESTADO</th>
                                         <th class="text-center min-w-100px">ACCIONES</th>
                                     </tr>
@@ -58,7 +57,6 @@
                                             <div class="text-gray-800">{{ $documento->areaDestino->nombre_area ?? 'N/A' }}</div>
                                         </td>
                                         <td>{{ formatoFechaText($documento->au_fechacr)}}</td>
-                                        <td>{{ formatoFechaText($documento->fecha_recepcion_documento)}}</td>
                                         <td>
                                             @php
                                                 // Obtener el área del usuario actual

@@ -39,7 +39,7 @@ class Tabla extends Component
             return collect()->paginate(10);
         }
 
-        return $this->documentoService->obtenerHistorialDerivaciones($idAreaActual, $this->buscar);
+        return $this->documentoService->obtenerHistorialMovimientosArea($idAreaActual, $this->buscar);
     }
 
     public function render()

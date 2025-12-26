@@ -4,6 +4,7 @@ namespace App\Services\Documento;
 
 use App\Models\ArchivoDocumento;
 use App\Models\Documento;
+use App\Models\Movimiento;
 use App\Repositories\Documentos\Documento\DocumentoRepositoryInterface;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -225,6 +226,7 @@ class DocumentoService
                 'observacion_doc_movimiento' => 'RECEPCIÓN: Documento puesto en trámite por ' . ($usuario->nombre_usuario ?? $usuario->name),
                 'au_usuariocr'               => $usuario->nombre_usuario ?? 'SISTEMA',
                 'au_fechacr'                 => Carbon::now(),
+                'fecha_recepcion'            => Carbon::now()->format('Y-m-d H:i:s'),
             ]);
 
             // 4. ACTUALIZAR EL DOCUMENTO
@@ -351,7 +353,7 @@ class DocumentoService
 
             // Si la transición es ARCHIVADO, integrar archivos de otras áreas al remitente original
             if (strtoupper($transicion->evento_transicion) === 'ARCHIVADO') {
-                $datosDocumento['fecha_recepcion_documento'] = Carbon::now()->format('Y-m-d H:i:s');
+                $datosDocumento['fecha_despacho_documento'] = Carbon::now()->format('Y-m-d H:i:s');
 
                 // Reasignar archivos de otras áreas al área remitente (creadora original)
                 // para que queden permanentemente integrados en "Mis Documentos"
@@ -406,6 +408,7 @@ class DocumentoService
             if (strtoupper($transicion->evento_transicion) === 'RECEPCIONAR') {
                 $datosMovimiento['id_area_origen'] = $documento->id_area_remitente;
                 $datosMovimiento['id_area_destino'] = $usuario->persona->id_area ?? null;
+                $datosMovimiento['fecha_recepcion'] = Carbon::now()->format('Y-m-d H:i:s');
             }
 
             // Registrar el movimiento
@@ -427,21 +430,59 @@ class DocumentoService
      */
     public function obtenerHistorialDerivaciones(int $idArea, ?string $buscar = null)
     {
+        // Identificar estados clave
+        $estadoRecepcion = DB::table('ta_estado')
+            ->where(function ($q) {
+                $q->where('nombre_estado', 'LIKE', 'EN TRÁMITE')
+                  ->orWhere('nombre_estado', 'LIKE', 'EN TRAMITE')
+                  ->orWhere('nombre_estado', 'LIKE', 'RECEPCIONADO');
+            })
+            ->first();
+
+        $estadoDerivado = DB::table('ta_estado')
+            ->where('nombre_estado', 'DERIVADO')
+            ->first();
+
+        $idsEstadosMov = [];
+        if ($estadoRecepcion) {
+            $idsEstadosMov[] = $estadoRecepcion->id_estado;
+        }
+        if ($estadoDerivado) {
+            $idsEstadosMov[] = $estadoDerivado->id_estado;
+        }
+
         // Obtener IDs de documentos que el área ha recepcionado alguna vez
         $idsDocumentosRecepcionados = DB::table('ta_movimiento')
             ->where('id_area_destino', $idArea)
-            ->where('id_estado', 8) // Estado RECEPCIONADO
+            ->whereIn('id_estado', $estadoRecepcion ? [$estadoRecepcion->id_estado] : [])
             ->pluck('id_documento')
             ->unique()
             ->toArray();
 
-        $query = Documento::with(['estado', 'areaRemitente', 'areaDestino', 'movimientos' => function ($q) use ($idArea) {
-                // Cargar solo el movimiento de recepción de esta área para mostrar fecha
-                $q->where('id_area_destino', $idArea)
-                  ->where('id_estado', 8)
-                  ->orderBy('au_fechacr', 'desc')
-                  ->limit(1);
-            }])
+        $query = Documento::with([
+                'estado',
+                'areaRemitente',
+                'areaDestino',
+                'movimientos' => function ($q) use ($idArea, $idsEstadosMov, $estadoRecepcion, $estadoDerivado) {
+                    $q->with('estado')
+                        ->whereIn('id_estado', $idsEstadosMov)
+                        ->where(function ($sub) use ($idArea, $estadoRecepcion, $estadoDerivado) {
+                            if ($estadoRecepcion) {
+                                $sub->orWhere(function ($qr) use ($idArea, $estadoRecepcion) {
+                                    $qr->where('id_estado', $estadoRecepcion->id_estado)
+                                       ->where('id_area_destino', $idArea);
+                                });
+                            }
+                            if ($estadoDerivado) {
+                                $sub->orWhere(function ($qr) use ($idArea, $estadoDerivado) {
+                                    $qr->where('id_estado', $estadoDerivado->id_estado)
+                                       ->where('id_area_origen', $idArea);
+                                });
+                            }
+                        })
+                        ->orderBy('au_fechacr', 'desc');
+                }
+            ])
             ->where(function ($q) use ($idArea, $idsDocumentosRecepcionados) {
                 // Documentos creados por el área y enviados a otros
                 $q->where(function ($subQuery) use ($idArea) {
@@ -458,6 +499,74 @@ class DocumentoService
 
         if ($buscar) {
             $query->where(function ($q) use ($buscar) {
+                $q->where('numero_documento', 'LIKE', "%$buscar%")
+                    ->orWhere('expediente_documento', 'LIKE', "%$buscar%")
+                    ->orWhere('folio_documento', 'LIKE', "%$buscar%")
+                    ->orWhere('asunto_documento', 'LIKE', "%$buscar%");
+            });
+        }
+
+        return $query->paginate(10);
+    }
+
+    /**
+     * Historial por área basado en movimientos (recepción y derivación).
+     * Muestra entradas separadas por cada recepción o derivación hecha por el área.
+     */
+    public function obtenerHistorialMovimientosArea(int $idArea, ?string $buscar = null)
+    {
+        // Obtener TODOS los estados de recepción (puede haber múltiples)
+        $idsRecepcion = DB::table('ta_estado')
+            ->where(function ($q) {
+                $q->where('nombre_estado', 'LIKE', '%TRÁMITE%')
+                    ->orWhere('nombre_estado', 'LIKE', '%TRAMITE%')
+                    ->orWhere('nombre_estado', '=', 'RECEPCIONADO');
+            })
+            ->pluck('id_estado')
+            ->toArray();
+
+        // Obtener estado DERIVADO
+        $estadoDerivado = DB::table('ta_estado')
+            ->where('nombre_estado', 'DERIVADO')
+            ->first();
+
+        $idDerivado = $estadoDerivado->id_estado ?? null;
+
+        $query = Movimiento::with([
+                'estado',
+                'documento.estado',
+                'documento.areaRemitente',
+                'documento.areaDestino',
+            ])
+            ->where(function ($q) use ($idArea, $idsRecepcion, $idDerivado) {
+                // Recepciones del área (debe haber al menos una condición base)
+                if (!empty($idsRecepcion)) {
+                    $q->where(function ($sub) use ($idArea, $idsRecepcion) {
+                        $sub->where('id_area_destino', $idArea)
+                            ->whereIn('id_estado', $idsRecepcion);
+                    });
+                }
+
+                // Derivaciones hechas por el área
+                if ($idDerivado) {
+                    if (!empty($idsRecepcion)) {
+                        $q->orWhere(function ($sub) use ($idArea, $idDerivado) {
+                            $sub->where('id_area_origen', $idArea)
+                                ->where('id_estado', $idDerivado);
+                        });
+                    } else {
+                        // Si no hay recepciones, usar where en lugar de orWhere
+                        $q->where(function ($sub) use ($idArea, $idDerivado) {
+                            $sub->where('id_area_origen', $idArea)
+                                ->where('id_estado', $idDerivado);
+                        });
+                    }
+                }
+            })
+            ->orderBy('au_fechacr', 'desc');
+
+        if ($buscar) {
+            $query->whereHas('documento', function ($q) use ($buscar) {
                 $q->where('numero_documento', 'LIKE', "%$buscar%")
                     ->orWhere('expediente_documento', 'LIKE', "%$buscar%")
                     ->orWhere('folio_documento', 'LIKE', "%$buscar%")
