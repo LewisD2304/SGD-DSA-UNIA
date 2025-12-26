@@ -36,16 +36,50 @@ class DocumentoService
         $documento = $this->repository->obtenerPorId($id, $relaciones);
 
         if ($documento && $documento->relationLoaded('archivos')) {
-            $documento->setRelation(
-                'archivos',
-                $documento->archivos
-                    ->filter(function ($archivo) use ($idAreaUsuario, $documento) {
-                        return $archivo->id_area === null
-                            || $archivo->id_area == $idAreaUsuario
-                            || $archivo->id_area == $documento->id_area_remitente;
-                    })
-                    ->values()
-            );
+            // Determinar el área de origen del último DERIVAR hacia cualquier destino
+            $estadoDerivado = DB::table('ta_estado')->where('nombre_estado', 'DERIVADO')->first();
+            $areaOrigenUltimoDerivar = null;
+
+            if ($estadoDerivado) {
+                $ultimoDerivar = DB::table('ta_movimiento')
+                    ->where('id_documento', $documento->id_documento)
+                    ->where('id_estado', $estadoDerivado->id_estado)
+                    ->orderBy('au_fechacr', 'desc')
+                    ->first();
+
+                $areaOrigenUltimoDerivar = $ultimoDerivar->id_area_origen ?? null;
+            }
+
+            // Conservar todos los adjuntos para cálculos posteriores
+            $todosAdjuntos = $documento->archivos;
+
+            // Base: adjuntos visibles por área del usuario/remitente/legado
+            $baseAdjuntos = $todosAdjuntos
+                ->filter(function ($archivo) use ($idAreaUsuario, $documento) {
+                    return $archivo->id_area === null
+                        || $archivo->id_area == $idAreaUsuario
+                        || $archivo->id_area == $documento->id_area_remitente;
+                })
+                ->values();
+
+            $documento->setRelation('archivos', $baseAdjuntos);
+
+            // Si el usuario es el destino actual del documento, incluir también los adjuntos subidos por
+            // el área que realizó el último DERIVAR (se envían con todos los cambios de esa área).
+            if ($documento->id_area_destino == $idAreaUsuario && $areaOrigenUltimoDerivar) {
+                $adjuntosExtra = $todosAdjuntos
+                    ->filter(function ($archivo) use ($areaOrigenUltimoDerivar) {
+                        return $archivo->id_area == $areaOrigenUltimoDerivar;
+                    });
+
+                $documento->setRelation(
+                    'archivos',
+                    $documento->archivos
+                        ->merge($adjuntosExtra)
+                        ->unique('id_archivo_documento')
+                        ->values()
+                );
+            }
         }
 
         return $documento;

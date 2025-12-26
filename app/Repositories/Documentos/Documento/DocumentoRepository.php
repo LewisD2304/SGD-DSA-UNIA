@@ -86,8 +86,17 @@ class DocumentoRepository implements DocumentoRepositoryInterface
     {
         $query = $this->model::query()
             ->with($relaciones)
+            ->where('id_area_destino', $idArea)
             ->whereNull('fecha_recepcion_documento')
-            ->where('id_area_destino', $idArea);
+            ->whereHas('estado', function ($q) {
+                // Solo estados considerados pendientes para el área
+                $q->whereIn('nombre_estado', [
+                    'DERIVADO',
+                    'SUBSANADO',
+                    'RETORNADO',
+                    'PARA ARCHIVAR',
+                ]);
+            });
 
         if (!empty($buscar)) {
             $query->buscar($buscar);
