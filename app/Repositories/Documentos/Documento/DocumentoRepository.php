@@ -59,20 +59,16 @@ class DocumentoRepository implements DocumentoRepositoryInterface
 
     public function listarPaginadoPorArea(int $idArea, int $paginado = 10, ?string $buscar = null, string $columnaOrden = 'id_documento', string $orden = 'asc', array $relaciones = [])
     {
-        // Obtener IDs de documentos que el área ha procesado (creado o recepcionado)
-        $idsDocumentosRecepcionados = DB::table('ta_movimiento')
-            ->where('id_area_destino', $idArea)
-            ->where('id_estado', 8) // Estado RECEPCIONADO
-            ->pluck('id_documento')
-            ->toArray();
-
         $query = $this->model::query()
             ->with($relaciones)
-            ->where(function ($q) use ($idArea, $idsDocumentosRecepcionados) {
-                // Documentos creados por el área
+            ->where(function ($q) use ($idArea) {
+                // Documentos creados por el área (siempre visibles en "Mis Documentos")
                 $q->where('id_area_remitente', $idArea)
-                    // O documentos que el área recepcionó alguna vez
-                    ->orWhereIn('id_documento', $idsDocumentosRecepcionados);
+                    // O documentos que tiene actualmente en su poder (recepcionados y aún en destino)
+                    ->orWhere(function ($subQuery) use ($idArea) {
+                        $subQuery->where('id_area_destino', $idArea)
+                            ->whereNotNull('fecha_recepcion_documento');
+                    });
             });
 
         if (!empty($buscar)) {

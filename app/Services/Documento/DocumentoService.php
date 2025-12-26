@@ -402,13 +402,39 @@ class DocumentoService
 
     /**
      * Obtener historial de documentos derivados por un área
+     * Muestra todos los documentos que el área ha procesado (creado o recepcionado)
+     * y que ya fueron derivados a otras áreas, registrando las fechas de recepción.
      */
     public function obtenerHistorialDerivaciones(int $idArea, ?string $buscar = null)
     {
-        $query = Documento::with(['estado', 'areaRemitente', 'areaDestino'])
-            ->where('id_area_remitente', $idArea)
-            ->where('id_area_destino', '!=', $idArea) // Documentos enviados a otras áreas
-            ->orderBy('au_fechacr', 'desc');
+        // Obtener IDs de documentos que el área ha recepcionado alguna vez
+        $idsDocumentosRecepcionados = DB::table('ta_movimiento')
+            ->where('id_area_destino', $idArea)
+            ->where('id_estado', 8) // Estado RECEPCIONADO
+            ->pluck('id_documento')
+            ->unique()
+            ->toArray();
+
+        $query = Documento::with(['estado', 'areaRemitente', 'areaDestino', 'movimientos' => function ($q) use ($idArea) {
+                // Cargar solo el movimiento de recepción de esta área para mostrar fecha
+                $q->where('id_area_destino', $idArea)
+                  ->where('id_estado', 8)
+                  ->orderBy('au_fechacr', 'desc')
+                  ->limit(1);
+            }])
+            ->where(function ($q) use ($idArea, $idsDocumentosRecepcionados) {
+                // Documentos creados por el área y enviados a otros
+                $q->where(function ($subQuery) use ($idArea) {
+                    $subQuery->where('id_area_remitente', $idArea)
+                        ->where('id_area_destino', '!=', $idArea);
+                })
+                // O documentos que recepcionó y luego derivó (ya no están en su poder)
+                ->orWhere(function ($subQuery) use ($idArea, $idsDocumentosRecepcionados) {
+                    $subQuery->whereIn('id_documento', $idsDocumentosRecepcionados)
+                        ->where('id_area_destino', '!=', $idArea);
+                });
+            })
+            ->orderBy('au_fechamd', 'desc'); // Ordenar por última modificación
 
         if ($buscar) {
             $query->where(function ($q) use ($buscar) {
