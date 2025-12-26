@@ -13,11 +13,16 @@ use App\Livewire\Seguridad\Menu\Index as MenuIndex;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Publico\ConsultaTramiteController;
 
 
 Route::middleware(['throttle:100,1'])->group(function () {
 
     Route::redirect('/', 'inicio');
+
+    // Consulta pública de trámite (sin autenticación)
+    Route::get('/consulta-tramite', [ConsultaTramiteController::class, 'index'])->name('consulta.index');
+    Route::post('/consulta-tramite', [ConsultaTramiteController::class, 'buscar'])->name('consulta.buscar');
 
     // Ruta de Login (solo para invitados)
     Route::get('/login', Login::class)->name('login')->middleware('guest');
