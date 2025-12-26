@@ -146,7 +146,14 @@ class Index extends Component
                 $reglas['archivosDocumento.*'] = 'file|mimes:pdf,png,jpg,jpeg|max:10240'; // Solo PDF e imágenes, 10MB cada uno
             }
 
-            $this->validate($reglas);
+            $mensajes = [
+                'folioDocumento.required' => 'El campo folio es obligatorio cuando se adjuntan archivos.',
+                'folioDocumento.numeric' => 'El campo folio debe ser un número.',
+                'folioDocumento.min' => 'El campo folio debe ser al menos 1.',
+                'folioDocumento.max' => 'El campo folio no puede ser mayor a 999999.',
+            ];
+
+            $this->validate($reglas, $mensajes);
 
             if ($this->modoModal == 1) {
                 $mensajeToastr = $this->registrar();
@@ -195,14 +202,13 @@ class Index extends Component
         // Registrar documento primero
         $documento = $this->documentoService->registrar([
             'numero_documento' => $this->numeroDocumento,
-            'folio_documento' => $this->folioDocumento,
+            'folio_documento' => !empty($this->folioDocumento) ? $this->folioDocumento : null,
             'asunto_documento' => $this->asuntoDocumento,
             'observacion_documento' => $this->observacionDocumento,
             'id_area_remitente' => $this->idAreaRemitente,
             'id_area_destino' => $this->idAreaDestino,
             'tipo_documento_catalogo' => $this->tipoDocumentoCatalogo,
             'fecha_recepcion_documento' => null,
-            'ruta_documento' => null, // Ya no se usa este campo
         ]);
 
         // Guardar archivos adjuntos si existen
@@ -210,7 +216,8 @@ class Index extends Component
             $archivosInfo = $this->archivoService->guardarMultiplesArchivos(
                 archivos: $this->archivosDocumento,
                 ruta: $this->rutaActual,
-                idDocumento: $documento->id_documento
+                idDocumento: $documento->id_documento,
+                idArea: $this->idAreaRemitente
             );
 
             // Guardar en BD
@@ -228,7 +235,7 @@ class Index extends Component
     {
         $datos = [
             'numero_documento' => $this->numeroDocumento,
-            'folio_documento' => $this->folioDocumento,
+            'folio_documento' => !empty($this->folioDocumento) ? $this->folioDocumento : null,
             'asunto_documento' => $this->asuntoDocumento,
             'observacion_documento' => $this->observacionDocumento,
             'id_area_destino' => $this->idAreaDestino,
@@ -247,7 +254,8 @@ class Index extends Component
             $archivosInfo = $this->archivoService->guardarMultiplesArchivos(
                 archivos: $this->archivosDocumento,
                 ruta: $this->rutaActual,
-                idDocumento: $this->modeloDocumento->id_documento
+                idDocumento: $this->modeloDocumento->id_documento,
+                idArea: $this->idAreaRemitente
             );
 
             // Actualizar orden desde el último existente
@@ -270,7 +278,7 @@ class Index extends Component
         if (!is_null($id_documento)) {
             $this->tituloModal = 'Modificar documento';
             $this->modoModal = 2;
-            $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento, ['archivos']);
+            $this->modeloDocumento = $this->documentoService->obtenerPorIdParaArea($id_documento, $this->idAreaRemitente, ['archivos']);
             $this->numeroDocumento = $this->modeloDocumento->numero_documento;
             $this->folioDocumento = $this->modeloDocumento->folio_documento;
             $this->tipoDocumentoCatalogo = $this->modeloDocumento->tipo_documento_catalogo;
@@ -380,7 +388,7 @@ class Index extends Component
     public function abrirModalDetalleDocumento($id_documento)
     {
         $this->limpiarModal();
-        $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento, ['estado', 'tipoDocumento', 'archivos']);
+        $this->modeloDocumento = $this->documentoService->obtenerPorIdParaArea($id_documento, $this->idAreaRemitente, ['estado', 'tipoDocumento', 'archivos']);
 
         $this->dispatch('cargando', cargando: 'false');
         $this->modalDocumento('#modal-detalle-documento', 'show');

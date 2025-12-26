@@ -18,6 +18,7 @@ class Index extends Component
     public $observacionesDerivar = '';
     public $accionActual = '';
     public $tituloModalDerivar = 'Derivar documento';
+    public $idAreaUsuario = 0;
 
     protected DocumentoService $documentoService;
 
@@ -26,10 +27,19 @@ class Index extends Component
         $this->documentoService = resolve(DocumentoService::class);
     }
 
+    public function mount()
+    {
+        $this->idAreaUsuario = (int) (Auth::user()->persona->id_area ?? 0);
+    }
+
     #[On('abrirModalDetalleDocumento')]
     public function abrirModalDetalleDocumento($id_documento)
     {
-        $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento, ['estado', 'tipoDocumento', 'archivos']);
+        $this->modeloDocumento = $this->documentoService->obtenerPorIdParaArea(
+            $id_documento,
+            $this->idAreaUsuario,
+            ['estado', 'tipoDocumento', 'archivos']
+        );
 
         $this->dispatch('cargando', cargando: 'false');
         $this->modalDocumento('#modal-detalle-documento', 'show');

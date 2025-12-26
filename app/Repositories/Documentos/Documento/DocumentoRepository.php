@@ -4,6 +4,7 @@ namespace App\Repositories\Documentos\Documento;
 
 use App\Models\Documento;
 use App\Traits\BaseRepositoryTrait;
+use Illuminate\Support\Facades\DB;
 
 class DocumentoRepository implements DocumentoRepositoryInterface
 {
@@ -59,7 +60,7 @@ class DocumentoRepository implements DocumentoRepositoryInterface
     public function listarPaginadoPorArea(int $idArea, int $paginado = 10, ?string $buscar = null, string $columnaOrden = 'id_documento', string $orden = 'asc', array $relaciones = [])
     {
         // Obtener IDs de documentos que el área ha procesado (creado o recepcionado)
-        $idsDocumentosRecepcionados = \DB::table('ta_movimiento')
+        $idsDocumentosRecepcionados = DB::table('ta_movimiento')
             ->where('id_area_destino', $idArea)
             ->where('id_estado', 8) // Estado RECEPCIONADO
             ->pluck('id_documento')

@@ -31,6 +31,26 @@ class DocumentoService
         return $this->repository->obtenerPorId($id, $relaciones);
     }
 
+    public function obtenerPorIdParaArea(int $id, int $idAreaUsuario, array $relaciones = [])
+    {
+        $documento = $this->repository->obtenerPorId($id, $relaciones);
+
+        if ($documento && $documento->relationLoaded('archivos')) {
+            $documento->setRelation(
+                'archivos',
+                $documento->archivos
+                    ->filter(function ($archivo) use ($idAreaUsuario, $documento) {
+                        return $archivo->id_area === null
+                            || $archivo->id_area == $idAreaUsuario
+                            || $archivo->id_area == $documento->id_area_remitente;
+                    })
+                    ->values()
+            );
+        }
+
+        return $documento;
+    }
+
     // Listar documentos paginados con relaciones precargadas y búsqueda
     public function listarPaginado(int $paginado = 10, ?string $buscar = null, string $columnaOrden = 'id_documento', string $orden = 'asc', array $relaciones = [])
     {
@@ -207,7 +227,12 @@ class DocumentoService
             // 1. Guardar Archivos Nuevos
             if (!empty($nuevosArchivos)) {
                 $archivoService = resolve(\App\Services\Documento\ArchivoDocumentoService::class);
-                $archivosInfo = $archivoService->guardarMultiplesArchivos($nuevosArchivos, 'gestion/documentos/documentos', $documento->id_documento);
+                $archivosInfo = $archivoService->guardarMultiplesArchivos(
+                    archivos: $nuevosArchivos,
+                    ruta: 'gestion/documentos/documentos',
+                    idDocumento: $documento->id_documento,
+                    idArea: $idAreaOrigen
+                );
                 foreach ($archivosInfo as $info) {
                     \App\Models\ArchivoDocumento::create($info);
                 }

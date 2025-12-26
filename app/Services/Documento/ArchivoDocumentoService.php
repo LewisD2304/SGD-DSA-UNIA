@@ -4,6 +4,7 @@ namespace App\Services\Documento;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 
 class ArchivoDocumentoService
 {
@@ -192,7 +193,7 @@ class ArchivoDocumentoService
     /**
      * Guardar múltiples archivos y retornar información para BD
      */
-    public function guardarMultiplesArchivos(array $archivos, string $ruta, int $idDocumento, ?string $disco = 'share'): array
+    public function guardarMultiplesArchivos(array $archivos, string $ruta, int $idDocumento, ?int $idArea = null, ?string $disco = 'share'): array
     {
         $archivosGuardados = [];
         $storage = Storage::disk($disco);
@@ -207,15 +208,22 @@ class ArchivoDocumentoService
 
             // Guardar archivo físico
             if ($storage->putFileAs($rutaCompleta['carpetaCompleta'], $archivo, $info['nombreFinal'])) {
-                $archivosGuardados[] = [
+                $payload = [
                     'id_documento' => $idDocumento,
                     'nombre_original' => $info['nombreOriginal'] . '.' . $info['extension'],
                     'nombre_archivo' => $info['nombreFinal'],
-                    'ruta_archivo' => $rutaCompleta['rutaRelativa'], // ruta completa con nombre de archivo
+                    'ruta_archivo' => $rutaCompleta['rutaRelativa'],
                     'extension' => $info['extension'],
                     'tamanio' => $archivo->getSize(),
                     'orden' => $index + 1,
                 ];
+
+                // Añadir id_area solo si la columna existe en BD (compatibilidad gradual)
+                if (Schema::hasColumn('ta_archivo_documento', 'id_area')) {
+                    $payload['id_area'] = $idArea;
+                }
+
+                $archivosGuardados[] = $payload;
             }
         }
 

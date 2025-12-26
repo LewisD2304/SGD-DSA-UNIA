@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\AuditoriaTrait;
+use App\Models\Area;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -21,6 +22,7 @@ class ArchivoDocumento extends Model
 
     protected $fillable = [
         'id_documento',
+        'id_area',
         'nombre_original',
         'nombre_archivo',
         'ruta_archivo',
@@ -42,6 +44,11 @@ class ArchivoDocumento extends Model
     public function documento()
     {
         return $this->belongsTo(Documento::class, 'id_documento', 'id_documento');
+    }
+
+    public function area()
+    {
+        return $this->belongsTo(Area::class, 'id_area', 'id_area');
     }
 
     // Accessor para tamaño formateado
