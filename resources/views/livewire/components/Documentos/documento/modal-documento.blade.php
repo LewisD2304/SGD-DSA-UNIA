@@ -136,7 +136,11 @@ use Illuminate\Support\Facades\Storage;
                             <label for="archivosDocumento" class="form-label">
                                 Adjuntar documentos (PDF, PNG, Excel, Word - máx. 10MB c/u) <span class="text-danger">*</span>
                             </label>
-                            <input type="file" class="form-control @error('archivosDocumento.*') is-invalid @enderror" id="archivosDocumento" accept=".pdf,.png,.jpg,.jpeg" wire:model="archivosDocumento" multiple />
+                            <input type="file" class="form-control @error('archivosDocumento.*') is-invalid @enderror" 
+                                   id="archivosDocumento" 
+                                   accept=".pdf,.png,.jpg,.jpeg" 
+                                   multiple 
+                                   wire:model="archivosDocumento" />
                             @error('archivosDocumento.*')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror

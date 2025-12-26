@@ -349,6 +349,23 @@ class DocumentoService
                 $datosDocumento['fecha_recepcion_documento'] = Carbon::now()->format('Y-m-d H:i:s');
             }
 
+            // Si la transición es ARCHIVADO, integrar archivos de otras áreas al remitente original
+            if (strtoupper($transicion->evento_transicion) === 'ARCHIVADO') {
+                $datosDocumento['fecha_recepcion_documento'] = Carbon::now()->format('Y-m-d H:i:s');
+
+                // Reasignar archivos de otras áreas al área remitente (creadora original)
+                // para que queden permanentemente integrados en "Mis Documentos"
+                $idAreaRemitente = $documento->id_area_remitente;
+
+                if ($idAreaRemitente) {
+                    DB::table('ta_archivo_documento')
+                        ->where('id_documento', $documento->id_documento)
+                        ->whereNotNull('id_area')
+                        ->where('id_area', '!=', $idAreaRemitente)
+                        ->update(['id_area' => $idAreaRemitente]);
+                }
+            }
+
             // Si la transición es DERIVAR, actualizar área destino y limpiar fecha recepción
             if (strtoupper($transicion->evento_transicion) === 'DERIVAR' && isset($datos['id_area_destino'])) {
                 $usuario = Auth::user();
