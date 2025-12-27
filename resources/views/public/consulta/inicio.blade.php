@@ -1,266 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta tu Trámite - SGD</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consulta tu Trámite - SGD</title>
+    <link rel="shortcut icon" href="{{ asset('/assets/media/logo-unia.webp') }}" />
 
-<link rel="shortcut icon" href="{{ asset('/assets/media/logo-unia.webp') }}" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --kt-primary: #009ef7;
+            --kt-primary-light: #f1faff;
+            --kt-text-gray-800: #181c32;
+            --kt-text-gray-600: #7e8299;
+            --kt-text-gray-500: #a1a5b7;
+            --kt-text-gray-400: #b5b5c3;
+            --kt-bg-light: #f5f8fa;
+            --kt-card-shadow: 0px 0px 20px 0px rgba(76, 87, 125, 0.02);
+        }
 
-<style>
-    :root {
-        --kt-primary: #009ef7;
-        --kt-primary-light: #f1faff;
-        --kt-text-gray-800: #181c32;
-        --kt-text-gray-600: #7e8299;
-        --kt-text-gray-500: #a1a5b7;
-        --kt-text-gray-400: #b5b5c3;
-        --kt-bg-light: #f5f8fa;
-        --kt-card-shadow: 0px 0px 20px 0px rgba(76, 87, 125, 0.02);
-    }
+        body {
+            font-family: 'Inter', Helvetica, sans-serif;
+            background-color: var(--kt-bg-light);
+            color: var(--kt-text-gray-600);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
 
-    body {
-        font-family: 'Inter', Helvetica, sans-serif;
-        background-color: var(--kt-bg-light);
-        color: var(--kt-text-gray-600);
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-    }
+        /* --- Header y Footer --- */
+        .header-brand {
+            background: #ffffff;
+            box-shadow: 0px 10px 30px 0px rgba(82, 63, 105, 0.05);
+            padding: 15px 0;
+            margin-bottom: 30px;
+        }
 
-    /* --- Header y Footer --- */
-    .header-brand {
-        background: #ffffff;
-        box-shadow: 0px 10px 30px 0px rgba(82, 63, 105, 0.05);
-        padding: 15px 0;
-        margin-bottom: 30px;
-    }
+        .footer {
+            margin-top: auto;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--kt-text-gray-500);
+        }
 
-    .footer {
-        margin-top: auto;
-        padding: 20px;
-        text-align: center;
-        font-size: 0.85rem;
-        color: var(--kt-text-gray-500);
-    }
+        /* --- Cards --- */
+        .card {
+            border: 0;
+            box-shadow: var(--kt-card-shadow);
+            border-radius: 0.75rem;
+            background-color: #ffffff;
+            margin-bottom: 20px;
+        }
 
-    /* --- Cards --- */
-    .card {
-        border: 0;
-        box-shadow: var(--kt-card-shadow);
-        border-radius: 0.75rem;
-        background-color: #ffffff;
-        margin-bottom: 20px;
-    }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eff2f5;
+            padding: 1.5rem 2rem;
+            min-height: 70px;
+            background: transparent;
+        }
 
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #eff2f5;
-        padding: 1.5rem 2rem;
-        min-height: 70px;
-        background: transparent;
-    }
+        .card-body {
+            padding: 2rem;
+        }
 
-    .card-body {
-        padding: 2rem;
-    }
+        /* --- Buscador (Estilo Metronic Input) --- */
+        .form-control-search {
+            background-color: #f5f8fa;
+            border: 1px solid transparent;
+            color: var(--kt-text-gray-800);
+            border-radius: 0.475rem;
+            padding: 1rem 1rem 1rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
 
-    /* --- Buscador (Estilo Metronic Input) --- */
-    .form-control-search {
-        background-color: #f5f8fa;
-        border: 1px solid transparent;
-        color: var(--kt-text-gray-800);
-        border-radius: 0.475rem;
-        padding: 1rem 1rem 1rem 3rem;
-        font-size: 1.1rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-    }
+        .form-control-search:focus {
+            background-color: #f5f8fa;
+            border-color: #eef3f7;
+            color: var(--kt-text-gray-800);
+            box-shadow: none;
+        }
 
-    .form-control-search:focus {
-        background-color: #f5f8fa;
-        border-color: #eef3f7;
-        /* O var(--kt-primary) si prefieres borde azul */
-        color: var(--kt-text-gray-800);
-        box-shadow: none;
-    }
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            left: 1.2rem;
+            transform: translateY(-50%);
+            color: var(--kt-text-gray-500);
+            font-size: 1.3rem;
+        }
 
-    .search-icon {
-        position: absolute;
-        top: 50%;
-        left: 1.2rem;
-        transform: translateY(-50%);
-        color: var(--kt-text-gray-500);
-        font-size: 1.3rem;
-    }
+        /* --- Botones --- */
+        .btn-primary {
+            background-color: var(--kt-primary);
+            border-color: var(--kt-primary);
+            padding: 0.8rem 1.5rem;
+            font-weight: 600;
+            border-radius: 0.475rem;
+        }
 
-    /* --- Botones --- */
-    .btn-primary {
-        background-color: var(--kt-primary);
-        border-color: var(--kt-primary);
-        padding: 0.8rem 1.5rem;
-        font-weight: 600;
-        border-radius: 0.475rem;
-    }
+        .btn-primary:hover {
+            background-color: #0095e8;
+        }
 
-    .btn-primary:hover {
-        background-color: #0095e8;
-    }
+        .btn-warning {
+            background-color: #ffc700;
+            border-color: #ffc700;
+            color: #ffffff;
+            font-weight: 600;
+        }
+        .btn-warning:hover {
+            background-color: #f1bc00;
+            border-color: #f1bc00;
+        }
 
-    /* --- DETALLES (Mejorado) --- */
-    .info-box {
-        background-color: #f9f9f9;
-        border: 1px dashed #e4e6ef;
-        border-radius: 0.475rem;
-        padding: 1.25rem;
-        height: 100%;
-        display: flex;
-        align-items: flex-start;
-        gap: 1rem;
-        transition: all 0.2s;
-    }
+        /* --- DETALLES (Mejorado) --- */
+        .info-box {
+            background-color: #f9f9f9;
+            border: 1px dashed #e4e6ef;
+            border-radius: 0.475rem;
+            padding: 1.25rem;
+            height: 100%;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: all 0.2s;
+        }
 
-    .info-box:hover {
-        background-color: #f1faff;
-        border-color: var(--kt-primary);
-    }
+        .info-box:hover {
+            background-color: #f1faff;
+            border-color: var(--kt-primary);
+        }
 
-    .symbol-circle {
-        width: 45px;
-        height: 45px;
-        background-color: #fff;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        flex-shrink: 0;
-    }
+        .symbol-circle {
+            width: 45px;
+            height: 45px;
+            background-color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
+        }
 
-    /* --- TIMELINE (Mejorado) --- */
-    .timeline-label {
-        position: relative;
-        padding-left: 0;
-    }
+        /* --- TIMELINE (Mejorado) --- */
+        .timeline-label {
+            position: relative;
+            padding-left: 0;
+        }
 
-    .timeline-item {
-        display: flex;
-        flex-direction: row;
-        position: relative;
-        margin-bottom: 1.75rem;
-    }
+        .timeline-item {
+            display: flex;
+            flex-direction: row;
+            position: relative;
+            margin-bottom: 1.75rem;
+        }
 
-    /* Línea conectora */
-    .timeline-item:before {
-        content: "";
-        position: absolute;
-        left: 21px;
-        /* Centro del badge */
-        top: 25px;
-        bottom: -25px;
-        /* Conecta con el siguiente */
-        width: 2px;
-        background-color: #e4e6ef;
-        z-index: 0;
-    }
+        /* Línea conectora */
+        .timeline-item:before {
+            content: "";
+            position: absolute;
+            left: 21px;
+            top: 25px;
+            bottom: -25px;
+            width: 2px;
+            background-color: #e4e6ef;
+            z-index: 0;
+        }
 
-    .timeline-item:last-child:before {
-        display: none;
-    }
+        .timeline-item:last-child:before {
+            display: none;
+        }
 
-    .timeline-item:last-child {
-        margin-bottom: 0;
-    }
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
 
-    /* Badge circular */
-    .timeline-badge {
-        flex-shrink: 0;
-        background-color: #ffffff;
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        border: 2px solid #e4e6ef;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1;
-        position: relative;
-        margin-right: 1.25rem;
-    }
+        /* Badge circular */
+        .timeline-badge {
+            flex-shrink: 0;
+            background-color: #ffffff;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid #e4e6ef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            position: relative;
+            margin-right: 1.25rem;
+        }
 
-    .timeline-badge i {
-        font-size: 1.2rem;
-        color: var(--kt-text-gray-500);
-    }
+        .timeline-badge i {
+            font-size: 1.2rem;
+            color: var(--kt-text-gray-500);
+        }
 
-    /* Estados del Timeline */
-    .timeline-badge.success {
-        border-color: #50cd89;
-    }
+        /* Estados del Timeline */
+        .timeline-badge.success { border-color: #50cd89; }
+        .timeline-badge.success i { color: #50cd89; }
 
-    .timeline-badge.success i {
-        color: #50cd89;
-    }
+        .timeline-badge.primary { border-color: var(--kt-primary); }
+        .timeline-badge.primary i { color: var(--kt-primary); }
 
-    .timeline-badge.primary {
-        border-color: var(--kt-primary);
-    }
+        .timeline-badge.info { border-color: #7239ea; }
+        .timeline-badge.info i { color: #7239ea; }
 
-    .timeline-badge.primary i {
-        color: var(--kt-primary);
-    }
+        .timeline-badge.warning { border-color: #ffc700; }
+        .timeline-badge.warning i { color: #ffc700; }
 
-    .timeline-content {
-        flex-grow: 1;
-        background-color: #f9f9f9;
-        /* Fondo suave para cada item */
-        padding: 1rem;
-        border-radius: 0.475rem;
-    }
+        .timeline-badge.danger { border-color: #f1416c; }
+        .timeline-badge.danger i { color: #f1416c; }
 
-    /* --- Badges Generales --- */
-    .badge {
-        padding: 0.5rem 0.6rem;
-        border-radius: 0.325rem;
-        font-weight: 600;
-        font-size: 0.75rem;
-    }
 
-    .badge-light-primary {
-        background-color: #f1faff;
-        color: #009ef7;
-    }
+        .timeline-content {
+            flex-grow: 1;
+            background-color: #f9f9f9;
+            padding: 1rem;
+            border-radius: 0.475rem;
+        }
 
-    .badge-light-success {
-        background-color: #e8fff3;
-        color: #50cd89;
-    }
+        /* --- Badges Generales --- */
+        .badge {
+            padding: 0.5rem 0.6rem;
+            border-radius: 0.325rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
 
-    .badge-light-warning {
-        background-color: #fff8dd;
-        color: #ffc700;
-    }
+        .badge-light-primary { background-color: #f1faff; color: #009ef7; }
+        .badge-light-success { background-color: #e8fff3; color: #50cd89; }
+        .badge-light-warning { background-color: #fff8dd; color: #ffc700; }
+        .badge-light-danger { background-color: #fff5f8; color: #f1416c; }
+        .badge-light-secondary { background-color: #f5f8fa; color: #7e8299; }
+        .badge-light-info { background-color: #f8f5ff; color: #7239ea; }
 
-    .badge-light-danger {
-        background-color: #fff5f8;
-        color: #f1416c;
-    }
-
-    .badge-light-secondary {
-        background-color: #f5f8fa;
-        color: #7e8299;
-    }
-
-    .badge-light-info {
-        background-color: #f8f5ff;
-        color: #7239ea;
-    }
-
-</style>
+    </style>
 </head>
 <body>
 
@@ -306,6 +292,7 @@
 
         @if(isset($resultado) && $resultado)
         <div class="row g-6">
+
             <div class="col-lg-7">
                 <div class="card h-100">
                     <div class="card-header border-0 pb-0">
@@ -316,11 +303,12 @@
                         @php
                         $estadoNombre = strtoupper(optional($resultado->estado)->nombre_estado);
                         $badgeClass = match($estadoNombre) {
-                        'RECEPCIONADO', 'FINALIZADO' => 'badge-light-success',
-                        'OBSERVADO', 'ANULADO' => 'badge-light-danger',
-                        'EN TRAMITE', 'DERIVADO' => 'badge-light-primary',
-                        'ARCHIVADO' => 'badge-light-info',
-                        default => 'badge-light-warning'
+                            'RECEPCIONADO', 'FINALIZADO' => 'badge-light-success',
+                            'OBSERVADO', 'ANULADO', 'RECHAZAR RECTIFICACION' => 'badge-light-danger',
+                            'EN TRAMITE', 'DERIVADO' => 'badge-light-primary',
+                            'ARCHIVADO' => 'badge-light-info',
+                            'POR RECTIFICAR', 'SOLICITAR RECTIFICACION' => 'badge-light-warning',
+                            default => 'badge-light-warning'
                         };
                         @endphp
                         <div class="card-toolbar">
@@ -416,25 +404,32 @@
                     <div class="card-body pt-6">
                         <div class="timeline-label">
 
-                            @forelse($resultado->movimientos()->orderByDesc('au_fechacr')->limit(6)->get() as $mov)
+                            @forelse($resultado->movimientos()->orderByDesc('au_fechacr')->limit(10)->get() as $mov)
                             @php
-                            $movEstado = strtoupper(optional($mov->estado)->nombre_estado);
-                            $isFirst = $loop->first;
+                                $movEstado = strtoupper(optional($mov->estado)->nombre_estado);
+                                $isFirst = $loop->first;
 
-                            $colorClass = match($movEstado) {
-                            'RECEPCIONADO', 'FINALIZADO' => 'success',
-                            'DERIVADO' => 'primary',
-                            'ARCHIVADO' => 'info',
-                            default => ''
-                            };
+                                // 1. COLORES PARA LOS ESTADOS
+                                $colorClass = match($movEstado) {
+                                    'RECEPCIONADO', 'FINALIZADO' => 'success',
+                                    'DERIVADO' => 'primary',
+                                    'ARCHIVADO' => 'info',
+                                    'OBSERVADO', 'RECHAZAR RECTIFICACION', 'RECHAZAR RECTIFICACIÓN' => 'danger',
+                                    'POR RECTIFICAR', 'SOLICITAR RECTIFICACION', 'SOLICITAR RECTIFICACIÓN' => 'warning',
+                                    default => 'secondary' // Gris por defecto
+                                };
 
-                            $iconClass = match($movEstado) {
-                            'RECEPCIONADO' => 'bi-check-lg',
-                            'DERIVADO' => 'bi-send',
-                            'ARCHIVADO' => 'bi-archive',
-                            'OBSERVADO' => 'bi-exclamation-lg',
-                            default => 'bi-circle-fill'
-                            };
+                                // 2. ICONOS PARA LOS ESTADOS
+                                $iconClass = match($movEstado) {
+                                    'RECEPCIONADO', 'FINALIZADO' => 'bi-check-lg',
+                                    'DERIVADO' => 'bi-send',
+                                    'ARCHIVADO' => 'bi-archive',
+                                    'OBSERVADO' => 'bi-exclamation-lg',
+                                    'POR RECTIFICAR' => 'bi-pencil-square',
+                                    'SOLICITAR RECTIFICACION', 'SOLICITAR RECTIFICACIÓN' => 'bi-file-earmark-text',
+                                    'RECHAZAR RECTIFICACION', 'RECHAZAR RECTIFICACIÓN' => 'bi-x-circle',
+                                    default => 'bi-circle-fill'
+                                };
                             @endphp
 
                             <div class="timeline-item">
@@ -458,10 +453,12 @@
                                         @else
                                             <span class="text-gray-800 fw-bold fs-6">{{ optional($mov->estado)->nombre_estado }}</span>
                                         @endif
+
                                         <span class="text-gray-400 fs-8 text-end">
                                             {{ $mov->au_fechacr ? \Carbon\Carbon::parse($mov->au_fechacr)->diffForHumans() : '' }}
                                         </span>
                                     </div>
+
                                     <div class="d-flex flex-column text-gray-600 fs-7">
                                         <span>
                                             <i class="bi bi-clock me-1 fs-8"></i>
@@ -496,7 +493,6 @@
         @endif
 
         @if(isset($resultado) && $resultado && $estadoNombre === 'ARCHIVADO')
-        <!-- Modal: Solicitud de Rectificación -->
         <div class="modal fade" id="modal-rectificar-publico" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
@@ -551,7 +547,6 @@
         </div>
         @endif
 
-        <!-- Modal: Detalle del Movimiento (Motivo) -->
         <div class="modal fade" id="modal-detalle-movimiento" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -570,7 +565,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="fw-bold text-gray-600 mb-2 d-block">Motivo / Observación</label>
-                            <div class="p-3 bg-light rounded" id="modal-motivo" style="min-height: 100px; word-wrap: break-word; white-space: pre-wrap;"></div>
+                            <div class="p-3 bg-light rounded text-break" id="modal-motivo" style="min-height: 100px; white-space: pre-wrap;"></div>
                         </div>
                     </div>
                     <div class="modal-footer">
