@@ -90,9 +90,25 @@ class Tabla extends Component
                                         <th class="w-10px pe-2">N°</th>
                                         <th class="min-w-200px">NOMBRE ROL</th>
                                         <th class="min-w-60px">ESTADO</th>
+                                        <th class="text-center min-w-100px">CONF. ACCESO</th>
+
                                         <th class="text-center min-w-60px">ACCIÓN</th>
                                     </thead>
                                     <tbody class="text-gray-600 fw-bold placeholder-glow">
+                                        <tr>
+                                            <td>
+                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
+                                            </td>
+                                            <td>
+                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
+                                            </td>
+                                            <td>
+                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
+                                            </td>
+                                            <td>
+                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
+                                            </td>
+                                        </tr>
                                         <tr>
                                             <td>
                                                 <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
