@@ -2,160 +2,164 @@
 use Illuminate\Support\Facades\Storage;
 @endphp
 
-<div wire:ignore.self class="modal fade" id="modal-detalle-documento" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered mw-900px">
+<div wire:ignore.self class="modal fade" id="modal-detalle-documento" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered mw-800px">
         <div class="modal-content">
 
-            <div class="modal-header">
-                <h3 class="fw-bold my-0">
-                    Detalle del documento
+            <div class="modal-header border-0 pb-0">
+                <h3 class="fw-bold text-gray-900 m-0">
+                    <i class="ki-outline ki-book-open fs-2 me-2 text-primary"></i> Detalle del Documento
                 </h3>
-
-                <div class="btn btn-icon btn-sm btn-active-icon-primary icon-rotate-custom" data-bs-dismiss="modal" aria-label="Close">
+                <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
                     <i class="ki-outline ki-cross fs-1"></i>
                 </div>
             </div>
 
-            <div class="modal-body px-5">
-                <div class="d-flex flex-column px-5 px-lg-10">
+            <div class="modal-body pt-5 pb-10 px-lg-10">
+                @if ($modeloDocumento)
 
-                    @if ($modeloDocumento)
-
-                    <!-- INFORMACIÓN DEL DOCUMENTO -->
-                    <div class="fw-bold text-dark mb-3 mt-3">
-                        <i class="ki-outline ki-document me-2"></i> Información del documento
+                <div class="d-flex justify-content-between align-items-center bg-light-primary rounded p-4 mb-6 border border-primary border-dashed border-opacity-25">
+                    <div class="d-flex flex-column">
+                        <span class="text-gray-500 fw-semibold fs-7 text-uppercase mb-1">N° de Documento</span>
+                        <span class="text-gray-900 fw-bold fs-3">{{ $modeloDocumento->numero_documento }}</span>
                     </div>
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <div class="fw-bold text-gray-600 mb-1">Número documento:</div>
-                            <div class="text-gray-800">{{ $modeloDocumento->numero_documento }}</div>
+                    <div>
+                        @if($modeloDocumento->estado)
+                            @php
+                                $nombreEstado = strtoupper($modeloDocumento->estado->nombre_estado);
+                                $colorEstado = match($nombreEstado) {
+                                    'RECEPCIONADO' => 'success',
+                                    'OBSERVADO' => 'danger',
+                                    'DERIVADO' => 'info', // Cambié a info/azul para derivado
+                                    'ARCHIVADO' => 'dark', // Dark o secondary para archivado
+                                    default => 'secondary'
+                                };
+                            @endphp
+                            <span class="badge badge-light-{{ $colorEstado }} fs-6 fw-bold py-3 px-4">
+                                {{ $modeloDocumento->estado->nombre_estado }}
+                            </span>
+                        @else
+                            <span class="badge badge-light-secondary fs-7">Sin estado</span>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="row g-5 mb-6">
+                    <div class="col-md-6">
+                        <div class="border border-gray-300 border-dashed rounded min-w-125px py-3 px-4 me-6">
+                            <div class="fw-semibold text-gray-400 fs-7">Folio</div>
+                            <div class="d-flex align-items-center">
+                                <i class="ki-outline ki-copy fs-3 text-gray-500 me-2"></i>
+                                <div class="fs-6 fw-bold text-gray-800">{{ $modeloDocumento->folio_documento }}</div>
+                            </div>
                         </div>
+                    </div>
 
-                        <div class="col-md-6">
-                            <div class="fw-bold text-gray-600 mb-1">Folio:</div>
-                            <div class="text-gray-800">{{ $modeloDocumento->folio_documento }}</div>
+                    <div class="col-md-6">
+                        <div class="border border-gray-300 border-dashed rounded min-w-125px py-3 px-4">
+                            <div class="fw-semibold text-gray-400 fs-7">Tipo de Documento</div>
+                            <div class="d-flex align-items-center">
+                                <i class="ki-outline ki-file fs-3 text-gray-500 me-2"></i>
+                                <div class="fs-6 fw-bold text-gray-800">{{ $modeloDocumento->tipoDocumento->descripcion_catalogo ?? 'N/A' }}</div>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="mb-3">
-                        <div class="fw-bold text-gray-600 mb-1">Tipo de documento:</div>
-                        <div class="text-gray-800">{{ $modeloDocumento->tipoDocumento->descripcion_catalogo ?? 'N/A' }}</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="fw-bold text-gray-600 mb-1">Asunto:</div>
-                        <div class="text-gray-800">{{ $modeloDocumento->asunto_documento }}</div>
-                    </div>
-
-                    @if($modeloDocumento->observacion_documento)
-                    <div class="mb-3">
-                        <div class="fw-bold text-gray-600 mb-1">Observación:</div>
-                        <div class="text-gray-800 text-uppercase">
-                            {{ $modeloDocumento->observacion_documento }}
-                        </div>
-                    </div>
-                    @endif
 
                     @if($modeloDocumento->fecha_recepcion_documento)
-                    <div class="mb-3">
-                        <div class="fw-bold text-gray-600 mb-1">Fecha recepción:</div>
-                        <div class="text-gray-800">{{ formatoFechaText($modeloDocumento->fecha_recepcion_documento) }}</div>
+                    <div class="col-md-6">
+                        <div class="border border-gray-300 border-dashed rounded min-w-125px py-3 px-4 me-6">
+                            <div class="fw-semibold text-gray-400 fs-7">Fecha Recepción</div>
+                            <div class="fs-6 fw-bold text-gray-800">
+                                <i class="ki-outline ki-calendar-tick fs-4 text-success me-1"></i>
+                                {{ formatoFechaText($modeloDocumento->fecha_recepcion_documento) }}
+                            </div>
+                        </div>
                     </div>
                     @endif
 
                     @php
-                    // 1. Intentamos obtener la fecha del campo específico
-                    $fechaArchivado = $modeloDocumento->fecha_despacho_documento;
-
-                    // 2. Si está vacío, pero el estado es "ARCHIVADO", usamos la fecha de modificación como respaldo
-                    if (!$fechaArchivado && optional($modeloDocumento->estado)->nombre_estado == 'ARCHIVADO') {
-                    $fechaArchivado = $modeloDocumento->au_fechamd ?? $modeloDocumento->updated_at;
-                    }
+                        $fechaArchivado = $modeloDocumento->fecha_despacho_documento;
+                        if (!$fechaArchivado && optional($modeloDocumento->estado)->nombre_estado == 'ARCHIVADO') {
+                            $fechaArchivado = $modeloDocumento->au_fechamd ?? $modeloDocumento->updated_at;
+                        }
                     @endphp
 
                     @if($fechaArchivado && optional($modeloDocumento->estado)->nombre_estado == 'ARCHIVADO')
                     <div class="col-md-6">
-                        <div class="fw-bold text-gray-600 mb-1">Fecha archivado:</div>
-                        <div class="text-gray-800">
-                            {{ formatoFechaText($fechaArchivado) }}
+                        <div class="border border-gray-300 border-dashed rounded min-w-125px py-3 px-4">
+                            <div class="fw-semibold text-gray-400 fs-7">Fecha Archivadado</div>
+                            <div class="fs-6 fw-bold text-gray-800">
+                                <i class="ki-outline ki-archive fs-4 text-dark me-1"></i>
+                                {{ formatoFechaText($fechaArchivado) }}
+                            </div>
                         </div>
                     </div>
                     @endif
+                </div>
 
-                    <!-- ARCHIVOS ADJUNTOS -->
-                    @if($modeloDocumento->archivos && count($modeloDocumento->archivos) > 0)
-                    <div class="mb-3">
-                        <div class="separator my-4"></div>
-                        <div class="fw-bold text-dark mb-3">
-                            <i class="ki-outline ki-file-check fs-3 me-2 text-success"></i> Archivos adjuntos ({{ count($modeloDocumento->archivos) }})
+                <div class="mb-6">
+                    <label class="fw-semibold text-gray-500 fs-7 mb-2">Asunto del Documento</label>
+                    <div class="bg-light rounded p-4 border border-gray-200">
+                        <p class="text-gray-800 fw-bold fs-6 m-0 lh-base">
+                            {{ $modeloDocumento->asunto_documento }}
+                        </p>
+                    </div>
+                </div>
+
+                @if($modeloDocumento->observacion_documento)
+                <div class="notice d-flex bg-light-warning rounded border-warning border border-dashed p-4 mb-6">
+                    <i class="ki-outline ki-information-5 fs-2tx text-warning me-4"></i>
+                    <div class="d-flex flex-stack flex-grow-1">
+                        <div class="fw-semibold">
+                            <h4 class="text-gray-900 fw-bold">Observación</h4>
+                            <div class="fs-6 text-gray-700 text-uppercase">
+                                {{ $modeloDocumento->observacion_documento }}
+                            </div>
                         </div>
-                        <div class="row g-3">
+                    </div>
+                </div>
+                @endif
+
+                @if($modeloDocumento->archivos && count($modeloDocumento->archivos) > 0)
+                    <div class="separator separator-dashed my-6"></div>
+                    <div class="mb-0">
+                        <h4 class="fs-6 fw-bold text-gray-800 mb-4">
+                            <i class="ki-outline ki-paper-clip fs-4 me-1"></i> Archivos Adjuntos ({{ count($modeloDocumento->archivos) }})
+                        </h4>
+
+                        <div class="row g-4">
                             @foreach($modeloDocumento->archivos as $archivo)
-                            <div class="col-md-6 col-lg-4" wire:key="archivo-{{ $archivo->id_archivo_documento }}">
-                                <div class="card shadow-sm border border-gray-300 h-100">
-                                    <div class="card-body p-4 d-flex flex-column">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="symbol symbol-50px me-3">
-                                                <span class="symbol-label bg-light-{{ $archivo->color }}">
-                                                    <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
-                                                </span>
-                                            </div>
-                                            <div class="flex-grow-1 overflow-hidden">
-                                                <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivo->nombre_original }}">
-                                                    {{ Str::limit($archivo->nombre_original, 20) }}
-                                                </div>
-                                                <div class="text-muted fs-7">
-                                                    {{ $archivo->tamanio_formateado }}
-                                                </div>
-                                            </div>
+                                <div class="col-md-6" wire:key="archivo-{{ $archivo->id_archivo_documento }}">
+                                    <div class="d-flex align-items-center border border-dashed border-gray-300 rounded p-3 bg-white h-100 hover-elevate-up transition-300">
+                                        <div class="symbol symbol-45px me-4">
+                                            <span class="symbol-label bg-light-{{ $archivo->color }}">
+                                                <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
+                                            </span>
                                         </div>
-                                        <div class="d-flex gap-2 mt-auto">
-                                            <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-sm btn-light-success flex-fill">
-                                                <i class="ki-outline ki-eye fs-5"></i> Ver
-                                            </a>
+                                        <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+                                            <span class="text-gray-800 fw-bold fs-6 text-truncate" title="{{ $archivo->nombre_original }}">
+                                                {{ Str::limit($archivo->nombre_original, 25) }}
+                                            </span>
+                                            <span class="text-gray-400 fw-semibold fs-8">{{ $archivo->tamanio_formateado }}</span>
                                         </div>
+                                        <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-icon btn-sm btn-light-primary ms-2" data-bs-toggle="tooltip" title="Ver Archivo">
+                                            <i class="ki-outline ki-eye fs-3"></i>
+                                        </a>
                                     </div>
                                 </div>
-                            </div>
                             @endforeach
                         </div>
                     </div>
-                    @endif
+                @endif
 
-                    <div class="mb-3">
-                        <div class="fw-bold text-gray-600 mb-1">Estado:</div>
-                        <div>
-                            @if($modeloDocumento->estado)
-                            @php
-                            $nombreEstado = strtoupper($modeloDocumento->estado->nombre_estado);
-                            $colorEstado = match($nombreEstado) {
-                            'RECEPCIONADO' => 'success',
-                            'OBSERVADO' => 'danger',
-                            'DERIVADO' => 'secondary',
-                            'ARCHIVADO' => 'primary',
-                            default => 'info'
-                            };
-                            @endphp
-                            <span class="badge badge-light-{{ $colorEstado }} py-2 px-3">
-                                {{ $modeloDocumento->estado->nombre_estado }}
-                            </span>
-                            @else
-                            <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
-                            @endif
-                        </div>
-                    </div>
-
-                    @endif
-
-                </div>
+                @endif
             </div>
 
-            <div class="modal-footer flex-center border-0">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
-                    Cerrar
-                </button>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
             </div>
+
         </div>
     </div>
 </div>
