@@ -23,6 +23,7 @@ Route::middleware(['throttle:100,1'])->group(function () {
     // Consulta pública de trámite (sin autenticación)
     Route::get('/consulta-tramite', [ConsultaTramiteController::class, 'index'])->name('consulta.index');
     Route::post('/consulta-tramite', [ConsultaTramiteController::class, 'buscar'])->name('consulta.buscar');
+    Route::post('/consulta-tramite/rectificar', [ConsultaTramiteController::class, 'solicitarRectificacion'])->name('consulta.rectificar');
 
     // Ruta de Login (solo para invitados)
     Route::get('/login', Login::class)->name('login')->middleware('guest');

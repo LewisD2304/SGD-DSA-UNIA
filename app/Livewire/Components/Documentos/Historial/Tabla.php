@@ -16,6 +16,7 @@ class Tabla extends Component
     public $buscar = '';
 
     protected DocumentoService $documentoService;
+    protected $paginationTheme = 'bootstrap';
 
     public function boot()
     {

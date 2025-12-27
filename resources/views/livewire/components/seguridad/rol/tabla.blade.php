@@ -64,14 +64,15 @@
                                     <td class="text-center">
                                         @if(!empty($permisos['CONFIGURAR']))
                                         <div x-data="{ cargando: false }">
-                                            <button type="button" class="btn btn-icon btn-light-primary btn-active-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Configurar permisos y accesos" @click="cargando = true" wire:click="configurarAcceso({{ $item->id_rol }})" :disabled="cargando">
+                                            <button type="button" class="btn btn-icon btn-bg-light btn-active-color-primary h-35px w-35px" data-bs-toggle="tooltip" data-bs-placement="top" title="Configurar permisos y accesos" @click="cargando = true" wire:click="configurarAcceso({{ $item->id_rol }})" :disabled="cargando">
                                                 <template x-if="!cargando">
-                                                    <i class="ki-outline ki-setting-2 fs-2"></i>
+                                                    <i class="ki-outline ki-setting-2 fs-2 text-gray-600"></i>
                                                 </template>
 
                                                 <template x-if="cargando">
                                                     <span>
-                                                        <x-spinner style="width: 20px; height: 20px;" /></span>
+                                                        <x-spinner style="width: 20px; height: 20px;" />
+                                                    </span>
                                                 </template>
                                             </button>
                                         </div>

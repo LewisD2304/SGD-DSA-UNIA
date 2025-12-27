@@ -83,7 +83,11 @@ class DocumentoRepository implements DocumentoRepositoryInterface
         $query = $this->model::query()
             ->with($relaciones)
             ->where('id_area_destino', $idArea)
-            ->whereNull('fecha_recepcion_documento')
+            ->where(function($q) {
+                // Documentos sin recepcionar O solicitudes de rectificación EN ESPERA (estado 10)
+                $q->whereNull('fecha_recepcion_documento')
+                  ->orWhere('id_estado', 10); // 10=Solicitud rectificación (aún sin resolver)
+            })
             ->whereHas('estado', function ($q) {
                 // Solo estados considerados pendientes para el área
                 $q->whereIn('nombre_estado', [
@@ -91,7 +95,7 @@ class DocumentoRepository implements DocumentoRepositoryInterface
                     'SUBSANADO',
                     'RETORNADO',
                     'PARA ARCHIVAR',
-                ]);
+                ])->orWhere('id_estado', 10); // 10=Solicitud rectificación
             });
 
         if (!empty($buscar)) {

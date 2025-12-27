@@ -583,6 +583,11 @@ class DocumentoService
     public function contarPendientesPorArea($idArea)
     {
         return Documento::where('id_area_destino', $idArea)
+            ->where(function($q) {
+                // Documentos sin recepcionar O solicitudes de rectificación EN ESPERA (estado 10)
+                $q->whereNull('fecha_recepcion_documento')
+                  ->orWhere('id_estado', 10); // 10=Solicitud rectificación (aún sin resolver)
+            })
             ->whereHas('estado', function ($q) {
 
                 $q->whereIn('nombre_estado', [
@@ -590,9 +595,115 @@ class DocumentoService
                     'SUBSANADO',
                     'RETORNADO',
                     'PARA ARCHIVAR'
-                ]);
+                ])->orWhere('id_estado', 10); // 10=Solicitud rectificación
             })
             ->count();
+    }
+
+    /**
+     * Registra una solicitud de rectificación pública (estado 10) desde "Consulta tu Trámite".
+     */
+    public function registrarSolicitudRectificacionPublica(Documento $documento, string $motivo)
+    {
+        DB::beginTransaction();
+
+        try {
+            $areaMesa = $documento->id_area_remitente; // Mesa de Partes (creador original)
+
+            // Registrar movimiento: 10 = SOLICITAR RECTIFICACIÓN
+            Movimiento::create([
+                'id_documento' => $documento->id_documento,
+                'id_estado' => 10,
+                'id_area_origen' => $documento->id_area_destino,
+                'id_area_destino' => $areaMesa,
+                'observacion_doc_movimiento' => $motivo,
+            ]);
+
+            // Actualizar documento a estado 10 y asignar destino Mesa de Partes
+            $this->repository->modificar([
+                'id_estado' => 10,
+                'id_area_destino' => $areaMesa,
+                'fecha_recepcion_documento' => null,
+            ], $documento);
+
+            DB::commit();
+
+            return $documento->refresh();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw new \Exception('No se pudo registrar la solicitud de rectificación: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Resuelve la solicitud de rectificación desde Mesa de Partes.
+     * - Aceptar: estado 9 (POR RECTIFICAR)
+     * - Rechazar: movimiento 11, documento a estado 6 (ARCHIVADO)
+     */
+    public function resolverSolicitudRectificacion(Documento $documento, string $decision, ?string $motivo = null)
+    {
+        DB::beginTransaction();
+
+        try {
+            $decision = strtolower($decision);
+
+            if (!in_array($decision, ['aceptar', 'rechazar'])) {
+                throw new \Exception('Decisión de rectificación no válida');
+            }
+
+            $usuario = Auth::user();
+
+            if ($decision === 'aceptar') {
+                // Movimiento: 9 = POR RECTIFICAR (se acepta solicitud)
+                Movimiento::create([
+                    'id_documento' => $documento->id_documento,
+                    'id_estado' => 9,
+                    'id_area_origen' => $documento->id_area_destino,
+                    'id_area_destino' => $documento->id_area_destino,
+                    'observacion_doc_movimiento' => $motivo,
+                ]);
+
+                // Actualizar documento a POR RECTIFICAR
+                $this->repository->modificar([
+                    'id_estado' => 9,
+                ], $documento);
+            } else {
+                // Movimiento: 11 = RECHAZAR RECTIFICACIÓN
+                Movimiento::create([
+                    'id_documento' => $documento->id_documento,
+                    'id_estado' => 11,
+                    'id_area_origen' => $documento->id_area_destino,
+                    'id_area_destino' => $documento->id_area_destino,
+                    'observacion_doc_movimiento' => $motivo,
+                ]);
+
+                // Actualizar documento a ARCHIVADO (6)
+                $this->repository->modificar([
+                    'id_estado' => 6,
+                    'fecha_despacho_documento' => Carbon::now()->format('Y-m-d H:i:s'),
+                ], $documento);
+            }
+
+            DB::commit();
+
+            return $documento->refresh();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw new \Exception('No se pudo resolver la solicitud de rectificación: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Marca la solicitud de rectificación (estado 10) como vista, registrando fecha_recepcion.
+     */
+    public function marcarSolicitudRectificacionVista(Documento $documento, int $idAreaDestino)
+    {
+        Movimiento::where('id_documento', $documento->id_documento)
+            ->where('id_estado', 10)
+            ->where('id_area_destino', $idAreaDestino)
+            ->whereNull('fecha_recepcion')
+            ->orderByDesc('au_fechacr')
+            ->first()?->update(['fecha_recepcion' => Carbon::now()->format('Y-m-d H:i:s')]);
     }
 }
 

@@ -79,6 +79,21 @@
                                                 @endcan
 
                                                 @php
+                                                $nombreEstado = strtoupper($documento->estado->nombre_estado ?? '');
+                                                $esSolicitudRectificacion = ($documento->id_estado == 10) || str_contains($nombreEstado, 'RECTIFIC');
+                                                @endphp
+
+                                                @if($esSolicitudRectificacion)
+                                                    @can('autorizacion',['RECTIFICAR','DOCUMENTOS'])
+                                                    <button type="button" class="btn btn-success btn-sm" wire:click="abrirRectificacion({{ $documento->id_documento }}, 'aceptar')">
+                                                        <i class="ki-outline ki-check fs-4 me-1"></i> Aceptar
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger btn-sm" wire:click="abrirRectificacion({{ $documento->id_documento }}, 'rechazar')">
+                                                        <i class="ki-outline ki-cross fs-4 me-1"></i> Rechazar
+                                                    </button>
+                                                    @endcan
+                                                @else
+                                                @php
                                                 // Verificar si el documento viene de vuelta a Mesa de Partes (área creadora original)
                                                 $areaUsuario = Auth::user()->persona->id_area ?? null;
                                                 $esCreadorOriginal = ($documento->id_area_remitente == $areaUsuario &&
@@ -126,8 +141,7 @@
                                                     <i class="ki-outline ki-{{ $btnConfig['icono'] }} fs-4 me-1"></i>
                                                     {{ $btnConfig['texto'] }}
                                                 </button>
-                                                @endif @endforeach
-                                            </div>
+                                                @endif @endforeach                                                @endif                                            </div>
                                         </td>
                                     </tr>
                                     @empty
@@ -231,6 +245,76 @@
                         </button>
                     </div>
 
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <div wire:ignore.self class="modal fade" id="modal-rectificacion" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered mw-600px">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h3 class="fw-bold my-0">
+                        {{ $accionRectificacion === 'rechazar' ? 'Rechazar rectificación' : 'Aceptar rectificación' }}
+                    </h3>
+
+                    <div class="btn btn-icon btn-sm btn-active-icon-primary icon-rotate-custom" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="ki-outline ki-cross fs-1"></i>
+                    </div>
+                </div>
+
+                <form autocomplete="off" novalidate class="form" wire:submit.prevent="confirmarRectificacion">
+                    <div class="modal-body px-5">
+                        <div class="d-flex flex-column px-5 px-lg-10">
+
+                            @if($accionRectificacion === 'aceptar')
+                                <div class="alert alert-success d-flex align-items-center mb-4">
+                                    <i class="ki-outline ki-check-circle fs-2x text-success me-3"></i>
+                                    <div>
+                                        <h5 class="mb-1">¿Confirmar aceptación?</h5>
+                                        <p class="mb-0">El documento cambiará a estado "POR RECTIFICAR" y se notificará al área correspondiente.</p>
+                                    </div>
+                                </div>
+                            @else
+                                <p class="text-gray-700 mb-4">
+                                    Esta acción rechazará la solicitud de rectificación y archivará el documento.
+                                </p>
+
+                                <div class="fv-row mb-5">
+                                    <label class="required fw-semibold fs-6 mb-2">Motivo del rechazo</label>
+                                    <textarea
+                                        wire:model="motivoRectificacion"
+                                        class="form-control form-control-solid"
+                                        rows="4"
+                                        placeholder="Explica por qué se rechaza la solicitud"
+                                        maxlength="500"
+                                    ></textarea>
+                                    <div class="text-muted fs-8 mt-1">
+                                        {{ strlen($motivoRectificacion) }}/500 caracteres
+                                    </div>
+                                    @error('motivoRectificacion')
+                                        <span class="text-danger fs-7">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            @endif
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-center">
+                        <button type="button" class="btn btn-light me-3" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="indicator-label" wire:loading.remove wire:target="confirmarRectificacion">
+                                Confirmar
+                            </span>
+                            <span class="indicator-progress" wire:loading wire:target="confirmarRectificacion">
+                                Procesando
+                                <span><x-spinner style="width: 20px; height: 20px;" /></span>
+                            </span>
+                        </button>
+                    </div>
                 </form>
 
             </div>

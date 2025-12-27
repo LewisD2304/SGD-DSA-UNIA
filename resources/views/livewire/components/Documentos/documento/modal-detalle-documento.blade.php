@@ -121,6 +121,36 @@ use Illuminate\Support\Facades\Storage;
                 </div>
                 @endif
 
+                @php
+                $nombreEstadoDoc = strtoupper($modeloDocumento->estado->nombre_estado ?? '');
+                $esRectificacionAceptada = ($modeloDocumento->id_estado == 9) || str_contains($nombreEstadoDoc, 'POR RECTIFICAR');
+
+                // Buscar el motivo: primero en movimiento estado 10 (solicitud), luego en estado 9 (aceptación)
+                $movimientoConMotivo = $esRectificacionAceptada ? $modeloDocumento->movimientos()
+                    ->whereIn('id_estado', [10, 9])
+                    ->whereNotNull('observacion_doc_movimiento')
+                    ->orderByDesc('au_fechacr')
+                    ->first() : null;
+
+                $motivoRectificacion = $movimientoConMotivo ? $movimientoConMotivo->observacion_doc_movimiento : null;
+                @endphp
+
+                @if($motivoRectificacion)
+                <div class="notice d-flex bg-light-info rounded border-info border border-dashed p-4 mb-6">
+                    <i class="ki-outline ki-message-text fs-2tx text-info me-4"></i>
+                    <div class="d-flex flex-stack flex-grow-1">
+                        <div class="fw-semibold">
+                            <h4 class="text-gray-900 fw-bold mb-2">
+                                <i class="ki-outline ki-information-2 fs-4 me-1"></i> Motivo de Rectificación
+                            </h4>
+                            <div class="fs-6 text-gray-800 lh-base" style="white-space: pre-wrap; word-wrap: break-word;">
+                                {{ $motivoRectificacion }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 @if($modeloDocumento->archivos && count($modeloDocumento->archivos) > 0)
                     <div class="separator separator-dashed my-6"></div>
                     <div class="mb-0">

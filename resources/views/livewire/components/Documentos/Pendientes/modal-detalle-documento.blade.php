@@ -57,6 +57,28 @@ use Illuminate\Support\Facades\Storage;
                     </div>
                     @endif
 
+                    @php
+                    $nombreEstado = strtoupper($modeloDocumento->estado->nombre_estado ?? '');
+                    $esSolicitudRectificacion = ($modeloDocumento->id_estado == 10) || str_contains($nombreEstado, 'RECTIFIC');
+                    $ultimoMovimiento = $modeloDocumento->movimientos()->latest('au_fechacr')->first();
+                    $motivoRectificacion = $esSolicitudRectificacion && $ultimoMovimiento ? $ultimoMovimiento->observacion_doc_movimiento : null;
+                    @endphp
+
+                    @if($motivoRectificacion)
+                    <div class="mb-3">
+                        <div class="separator my-4"></div>
+                        <div class="fw-bold text-dark mb-3">
+                            <i class="ki-outline ki-information fs-3 me-2 text-warning"></i> Motivo de Rectificación
+                        </div>
+                        <div class="alert alert-warning d-flex align-items-start">
+                            <i class="ki-outline ki-message-text fs-2 me-3"></i>
+                            <div class="flex-grow-1">
+                                <div class="text-gray-800 text-break">{{ $motivoRectificacion }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                     @if($modeloDocumento->fecha_recepcion_documento)
                     <div class="mb-3">
                         <div class="fw-bold text-gray-600 mb-1">Fecha recepción:</div>

@@ -10,6 +10,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class Tabla extends Component
 {
@@ -23,6 +24,9 @@ class Tabla extends Component
     public ?int $documentoRecepcionId = null;
     public ?string $documentoRecepcionTitulo = null;
     public bool $esArchivar = false; // Para saber si es archivar o recepcionar
+    public ?int $documentoRectificacionId = null;
+    public string $accionRectificacion = '';
+    public string $motivoRectificacion = '';
 
     protected DocumentoService $documentoService;
     protected $paginationTheme = 'bootstrap';
@@ -49,7 +53,7 @@ class Tabla extends Component
             buscar: $this->buscar,
             columnaOrden: 'au_fechacr',
             orden: 'desc',
-            relaciones: ['area', 'tipoDocumento', 'estado', 'areaRemitente', 'areaDestino']
+            relaciones: ['area', 'tipoDocumento', 'estado', 'areaRemitente', 'areaDestino', 'movimientos']
         );
     }
 
@@ -164,6 +168,98 @@ class Tabla extends Component
     {
         $this->dispatch('modal', nombre: '#modal-confirmar-recepcion', accion: 'hide');
         $this->reset(['documentoRecepcionId', 'documentoRecepcionTitulo']);
+    }
+
+    public function abrirRectificacion(int $id_documento, string $accion)
+    {
+        Gate::authorize('autorizacion', ['RECTIFICAR', 'DOCUMENTOS']);
+
+        $this->documentoRectificacionId = $id_documento;
+        $this->accionRectificacion = $accion;
+        $this->motivoRectificacion = '';
+
+        // Marcar solicitud como vista registrando fecha_recepcion en el último movimiento 10
+        $documento = $this->documentoService->obtenerPorId($id_documento);
+        $idAreaUsuario = Auth::user()->persona->id_area ?? 0;
+        if ($documento && $idAreaUsuario) {
+            $this->documentoService->marcarSolicitudRectificacionVista($documento, $idAreaUsuario);
+        }
+
+        $this->dispatch('modal', nombre: '#modal-rectificacion', accion: 'show');
+    }
+
+    public function confirmarRectificacion()
+    {
+        Gate::authorize('autorizacion', ['RECTIFICAR', 'DOCUMENTOS']);
+
+        if (!$this->documentoRectificacionId) {
+            return;
+        }
+
+        $reglas = ['motivoRectificacion' => 'nullable|string|max:500'];
+
+        if ($this->accionRectificacion === 'rechazar') {
+            $reglas['motivoRectificacion'] = 'required|string|max:500';
+        }
+
+        $this->validate($reglas, [
+            'motivoRectificacion.required' => 'Debe ingresar un motivo',
+            'motivoRectificacion.max' => 'El motivo no puede exceder 500 caracteres'
+        ]);
+
+        $documento = $this->documentoService->obtenerPorId($this->documentoRectificacionId);
+
+        if (!$documento) {
+            $this->cerrarModalRectificacion();
+            return;
+        }
+
+        try {
+            $this->documentoService->resolverSolicitudRectificacion(
+                $documento,
+                $this->accionRectificacion,
+                $this->motivoRectificacion ?: null
+            );
+
+            $this->dispatch('refrescarDocumentos');
+            $this->dispatch('refrescarDocumentosPendientes');
+
+            $mensaje = $this->accionRectificacion === 'aceptar'
+                ? 'Solicitud de rectificación aceptada'
+                : 'Solicitud de rectificación rechazada';
+
+            $this->dispatch(
+                'toastr',
+                boton_cerrar: false,
+                progreso_avance: true,
+                duracion: '3000',
+                titulo: 'Éxito',
+                tipo: 'success',
+                mensaje: $mensaje,
+                posicion_y: 'top',
+                posicion_x: 'right'
+            );
+        } catch (\Exception $e) {
+            $this->dispatch(
+                'toastr',
+                boton_cerrar: false,
+                progreso_avance: true,
+                duracion: '5000',
+                titulo: 'Error',
+                tipo: 'error',
+                mensaje: $e->getMessage(),
+                posicion_y: 'top',
+                posicion_x: 'right'
+            );
+        }
+
+        $this->cerrarModalRectificacion();
+    }
+
+    public function cerrarModalRectificacion()
+    {
+        $this->dispatch('modal', nombre: '#modal-rectificacion', accion: 'hide');
+        $this->reset(['documentoRectificacionId', 'accionRectificacion', 'motivoRectificacion']);
     }
 
     // Obtener transiciones disponibles para un documento según su estado actual
