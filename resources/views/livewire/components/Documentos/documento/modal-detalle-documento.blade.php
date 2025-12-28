@@ -152,14 +152,23 @@ use Illuminate\Support\Facades\Storage;
                 @endif
 
                 @if($modeloDocumento->archivos && count($modeloDocumento->archivos) > 0)
+                    @php
+                    $archivosOriginales = $modeloDocumento->archivos->where('tipo_archivo', 'original');
+                    // Solo mostrar evidencias si la solicitud fue aceptada (estado 9 = POR RECTIFICAR o superior)
+                    $archivosEvidencia = ($modeloDocumento->id_estado != 10)
+                        ? $modeloDocumento->archivos->where('tipo_archivo', 'evidencia_rectificacion')
+                        : collect([]);
+                    @endphp
+
+                    @if($archivosOriginales->count() > 0)
                     <div class="separator separator-dashed my-6"></div>
-                    <div class="mb-0">
+                    <div class="mb-6">
                         <h4 class="fs-6 fw-bold text-gray-800 mb-4">
-                            <i class="ki-outline ki-paper-clip fs-4 me-1"></i> Archivos Adjuntos ({{ count($modeloDocumento->archivos) }})
+                            <i class="ki-outline ki-paper-clip fs-4 me-1"></i> Archivos Adjuntos ({{ $archivosOriginales->count() }})
                         </h4>
 
                         <div class="row g-4">
-                            @foreach($modeloDocumento->archivos as $archivo)
+                            @foreach($archivosOriginales as $archivo)
                                 <div class="col-md-6" wire:key="archivo-{{ $archivo->id_archivo_documento }}">
                                     <div class="d-flex align-items-center border border-dashed border-gray-300 rounded p-3 bg-white h-100 hover-elevate-up transition-300">
                                         <div class="symbol symbol-45px me-4">
@@ -181,6 +190,39 @@ use Illuminate\Support\Facades\Storage;
                             @endforeach
                         </div>
                     </div>
+                    @endif
+
+                    @if($archivosEvidencia->count() > 0)
+                    <div class="separator separator-dashed my-6"></div>
+                    <div class="mb-0">
+                        <h4 class="fs-6 fw-bold text-gray-800 mb-4">
+                            <i class="ki-outline ki-document-text fs-4 me-1 text-warning"></i> Evidencia de rectificación ({{ $archivosEvidencia->count() }})
+                        </h4>
+
+                        <div class="row g-4">
+                            @foreach($archivosEvidencia as $archivo)
+                                <div class="col-md-6" wire:key="archivo-evidencia-{{ $archivo->id_archivo_documento }}">
+                                    <div class="d-flex align-items-center border border-dashed border-warning rounded p-3 bg-light-warning h-100 hover-elevate-up transition-300">
+                                        <div class="symbol symbol-45px me-4">
+                                            <span class="symbol-label bg-light-{{ $archivo->color }}">
+                                                <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
+                                            </span>
+                                        </div>
+                                        <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+                                            <span class="text-gray-800 fw-bold fs-6 text-truncate" title="{{ $archivo->nombre_original }}">
+                                                {{ Str::limit($archivo->nombre_original, 25) }}
+                                            </span>
+                                            <span class="text-gray-600 fw-semibold fs-8">{{ $archivo->tamanio_formateado }}</span>
+                                        </div>
+                                        <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-icon btn-sm btn-warning ms-2" data-bs-toggle="tooltip" title="Ver Archivo">
+                                            <i class="ki-outline ki-eye fs-3"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
                 @endif
 
                 @endif

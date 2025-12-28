@@ -464,6 +464,15 @@
                                             <i class="bi bi-clock me-1 fs-8"></i>
                                             {{ $mov->au_fechacr ? \Carbon\Carbon::parse($mov->au_fechacr)->format('d/m/Y h:i A') : '' }}
                                         </span>
+                                        @php
+                                            $areaMovimiento = optional($mov->areaDestino)->nombre_area ?? optional($mov->areaOrigen)->nombre_area;
+                                        @endphp
+                                        @if(!empty($areaMovimiento))
+                                        <span>
+                                            <i class="bi bi-building me-1 fs-8"></i>
+                                            Área: <span class="fw-semibold text-gray-800">{{ $areaMovimiento }}</span>
+                                        </span>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -472,6 +481,40 @@
                                 <span class="text-gray-400">Sin movimientos registrados</span>
                             </div>
                             @endforelse
+
+                            @php
+                                $primerMovimiento = $resultado->movimientos()->orderBy('au_fechacr', 'asc')->first();
+                            @endphp
+                            @if($primerMovimiento && strtoupper(optional($primerMovimiento->estado)->nombre_estado) === 'RECEPCIONADO')
+                            <div class="timeline-item">
+                                <div class="timeline-badge primary">
+                                    <i class="bi bi-send"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <div class="d-flex flex-stack mb-1">
+                                        <span class="text-gray-800 fw-bold fs-6">DERIVADO</span>
+                                        <span class="text-gray-400 fs-8 text-end">
+                                            {{ $primerMovimiento->au_fechacr ? \Carbon\Carbon::parse($primerMovimiento->au_fechacr)->diffForHumans() : '' }}
+                                        </span>
+                                    </div>
+                                    <div class="d-flex flex-column text-gray-600 fs-7">
+                                        <span>
+                                            <i class="bi bi-clock me-1 fs-8"></i>
+                                            {{ $primerMovimiento->au_fechacr ? \Carbon\Carbon::parse($primerMovimiento->au_fechacr)->format('d/m/Y h:i A') : '' }}
+                                        </span>
+                                        @php
+                                            $areaInicial = optional($primerMovimiento->areaDestino)->nombre_area ?? optional($primerMovimiento->areaOrigen)->nombre_area;
+                                        @endphp
+                                        @if(!empty($areaInicial))
+                                        <span>
+                                            <i class="bi bi-building me-1 fs-8"></i>
+                                            Área: <span class="fw-semibold text-gray-800">{{ $areaInicial }}</span>
+                                        </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
 
                         </div>
                     </div>
@@ -500,7 +543,7 @@
                         <h5 class="modal-title fw-bold">Solicitud de Rectificación</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form method="post" action="{{ route('consulta.rectificar') }}">
+                    <form method="post" action="{{ route('consulta.rectificar') }}" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="expediente" value="{{ $resultado->expediente_documento }}">
                         <div class="modal-body">
@@ -533,6 +576,28 @@
                                 @error('motivo')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Archivos de evidencia (opcional)</label>
+                                <input type="file" name="archivos_evidencia[]" id="archivos-evidencia-input" class="form-control @error('archivos_evidencia') is-invalid @enderror @error('archivos_evidencia.*') is-invalid @enderror" multiple accept=".pdf,.png,.jpg,.jpeg" style="display: none;">
+                                <button type="button" class="btn btn-light-primary w-100" onclick="document.getElementById('archivos-evidencia-input').click()">
+                                    <i class="bi bi-upload me-2"></i> Elegir archivos
+                                </button>
+                                <div class="form-text mt-2">Puedes adjuntar archivos PDF o imágenes (máx. 10MB cada uno)</div>
+                                @error('archivos_evidencia')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                                @error('archivos_evidencia.*')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+
+                                <div id="archivos-preview-container" class="mt-3" style="display: none;">
+                                    <div class="fw-semibold text-gray-700 mb-2">
+                                        <i class="bi bi-paperclip me-1"></i> Archivos a subir (<span id="archivos-count">0</span>)
+                                    </div>
+                                    <div id="archivos-preview" class="row g-3"></div>
+                                </div>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -585,6 +650,104 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
+        // Manejo de vista previa de archivos
+        let selectedFiles = [];
+        const inputFile = document.getElementById('archivos-evidencia-input');
+        const previewContainer = document.getElementById('archivos-preview-container');
+        const previewDiv = document.getElementById('archivos-preview');
+        const countSpan = document.getElementById('archivos-count');
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB por archivo
+        const MAX_TOTAL_SIZE = 40 * 1024 * 1024; // 40MB total
+
+        if (inputFile) {
+            inputFile.addEventListener('change', function(e) {
+                const files = Array.from(e.target.files);
+
+                // Validar tamaño de cada archivo
+                for (const file of files) {
+                    if (file.size > MAX_FILE_SIZE) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Archivo demasiado grande',
+                            text: `El archivo "${file.name}" excede el límite de 10MB. Por favor, selecciona un archivo más pequeño.`,
+                            confirmButtonColor: '#f1416c'
+                        });
+                        return;
+                    }
+                }
+
+                // Agregar archivos a la lista
+                selectedFiles = [...selectedFiles, ...files];
+
+                // Validar tamaño total
+                const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+                if (totalSize > MAX_TOTAL_SIZE) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Tamaño total excedido',
+                        text: `El tamaño total de los archivos (${(totalSize / 1024 / 1024).toFixed(2)}MB) excede el límite de 40MB. Por favor, quita algunos archivos.`,
+                        confirmButtonColor: '#f1416c'
+                    });
+                    // Remover los últimos archivos agregados
+                    selectedFiles = selectedFiles.slice(0, selectedFiles.length - files.length);
+                }
+
+                updateFilePreview();
+            });
+        }
+
+        function updateFilePreview() {
+            if (selectedFiles.length === 0) {
+                previewContainer.style.display = 'none';
+                return;
+            }
+
+            previewContainer.style.display = 'block';
+            countSpan.textContent = selectedFiles.length;
+            previewDiv.innerHTML = '';
+
+            selectedFiles.forEach((file, index) => {
+                const fileSize = (file.size / 1024).toFixed(0) + ' KB';
+                const fileName = file.name.length > 25 ? file.name.substring(0, 22) + '...' : file.name;
+                const isImage = file.type.startsWith('image/');
+                const isPDF = file.type === 'application/pdf';
+
+                const iconClass = isPDF ? 'bi-file-earmark-pdf text-danger' : 'bi-image text-primary';
+
+                const col = document.createElement('div');
+                col.className = 'col-md-6 col-lg-4';
+                col.innerHTML = `
+                    <div class="card border border-gray-300 h-100">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="me-3">
+                                    <i class="bi ${iconClass} fs-2x"></i>
+                                </div>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="fw-bold text-gray-800 text-truncate" title="${file.name}">${fileName}</div>
+                                    <div class="text-muted fs-7">${fileSize}</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-light-danger w-100" onclick="removeFile(${index})">
+                                <i class="bi bi-trash me-1"></i> Quitar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                previewDiv.appendChild(col);
+            });
+
+            // Actualizar el input con los archivos seleccionados
+            const dataTransfer = new DataTransfer();
+            selectedFiles.forEach(file => dataTransfer.items.add(file));
+            inputFile.files = dataTransfer.files;
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFilePreview();
+        }
+
         // Llenar modal de detalle del movimiento
         const detalleMovModal = document.getElementById('modal-detalle-movimiento');
         if (detalleMovModal) {

@@ -45,4 +45,15 @@ class Movimiento extends Model
     {
         return $this->belongsTo(Estado::class, 'id_estado');
     }
+
+    // Relaciones con áreas (origen y destino)
+    public function areaOrigen()
+    {
+        return $this->belongsTo(Area::class, 'id_area_origen', 'id_area');
+    }
+
+    public function areaDestino()
+    {
+        return $this->belongsTo(Area::class, 'id_area_destino', 'id_area');
+    }
 }

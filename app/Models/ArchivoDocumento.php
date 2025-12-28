@@ -28,7 +28,8 @@ class ArchivoDocumento extends Model
         'ruta_archivo',
         'extension',
         'tamanio',
-        'orden'
+        'orden',
+        'tipo_archivo'
     ];
 
     protected $hidden = [

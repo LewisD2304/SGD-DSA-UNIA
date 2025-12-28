@@ -47,7 +47,7 @@ class ConsultaTramiteController extends Controller
 
     private function buscarDocumentoPorExpediente(string $expediente)
     {
-        return Documento::with(['estado', 'areaRemitente', 'areaDestino', 'movimientos.estado'])
+        return Documento::with(['estado', 'areaRemitente', 'areaDestino', 'movimientos.estado', 'movimientos.areaOrigen', 'movimientos.areaDestino'])
             ->where('expediente_documento', $expediente)
             ->first();
     }
@@ -60,6 +60,8 @@ class ConsultaTramiteController extends Controller
         $data = $request->validate([
             'expediente' => ['required', 'string', 'max:100'],
             'motivo' => ['required', 'string', 'max:500'],
+            'archivos_evidencia' => ['nullable', 'array'],
+            'archivos_evidencia.*' => ['file', 'mimes:pdf,png,jpg,jpeg', 'max:10240'], // 10MB por archivo
         ]);
 
         $expediente = trim($data['expediente']);
@@ -71,7 +73,8 @@ class ConsultaTramiteController extends Controller
         }
 
         try {
-            $service->registrarSolicitudRectificacionPublica($documento, $data['motivo']);
+            $archivos = $request->hasFile('archivos_evidencia') ? $request->file('archivos_evidencia') : [];
+            $service->registrarSolicitudRectificacionPublica($documento, $data['motivo'], $archivos);
 
             return redirect()->route('consulta.buscar', ['expediente' => $expediente])
                 ->with('status', 'Solicitud de rectificación enviada correctamente a Mesa de Partes.');

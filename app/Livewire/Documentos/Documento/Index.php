@@ -59,6 +59,7 @@ class Index extends Component
     // Propiedades para derivar documento
     public $idAreaDerivar = '';
     public $observacionesDerivar = '';
+    public $archivosEvidenciaRectificacion = [];
 
     protected DocumentoService $documentoService;
     protected ArchivoDocumentoService $archivoService;
@@ -574,6 +575,7 @@ class Index extends Component
         $this->idAreaDestino = $this->modeloDocumento->id_area_destino;
         $this->idAreaDerivar = '';
         $this->observacionesDerivar = '';
+        $this->archivosEvidenciaRectificacion = [];
 
         $this->dispatch('cargando', cargando: 'false');
         $this->modalDocumento('#modal-rectificar-documento', 'show');
@@ -584,7 +586,9 @@ class Index extends Component
         $this->observacionesDerivar = limpiarCadena($this->observacionesDerivar);
 
         $this->validate([
-            'observacionesDerivar' => 'required|max:500'
+            'observacionesDerivar' => 'required|max:500',
+            'archivosEvidenciaRectificacion' => 'nullable|array',
+            'archivosEvidenciaRectificacion.*' => 'file|mimes:pdf,png,jpg,jpeg|max:10240'
         ], [
             'observacionesDerivar.required' => 'El motivo de rectificación es obligatorio',
             'observacionesDerivar.max' => 'El motivo de rectificación no puede exceder 500 caracteres'
@@ -615,6 +619,24 @@ class Index extends Component
                 ]
             );
 
+            // Guardar archivos de evidencia (si se adjuntaron)
+            if (!empty($this->archivosEvidenciaRectificacion)) {
+                $usuario = \Illuminate\Support\Facades\Auth::user();
+                $idAreaUsuario = $usuario->persona->id_area ?? null;
+                $archivosInfo = $this->archivoService->guardarMultiplesArchivos(
+                    archivos: $this->archivosEvidenciaRectificacion,
+                    ruta: 'gestion/documentos/evidencias_rectificacion',
+                    idDocumento: $this->modeloDocumento->id_documento,
+                    idArea: $idAreaUsuario
+                );
+
+                foreach ($archivosInfo as $info) {
+                    \App\Models\ArchivoDocumento::create(array_merge($info, [
+                        'tipo_archivo' => 'evidencia_rectificacion'
+                    ]));
+                }
+            }
+
             $this->dispatch('refrescarDocumentos');
             $mensajeToastr = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Documento enviado a rectificación', 'top', 'right');
         } catch (\Exception $e) {
@@ -622,7 +644,7 @@ class Index extends Component
         }
 
         $this->modalDocumento('#modal-rectificar-documento', 'hide');
-        $this->reset(['idAreaDerivar', 'observacionesDerivar']);
+        $this->reset(['idAreaDerivar', 'observacionesDerivar', 'archivosEvidenciaRectificacion']);
 
         if ($mensajeToastr !== null) {
             $this->dispatch(
@@ -636,6 +658,15 @@ class Index extends Component
                 posicion_y: $mensajeToastr['posicion_y'],
                 posicion_x: $mensajeToastr['posicion_x']
             );
+        }
+    }
+
+    // Quitar un archivo del listado antes de guardar
+    public function quitarArchivoEvidencia(int $index): void
+    {
+        if (isset($this->archivosEvidenciaRectificacion[$index])) {
+            unset($this->archivosEvidenciaRectificacion[$index]);
+            $this->archivosEvidenciaRectificacion = array_values($this->archivosEvidenciaRectificacion);
         }
     }
 

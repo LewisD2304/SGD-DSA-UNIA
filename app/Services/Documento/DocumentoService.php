@@ -603,7 +603,7 @@ class DocumentoService
     /**
      * Registra una solicitud de rectificación pública (estado 10) desde "Consulta tu Trámite".
      */
-    public function registrarSolicitudRectificacionPublica(Documento $documento, string $motivo)
+    public function registrarSolicitudRectificacionPublica(Documento $documento, string $motivo, array $archivos = [])
     {
         DB::beginTransaction();
 
@@ -625,6 +625,23 @@ class DocumentoService
                 'id_area_destino' => $areaMesa,
                 'fecha_recepcion_documento' => null,
             ], $documento);
+
+            // Guardar archivos de evidencia si existen
+            if (!empty($archivos)) {
+                $archivoService = resolve(\App\Services\Documento\ArchivoDocumentoService::class);
+                $archivosInfo = $archivoService->guardarMultiplesArchivos(
+                    archivos: $archivos,
+                    ruta: 'gestion/documentos/evidencias_rectificacion',
+                    idDocumento: $documento->id_documento,
+                    idArea: null // Sin área específica (solicitud pública)
+                );
+
+                foreach ($archivosInfo as $info) {
+                    \App\Models\ArchivoDocumento::create(array_merge($info, [
+                        'tipo_archivo' => 'evidencia_rectificacion'
+                    ]));
+                }
+            }
 
             DB::commit();
 

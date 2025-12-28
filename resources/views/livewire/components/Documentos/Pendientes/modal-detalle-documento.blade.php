@@ -88,13 +88,20 @@ use Illuminate\Support\Facades\Storage;
 
                     <!-- ARCHIVOS ADJUNTOS -->
                     @if($modeloDocumento->archivos && count($modeloDocumento->archivos) > 0)
+                    @php
+                    $archivosOriginales = $modeloDocumento->archivos->where('tipo_archivo', 'original');
+                    // En Pendientes siempre mostrar las evidencias para que Mesa de Partes las revise
+                    $archivosEvidencia = $modeloDocumento->archivos->where('tipo_archivo', 'evidencia_rectificacion');
+                    @endphp
+
+                    @if($archivosOriginales->count() > 0)
                     <div class="mb-3">
                         <div class="separator my-4"></div>
                         <div class="fw-bold text-dark mb-3">
-                            <i class="ki-outline ki-file-check fs-3 me-2 text-success"></i> Archivos adjuntos ({{ count($modeloDocumento->archivos) }})
+                            <i class="ki-outline ki-file-check fs-3 me-2 text-success"></i> Archivos adjuntos ({{ $archivosOriginales->count() }})
                         </div>
                         <div class="row g-3">
-                            @foreach($modeloDocumento->archivos as $archivo)
+                            @foreach($archivosOriginales as $archivo)
                             <div class="col-md-6 col-lg-4" wire:key="archivo-{{ $archivo->id_archivo_documento }}">
                                 <div class="card shadow-sm border border-gray-300 h-100">
                                     <div class="card-body p-4 d-flex flex-column">
@@ -124,6 +131,46 @@ use Illuminate\Support\Facades\Storage;
                             @endforeach
                         </div>
                     </div>
+                    @endif
+
+                    @if($archivosEvidencia->count() > 0)
+                    <div class="mb-3">
+                        <div class="separator my-4"></div>
+                        <div class="fw-bold text-dark mb-3">
+                            <i class="ki-outline ki-document-text fs-3 me-2 text-warning"></i> Evidencia de rectificación ({{ $archivosEvidencia->count() }})
+                        </div>
+                        <div class="row g-3">
+                            @foreach($archivosEvidencia as $archivo)
+                            <div class="col-md-6 col-lg-4" wire:key="archivo-evidencia-{{ $archivo->id_archivo_documento }}">
+                                <div class="card shadow-sm border border-warning h-100">
+                                    <div class="card-body p-4 d-flex flex-column">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="symbol symbol-50px me-3">
+                                                <span class="symbol-label bg-light-{{ $archivo->color }}">
+                                                    <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
+                                                </span>
+                                            </div>
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivo->nombre_original }}">
+                                                    {{ Str::limit($archivo->nombre_original, 20) }}
+                                                </div>
+                                                <div class="text-muted fs-7">
+                                                    {{ $archivo->tamanio_formateado }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2 mt-auto">
+                                            <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-sm btn-light-warning flex-fill">
+                                                <i class="ki-outline ki-eye fs-5"></i> Ver
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
                     @endif
 
                     <div class="mb-3">
