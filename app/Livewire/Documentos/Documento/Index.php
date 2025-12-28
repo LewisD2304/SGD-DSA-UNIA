@@ -581,40 +581,42 @@ class Index extends Component
 
     public function guardarRectificar()
     {
+        $this->observacionesDerivar = limpiarCadena($this->observacionesDerivar);
+
         $this->validate([
-            'idAreaDerivar' => 'required|exists:ta_area,id_area',
             'observacionesDerivar' => 'required|max:500'
         ], [
-            'idAreaDerivar.required' => 'Debe seleccionar un área de destino',
-            'idAreaDerivar.exists' => 'El área seleccionada no existe',
-            'observacionesDerivar.required' => 'Las observaciones son obligatorias',
-            'observacionesDerivar.max' => 'Las observaciones no pueden exceder 500 caracteres'
+            'observacionesDerivar.required' => 'El motivo de rectificación es obligatorio',
+            'observacionesDerivar.max' => 'El motivo de rectificación no puede exceder 500 caracteres'
         ]);
 
         $mensajeToastr = null;
 
         try {
-            // Buscar la transición DEVOLVER según el estado actual del documento
-            $transicion = Transicion::where('evento_transicion', 'DEVOLVER')
-                ->where('id_estado_actual_transicion', $this->modeloDocumento->id_estado)
+            // Validar que el documento esté archivado (estado 6)
+            if ($this->modeloDocumento->id_estado != 6) {
+                throw new \Exception('Solo se pueden rectificar documentos archivados.');
+            }
+
+            // Transición directa a POR RECTIFICAR (estado actual: ARCHIVADO 6 -> siguiente: POR RECTIFICAR 9)
+            $transicion = Transicion::where('evento_transicion', 'POR RECTIFICAR')
+                ->where('id_estado_actual_transicion', 6)
                 ->first();
 
             if (!$transicion) {
-                throw new \Exception('No se puede devolver el documento en su estado actual');
+                throw new \Exception('No se encontró la transición a "POR RECTIFICAR" para el estado actual.');
             }
 
-            // Usar el servicio de procesarTransicion
-            $resultado = $this->documentoService->procesarTransicion(
+            $this->documentoService->procesarTransicion(
                 $this->modeloDocumento->id_documento,
                 $transicion->id_transicion,
                 [
-                    'id_area_destino' => $this->idAreaDerivar,
                     'observacion' => $this->observacionesDerivar
                 ]
             );
 
             $this->dispatch('refrescarDocumentos');
-            $mensajeToastr = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Documento devuelto correctamente', 'top', 'right');
+            $mensajeToastr = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Documento enviado a rectificación', 'top', 'right');
         } catch (\Exception $e) {
             $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');
         }

@@ -10,6 +10,7 @@ use App\Livewire\Seguridad\Usuario\Index as UsuarioIndex;
 use App\Livewire\Seguridad\Persona\Index as PersonaIndex;
 use App\Livewire\Seguridad\Catalogo\Index as CatalogoIndex;
 use App\Livewire\Seguridad\Menu\Index as MenuIndex;
+use \App\Livewire\Documentos\Historial\Index as HistorialIndex;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -74,7 +75,7 @@ Route::middleware(['throttle:100,1'])->group(function () {
             // Pendientes
             Route::get('/pendientes', PendientesIndex::class)->name('pendientes.index');
             // Historial
-            Route::get('/historial', \App\Livewire\Documentos\Historial\Index::class)->name('historial.index');
+            Route::get('/historial', HistorialIndex::class)->name('historial.index');
         });
 
 
