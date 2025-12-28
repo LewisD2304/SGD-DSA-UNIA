@@ -59,30 +59,30 @@
                                         <td>{{ formatoFechaText($documento->au_fechacr)}}</td>
                                         <td>
                                             @php
-                                                // Obtener el área del usuario actual
-                                                $areaUsuario = Auth::user()->persona->id_area ?? null;
-                                                // Obtener el estado visual según el área
-                                                $estadoVisual = $documento->getEstadoVisual($areaUsuario);
+                                            // Obtener el área del usuario actual
+                                            $areaUsuario = Auth::user()->persona->id_area ?? null;
+                                            // Obtener el estado visual según el área
+                                            $estadoVisual = $documento->getEstadoVisual($areaUsuario);
 
-                                                if ($estadoVisual) {
-                                                    $nombreEstado = strtoupper($estadoVisual->nombre_estado);
-                                                    $colorEstado = match($nombreEstado) {
-                                                        'RECEPCIONADO' => 'success',
-                                                        'OBSERVADO' => 'danger',
-                                                        'DERIVADO' => 'secondary',
-                                                        'ARCHIVADO' => 'primary',
-                                                        'EN TRÁMITE', 'EN TRAMITE' => 'info',
-                                                        default => 'info'
-                                                    };
-                                                }
+                                            if ($estadoVisual) {
+                                            $nombreEstado = strtoupper($estadoVisual->nombre_estado);
+                                            $colorEstado = match($nombreEstado) {
+                                            'RECEPCIONADO' => 'success',
+                                            'OBSERVADO' => 'danger',
+                                            'DERIVADO' => 'secondary',
+                                            'ARCHIVADO' => 'primary',
+                                            'EN TRÁMITE', 'EN TRAMITE' => 'info',
+                                            default => 'info'
+                                            };
+                                            }
                                             @endphp
 
                                             @if(isset($estadoVisual))
-                                                <span class="badge badge-light-{{ $colorEstado }} py-2 px-3">
-                                                    {{ $estadoVisual->nombre_estado }}
-                                                </span>
+                                            <span class="badge badge-light-{{ $colorEstado }} py-2 px-3">
+                                                {{ $estadoVisual->nombre_estado }}
+                                            </span>
                                             @else
-                                                <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
+                                            <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
                                             @endif
                                         </td>
 
@@ -96,8 +96,8 @@
                                                 <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-6 py-4 w-175px" data-kt-menu="true">
 
                                                     @php
-                                                        // Verificar si el documento está archivado
-                                                        $estaArchivado = $documento->id_estado == 6; // 6 = ARCHIVADO
+                                                    // Verificar si el documento está archivado
+                                                    $estaArchivado = $documento->id_estado == 6; // 6 = ARCHIVADO
                                                     @endphp
 
                                                     @can('autorizacion', ['VER', 'DOCUMENTOS'])
@@ -109,50 +109,60 @@
                                                     @endcan
 
                                                     @if(!$estaArchivado)
-                                                        @can('autorizacion', ['MODIFICAR', 'DOCUMENTOS'])
-                                                        <div class="menu-item px-3">
-                                                            <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                                <span class="menu-icon"><i class="ki-outline ki-pencil fs-3"></i></span> Modificar
-                                                            </a>
-                                                        </div>
-                                                        @endcan
+                                                    {{-- ACCIONES PARA DOCUMENTOS ACTIVOS (NO ARCHIVADOS) --}}
 
-                                                        @can('autorizacion', ['ELIMINAR', 'DOCUMENTOS'])
-                                                        <div class="menu-item px-3">
-                                                            <a href="#" class="menu-link px-3 text-danger" wire:click="$dispatch('abrirModalEliminarDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                                <span class="menu-icon"><i class="ki-outline ki-trash fs-3 text-danger"></i></span> Eliminar
-                                                            </a>
-                                                        </div>
-                                                        @endcan
+                                                    @can('autorizacion', ['MODIFICAR', 'DOCUMENTOS'])
+                                                    <div class="menu-item px-3">
+                                                        <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                            <span class="menu-icon"><i class="ki-outline ki-pencil fs-3"></i></span> Modificar
+                                                        </a>
+                                                    </div>
+                                                    @endcan
 
-                                                        @if(Auth::user()->can('autorizacion', ['DERIVAR', 'DOCUMENTOS']) || Auth::user()->can('autorizacion', ['MODIFICAR', 'DOCUMENTOS']))
-                                                        <div class="separator my-2"></div>
-                                                        @endif
+                                                    @can('autorizacion', ['ELIMINAR', 'DOCUMENTOS'])
+                                                    <div class="menu-item px-3">
+                                                        <a href="#" class="menu-link px-3 text-danger" wire:click="$dispatch('abrirModalEliminarDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                            <span class="menu-icon"><i class="ki-outline ki-trash fs-3 text-danger"></i></span> Eliminar
+                                                        </a>
+                                                    </div>
+                                                    @endcan
 
-                                                        @can('autorizacion', ['DERIVAR', 'DOCUMENTOS'])
-                                                            @php
-                                                                $areaUsuario = Auth::user()->persona->id_area ?? null;
-                                                                // Solo mostrar Derivar si el documento fue RECEPCIONADO por mi área (no si lo creé yo)
-                                                                $puedeDerivar = $areaUsuario &&
-                                                                                $documento->id_area_destino == $areaUsuario &&
-                                                                                $documento->fecha_recepcion_documento !== null;
-                                                            @endphp
-                                                            @if($puedeDerivar)
-                                                            <div class="menu-item px-3">
-                                                                <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalDerivarDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                                    <span class="menu-icon"><i class="ki-outline ki-arrow-right fs-3"></i></span> Derivar
-                                                                </a>
-                                                            </div>
-                                                            @endif
-                                                        @endcan
+                                                    @if(Auth::user()->can('autorizacion', ['DERIVAR', 'DOCUMENTOS']))
+                                                    <div class="separator my-2"></div>
+                                                    @endif
 
-                                                        @can('autorizacion', ['MODIFICAR', 'DOCUMENTOS'])
-                                                        <div class="menu-item px-3">
-                                                            <a href="#" class="menu-link px-3 text-warning" wire:click="$dispatch('abrirModalRectificarDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                                <span class="menu-icon"><i class="ki-outline ki-pencil-video fs-3 text-warning"></i></span> Rectificar
-                                                            </a>
-                                                        </div>
-                                                        @endcan
+                                                    @can('autorizacion', ['DERIVAR', 'DOCUMENTOS'])
+                                                    @php
+                                                    $areaUsuario = Auth::user()->persona->id_area ?? null;
+                                                    $puedeDerivar = $areaUsuario &&
+                                                    $documento->id_area_destino == $areaUsuario &&
+                                                    $documento->fecha_recepcion_documento !== null;
+                                                    @endphp
+                                                    @if($puedeDerivar)
+                                                    <div class="menu-item px-3">
+                                                        <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalDerivarDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                            <span class="menu-icon"><i class="ki-outline ki-arrow-right fs-3"></i></span> Derivar
+                                                        </a>
+                                                    </div>
+                                                    @endif
+                                                    @endcan
+                                                    @endif
+
+                                                    {{-- ACCIONES EXCLUSIVAS PARA DOCUMENTOS ARCHIVADOS --}}
+                                                    @if($estaArchivado)
+                                                    <div class="separator my-2"></div>
+
+                                                    @can('autorizacion', ['RECTIFICAR', 'DOCUMENTOS'])
+                                                    <div class="menu-item px-3">
+                                                        <a href="#" class="menu-link px-3 text-warning" wire:click="$dispatch('abrirModalRectificarDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                            <span class="menu-icon">
+                                                                <i class="ki-outline ki-pencil fs-4 text-warning"></i>
+                                                            </span>
+                                                            Rectificar
+                                                        </a>
+                                                    </div>
+                                                    @endcan
+
                                                     @endif
                                                 </div>
                                             </div>
