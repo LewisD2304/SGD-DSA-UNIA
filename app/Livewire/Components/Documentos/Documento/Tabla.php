@@ -19,6 +19,8 @@ class Tabla extends Component
     #[Url('buscar')]
     public $buscar = '';
     public $permisos = [];
+    public ?int $documentoArchivarId = null;
+    public ?string $documentoArchivarTitulo = null;
 
     protected DocumentoService $documentoService;
     protected $paginationTheme = 'bootstrap';
@@ -46,6 +48,96 @@ class Tabla extends Component
             orden: 'desc',
             relaciones: ['area', 'tipoDocumento', 'estado', 'areaRemitente', 'areaDestino']
         );
+    }
+
+    public function abrirModalArchivar(int $id_documento): void
+    {
+        $documento = $this->documentoService->obtenerPorId($id_documento);
+
+        if (!$documento) {
+            $this->dispatch('toastr',
+                boton_cerrar: false,
+                progreso_avance: true,
+                duracion: '5000',
+                titulo: 'Error',
+                tipo: 'error',
+                mensaje: 'Documento no encontrado',
+                posicion_y: 'top',
+                posicion_x: 'right'
+            );
+            return;
+        }
+
+        $this->documentoArchivarId = $documento->id_documento;
+        $this->documentoArchivarTitulo = $documento->asunto_documento ?? $documento->expediente_documento;
+
+        $this->dispatch('modal', nombre: '#modal-archivar-documento', accion: 'show');
+    }
+
+    public function confirmarArchivar(): void
+    {
+        $mensajeToastr = null;
+
+        if (!$this->documentoArchivarId) {
+            return;
+        }
+
+        try {
+            $documento = $this->documentoService->obtenerPorId($this->documentoArchivarId);
+
+            if (!$documento) {
+                throw new \Exception('Documento no encontrado');
+            }
+
+            $areaUsuario = Auth::user()->persona->id_area ?? null;
+
+            // Solo el área destino actual puede archivar
+            if (!$areaUsuario || $documento->id_area_destino != $areaUsuario) {
+                throw new \Exception('No tiene permisos para archivar este documento');
+            }
+
+            $estadoActual = strtoupper(optional($documento->estado)->nombre_estado);
+
+            if ($estadoActual !== 'RECEPCIONADO') {
+                throw new \Exception('Solo se pueden archivar documentos recepcionados');
+            }
+
+            $transicion = \App\Models\Transicion::whereIn('evento_transicion', ['ARCHIVADO', 'ARCHIVAR'])
+                ->where('id_estado_actual_transicion', $documento->id_estado)
+                ->first();
+
+            if (!$transicion) {
+                throw new \Exception('No se encontró transición para archivar');
+            }
+
+            $this->documentoService->procesarTransicion(
+                $documento->id_documento,
+                $transicion->id_transicion,
+                []
+            );
+
+            $this->dispatch('refrescarDocumentos');
+            $mensajeToastr = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Documento archivado correctamente', 'top', 'right');
+        } catch (\Exception $e) {
+            $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');
+        }
+
+        $this->dispatch('modal', nombre: '#modal-archivar-documento', accion: 'hide');
+        $this->reset(['documentoArchivarId', 'documentoArchivarTitulo']);
+
+        if ($mensajeToastr !== null) {
+            $this->dispatch(
+                'toastr',
+                boton_cerrar: $mensajeToastr['boton_cerrar'],
+                progreso_avance: $mensajeToastr['progreso_avance'],
+                duracion: $mensajeToastr['duracion'],
+                titulo: $mensajeToastr['titulo'],
+                tipo: $mensajeToastr['tipo'],
+                mensaje: $mensajeToastr['mensaje'],
+                posicion_y: $mensajeToastr['posicion_y'],
+                posicion_x: $mensajeToastr['posicion_x']
+            );
+        }
     }
 
     public function placeholder()

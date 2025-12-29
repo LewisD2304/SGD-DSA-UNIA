@@ -62,12 +62,12 @@
 
                         <div class="mb-3">
                             <label class="fw-semibold fs-6 mb-2">Archivos de evidencia (opcional)</label>
-                            <input id="evidenciaInput" type="file" class="d-none @error('archivosEvidenciaRectificacion') is-invalid @enderror @error('archivosEvidenciaRectificacion.*') is-invalid @enderror" multiple accept=".pdf,.png,.jpg,.jpeg" wire:model="archivosEvidenciaRectificacion">
+                            <input id="evidenciaInput" type="file" class="d-none @error('archivosEvidenciaRectificacion') is-invalid @enderror @error('archivosEvidenciaRectificacion.*') is-invalid @enderror" multiple accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" wire:model="archivosEvidenciaRectificacion">
 
                             <button type="button" class="btn btn-light-primary" onclick="document.getElementById('evidenciaInput').click()">
                                 <i class="bi bi-upload me-2"></i> Elegir archivos
                             </button>
-                            <div class="text-muted fs-8 mt-2">Puedes adjuntar archivos PDF o imágenes (máx. 10MB cada uno)</div>
+                            <div class="text-muted fs-8 mt-2">Puedes adjuntar archivos PDF o imágenes JPG/PNG (máx. 10MB cada uno)</div>
 
                             @error('archivosEvidenciaRectificacion')
                             <div class="text-danger fs-7 mt-1">{{ $message }}</div>

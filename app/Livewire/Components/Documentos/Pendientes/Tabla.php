@@ -57,7 +57,7 @@ class Tabla extends Component
         );
     }
 
-    public function solicitarRecepcion(int $id_documento)
+    public function solicitarRecepcion(int $id_documento, bool $archivar = false)
     {
         $documento = $this->documentoService->obtenerPorId($id_documento);
 
@@ -70,8 +70,11 @@ class Tabla extends Component
 
         // Verificar si el usuario actual es el área creadora original (Mesa de Partes)
         $areaUsuario = Auth::user()->persona->id_area ?? null;
-        $this->esArchivar = ($documento->id_area_remitente == $areaUsuario &&
-                            $documento->id_area_destino == $areaUsuario);
+        $esCreadorOriginal = ($documento->id_area_remitente == $areaUsuario &&
+                             $documento->id_area_destino == $areaUsuario);
+
+        // Solo se permite archivar si es Mesa de Partes y se solicitó archivar explícitamente
+        $this->esArchivar = ($archivar && $esCreadorOriginal);
 
         $this->dispatch('modal', nombre: '#modal-confirmar-recepcion', accion: 'show');
     }
@@ -91,13 +94,15 @@ class Tabla extends Component
 
         try {
             $areaUsuario = Auth::user()->persona->id_area ?? null;
-            $esArchivar = ($documento->id_area_remitente == $areaUsuario &&
-                          $documento->id_area_destino == $areaUsuario);
+            $esCreadorOriginal = ($documento->id_area_remitente == $areaUsuario &&
+                                  $documento->id_area_destino == $areaUsuario);
 
-            // Si es archivar (Mesa de Partes recibe documento de vuelta)
-            if ($esArchivar) {
-                // Buscar la transición ARCHIVADO
-                $transicion = Transicion::where('evento_transicion', 'ARCHIVADO')
+            $archivar = $this->esArchivar && $esCreadorOriginal;
+
+            // Si es archivar (Mesa de Partes tras haber recepcionado)
+            if ($archivar) {
+                // Buscar la transición de archivado (acepta alias ARCHIVAR/ARCHIVADO)
+                $transicion = Transicion::whereIn('evento_transicion', ['ARCHIVADO', 'ARCHIVAR'])
                     ->where('id_estado_actual_transicion', $documento->id_estado)
                     ->first();
 
@@ -119,7 +124,7 @@ class Tabla extends Component
                     duracion: '5000',
                     titulo: 'Error',
                     tipo: 'error',
-                    mensaje: 'No se puede ' . ($esArchivar ? 'archivar' : 'recepcionar') . ' el documento en su estado actual',
+                    mensaje: 'No se puede ' . ($archivar ? 'archivar' : 'recepcionar') . ' el documento en su estado actual',
                     posicion_y: 'top',
                     posicion_x: 'right'
                 );

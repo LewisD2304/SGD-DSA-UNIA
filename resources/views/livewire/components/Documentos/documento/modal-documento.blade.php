@@ -134,11 +134,11 @@ use Illuminate\Support\Facades\Storage;
                         <!-- Adjuntar documentos -->
                         <div class="mb-3">
                             <label for="archivosDocumento" class="form-label">
-                                Adjuntar documentos (PDF, PNG, Excel, Word - máx. 10MB c/u) <span class="text-danger">*</span>
+                                Adjuntar documentos (PDF, JPG, PNG - máx. 10MB c/u) <span class="text-danger">*</span>
                             </label>
                             <input type="file" class="form-control @error('archivosDocumento.*') is-invalid @enderror"
                                    id="archivosDocumento"
-                                   accept=".pdf,.png,.jpg,.jpeg"
+                                   accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
                                    multiple
                                    wire:model="archivosDocumento" />
                             @error('archivosDocumento.*')
