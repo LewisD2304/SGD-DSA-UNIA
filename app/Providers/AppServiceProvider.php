@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Usuario;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,5 +25,7 @@ class AppServiceProvider extends ServiceProvider
         Auth::provider('eloquent', function ($app, array $config) {
             return new \Illuminate\Auth\EloquentUserProvider($app['hash'], Usuario::class);
         });
+
+        View::addLocation(app_path('Livewire/Components/Consulta'));
     }
 }

@@ -3,12 +3,14 @@
 namespace App\Livewire\Components\Documentos\Documento;
 
 use App\Services\Documento\DocumentoService;
+use App\Services\Configuracion\AreaService;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class Tabla extends Component
 {
@@ -21,13 +23,25 @@ class Tabla extends Component
     public $permisos = [];
     public ?int $documentoArchivarId = null;
     public ?string $documentoArchivarTitulo = null;
+    public ?int $documentoObservarId = null;
+    public ?string $documentoObservarTitulo = null;
+    public $motivoObservacion = '';
+    public $archivosEvidenciaObservacion = [];
+    public $idAreaObservar = '';
+    public $areas = [];
+    public ?string $numeroDocumento = null;
+    public ?string $folioDocumento = null;
+    public ?string $asuntoDocumento = null;
+    public $modeloDocumento = null;
 
     protected DocumentoService $documentoService;
+    protected AreaService $areaService;
     protected $paginationTheme = 'bootstrap';
 
     public function __construct()
     {
         $this->documentoService = resolve(DocumentoService::class);
+        $this->areaService = resolve(AreaService::class);
     }
 
     #[Computed()]
@@ -137,6 +151,137 @@ class Tabla extends Component
                 posicion_y: $mensajeToastr['posicion_y'],
                 posicion_x: $mensajeToastr['posicion_x']
             );
+        }
+    }
+
+    #[On('abrirModalObservarDocumento')]
+    public function abrirModalObservarDocumento(int $id_documento): void
+    {
+        $documento = $this->documentoService->obtenerPorId($id_documento, ['estado']);
+
+        if (!$documento) {
+            $this->dispatch('toastr',
+                boton_cerrar: false,
+                progreso_avance: true,
+                duracion: '5000',
+                titulo: 'Error',
+                tipo: 'error',
+                mensaje: 'Documento no encontrado',
+                posicion_y: 'top',
+                posicion_x: 'right'
+            );
+            return;
+        }
+
+        $this->documentoObservarId = $documento->id_documento;
+        $this->documentoObservarTitulo = $documento->asunto_documento ?? $documento->expediente_documento;
+        $this->numeroDocumento = $documento->numero_documento;
+        $this->folioDocumento = $documento->folio_documento;
+        $this->asuntoDocumento = $documento->asunto_documento;
+        $this->modeloDocumento = $documento;
+        $this->motivoObservacion = '';
+        $this->archivosEvidenciaObservacion = [];
+        $this->idAreaObservar = $documento->id_area_destino ?? '';
+
+        $this->dispatch('modal', nombre: '#modal-observacion-documento', accion: 'show');
+    }
+
+    public function guardarObservacion(): void
+    {
+        $this->motivoObservacion = limpiarCadena($this->motivoObservacion);
+
+        $reglas = [
+            'motivoObservacion' => 'required|max:500',
+            'idAreaObservar' => 'required|exists:ta_area,id_area',
+            'archivosEvidenciaObservacion' => 'nullable|array',
+            'archivosEvidenciaObservacion.*' => 'file|mimetypes:application/pdf,image/png,image/jpeg|max:10240'
+        ];
+
+        $this->validate($reglas, [
+            'motivoObservacion.required' => 'El motivo de la observación es obligatorio',
+            'motivoObservacion.max' => 'El motivo de la observación no puede exceder 500 caracteres'
+        ]);
+
+        $mensajeToastr = null;
+
+        try {
+            if (!$this->documentoObservarId) {
+                throw new \Exception('Documento no encontrado');
+            }
+
+            $documento = $this->documentoService->obtenerPorId($this->documentoObservarId);
+
+            if (!$documento) {
+                throw new \Exception('Documento no encontrado');
+            }
+
+            // Procesar transición OBSERVAR (estado actual a estado OBSERVADO)
+            $transicion = \App\Models\Transicion::where('evento_transicion', 'OBSERVAR')
+                ->where('id_estado_actual_transicion', $documento->id_estado)
+                ->first();
+
+            if (!$transicion) {
+                throw new \Exception('No se encontró la transición para observar el documento');
+            }
+
+            // Procesar la transición
+            $this->documentoService->procesarTransicion(
+                $documento->id_documento,
+                $transicion->id_transicion,
+                [
+                    'observacion' => $this->motivoObservacion,
+                    'id_area_destino' => $this->idAreaObservar
+                ]
+            );
+
+            // Guardar archivos de evidencia si existen
+            if (!empty($this->archivosEvidenciaObservacion)) {
+                $usuario = Auth::user();
+                $idAreaUsuario = $usuario->persona->id_area ?? null;
+                $archivoService = resolve(\App\Services\Documento\ArchivoDocumentoService::class);
+                $archivosInfo = $archivoService->guardarMultiplesArchivos(
+                    archivos: $this->archivosEvidenciaObservacion,
+                    ruta: 'gestion/documentos/evidencias_observacion',
+                    idDocumento: $documento->id_documento,
+                    idArea: $idAreaUsuario
+                );
+
+                foreach ($archivosInfo as $info) {
+                    \App\Models\ArchivoDocumento::create(array_merge($info, [
+                        'tipo_archivo' => 'evidencia_observacion'
+                    ]));
+                }
+            }
+
+            $this->dispatch('refrescarDocumentos');
+            $mensajeToastr = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Documento observado correctamente', 'top', 'right');
+        } catch (\Exception $e) {
+            $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');
+        }
+
+        $this->dispatch('modal', nombre: '#modal-observacion-documento', accion: 'hide');
+        $this->reset(['documentoObservarId', 'documentoObservarTitulo', 'motivoObservacion', 'archivosEvidenciaObservacion', 'numeroDocumento', 'folioDocumento', 'asuntoDocumento', 'modeloDocumento', 'idAreaObservar']);
+
+        if ($mensajeToastr !== null) {
+            $this->dispatch(
+                'toastr',
+                boton_cerrar: $mensajeToastr['boton_cerrar'],
+                progreso_avance: $mensajeToastr['progreso_avance'],
+                duracion: $mensajeToastr['duracion'],
+                titulo: $mensajeToastr['titulo'],
+                tipo: $mensajeToastr['tipo'],
+                mensaje: $mensajeToastr['mensaje'],
+                posicion_y: $mensajeToastr['posicion_y'],
+                posicion_x: $mensajeToastr['posicion_x']
+            );
+        }
+    }
+
+    public function quitarArchivoObservacion(int $index): void
+    {
+        if (isset($this->archivosEvidenciaObservacion[$index])) {
+            unset($this->archivosEvidenciaObservacion[$index]);
+            $this->archivosEvidenciaObservacion = array_values($this->archivosEvidenciaObservacion);
         }
     }
 
@@ -253,10 +398,16 @@ class Tabla extends Component
             foreach ($menu->acciones as $accion) {
                 $nombre_accion = str_replace(' ', '_', strtoupper($accion->tipoAccion->descripcion_catalogo));
                 if ($nombre_accion !== 'LISTAR') {
-                    $this->permisos[$nombre_accion] = \Illuminate\Support\Facades\Gate::allows('autorizacion', [$nombre_accion, $menu->nombre_menu]);
+                    $this->permisos[$nombre_accion] = Gate::allows('autorizacion', [$nombre_accion, $menu->nombre_menu]);
                 }
             }
         }
+
+        // Cargar áreas activas para seleccionar destino de observación, excluyendo el área actual
+        $areaUsuario = Auth::user()?->persona?->id_area;
+        $this->areas = $this->areaService->listarActivas()->filter(function($area) use ($areaUsuario) {
+            return (int)$area->id_area !== (int)$areaUsuario;
+        })->values();
     }
 
     public function render()

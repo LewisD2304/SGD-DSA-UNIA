@@ -5,6 +5,7 @@ namespace App\Services\Documento;
 use App\Models\ArchivoDocumento;
 use App\Models\Documento;
 use App\Models\Movimiento;
+use App\Models\Transicion;
 use App\Repositories\Documentos\Documento\DocumentoRepositoryInterface;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -218,14 +219,12 @@ class DocumentoService
             }
 
             // 3. REGISTRAR HISTORIAL (TA_MOVIMIENTO)
-            DB::table('ta_movimiento')->insert([
+            \App\Models\Movimiento::create([
                 'id_documento'               => $documento->id_documento,
                 'id_estado'                  => $estadoEnTramite->id_estado,
                 'id_area_origen'             => $idAreaOrigen,  // De dónde viene
                 'id_area_destino'            => $idAreaDestino, // Quién lo tiene ahora (YO)
                 'observacion_doc_movimiento' => 'RECEPCIÓN: Documento puesto en trámite por ' . ($usuario->nombre_usuario ?? $usuario->name),
-                'au_usuariocr'               => $usuario->nombre_usuario ?? 'SISTEMA',
-                'au_fechacr'                 => Carbon::now(),
                 'fecha_recepcion'            => Carbon::now()->format('Y-m-d H:i:s'),
             ]);
 
@@ -282,14 +281,12 @@ class DocumentoService
             if (!$estadoDerivado) throw new \Exception('Estado DERIVADO no existe.');
 
             // 3. REGISTRAR HISTORIAL (Congelado)
-            DB::table('ta_movimiento')->insert([
+            \App\Models\Movimiento::create([
                 'id_documento'    => $idDocumento,
                 'id_estado'       => $estadoDerivado->id_estado,
                 'id_area_origen'  => $idAreaOrigen,  // DE
                 'id_area_destino' => $idAreaDestino, // PARA
                 'observacion_doc_movimiento' => $observaciones,
-                'au_usuariocr'    => $usuario->nombre_usuario,
-                'au_fechacr'      => Carbon::now(),
             ]);
 
             // 4. ACTUALIZAR EL DOCUMENTO (Cambio de manos)
@@ -351,6 +348,11 @@ class DocumentoService
                 $datosDocumento['fecha_recepcion_documento'] = Carbon::now()->format('Y-m-d H:i:s');
             }
 
+            // Si la transición es OBSERVACION RECEPCIONADO, marcar recepción
+            if (strtoupper($transicion->evento_transicion) === 'OBSERVACION RECEPCIONADO') {
+                $datosDocumento['fecha_recepcion_documento'] = Carbon::now()->format('Y-m-d H:i:s');
+            }
+
             // Si la transición es ARCHIVADO, integrar archivos de otras áreas al remitente original
             if (strtoupper($transicion->evento_transicion) === 'ARCHIVADO') {
                 $datosDocumento['fecha_despacho_documento'] = Carbon::now()->format('Y-m-d H:i:s');
@@ -379,8 +381,25 @@ class DocumentoService
                 $datosDocumento['fecha_emision_documento'] = Carbon::now();
             }
 
+            // Si la transición es SUBSANADO, actualizar área destino y limpiar fecha recepción
+            if (strtoupper($transicion->evento_transicion) === 'SUBSANADO' && isset($datos['id_area_destino'])) {
+                $usuario = Auth::user();
+                $idAreaOrigen = $usuario->persona->id_area ?? null;
+
+                // Actualizar el nuevo destino y limpiar recepción
+                $datosDocumento['id_area_destino'] = $datos['id_area_destino'];
+                $datosDocumento['fecha_recepcion_documento'] = null;
+                $datosDocumento['fecha_emision_documento'] = Carbon::now();
+            }
+
             // Si la transición es DEVOLVER y hay área destino
             if (strtoupper($transicion->evento_transicion) === 'DEVOLVER' && isset($datos['id_area_destino'])) {
+                $datosDocumento['id_area_destino'] = $datos['id_area_destino'];
+                $datosDocumento['fecha_recepcion_documento'] = null;
+            }
+
+            // Si la transición es OBSERVAR y se envía a otra área, actualizar destino y limpiar recepción
+            if (strtoupper($transicion->evento_transicion) === 'OBSERVAR' && isset($datos['id_area_destino'])) {
                 $datosDocumento['id_area_destino'] = $datos['id_area_destino'];
                 $datosDocumento['fecha_recepcion_documento'] = null;
             }
@@ -394,12 +413,16 @@ class DocumentoService
                 'id_documento' => $idDocumento,
                 'id_estado' => $datosDocumento['id_estado'] ?? $transicion->id_estado_siguiente_transicion,
                 'observacion_doc_movimiento' => $datos['observacion'] ?? null,
-                'au_fechacr' => Carbon::now(),
-                'au_fechamd' => Carbon::now(),
             ];
 
             // Si es DERIVAR, registrar origen y destino
             if (strtoupper($transicion->evento_transicion) === 'DERIVAR' && isset($datos['id_area_destino'])) {
+                $datosMovimiento['id_area_origen'] = $usuario->persona->id_area ?? null;
+                $datosMovimiento['id_area_destino'] = $datos['id_area_destino'];
+            }
+
+            // Si es SUBSANADO, registrar origen y destino
+            if (strtoupper($transicion->evento_transicion) === 'SUBSANADO' && isset($datos['id_area_destino'])) {
                 $datosMovimiento['id_area_origen'] = $usuario->persona->id_area ?? null;
                 $datosMovimiento['id_area_destino'] = $datos['id_area_destino'];
             }
@@ -411,8 +434,28 @@ class DocumentoService
                 $datosMovimiento['fecha_recepcion'] = Carbon::now()->format('Y-m-d H:i:s');
             }
 
-            // Registrar el movimiento
-            DB::table('ta_movimiento')->insert($datosMovimiento);
+            // Si es OBSERVACION RECEPCIONADO, registrar áreas y fecha recepción
+            if (strtoupper($transicion->evento_transicion) === 'OBSERVACION RECEPCIONADO') {
+                $datosMovimiento['id_area_origen'] = $documento->id_area_remitente;
+                $datosMovimiento['id_area_destino'] = $usuario->persona->id_area ?? null;
+                $datosMovimiento['fecha_recepcion'] = Carbon::now()->format('Y-m-d H:i:s');
+            }
+
+            // Si es RECEPCIONAR SUBSANACION, registrar áreas y fecha recepción
+            if (strtoupper($transicion->evento_transicion) === 'RECEPCIONAR SUBSANACION') {
+                $datosMovimiento['id_area_origen'] = $documento->id_area_remitente;
+                $datosMovimiento['id_area_destino'] = $usuario->persona->id_area ?? null;
+                $datosMovimiento['fecha_recepcion'] = Carbon::now()->format('Y-m-d H:i:s');
+            }
+
+            // Si es OBSERVAR, registrar el área que observa
+            if (strtoupper($transicion->evento_transicion) === 'OBSERVAR') {
+                $datosMovimiento['id_area_origen'] = $usuario->persona->id_area ?? null;
+                $datosMovimiento['id_area_destino'] = $datos['id_area_destino'] ?? ($usuario->persona->id_area ?? null);
+            }
+
+            // Registrar el movimiento usando el modelo para que se aplique el AuditoriaTrait
+            \App\Models\Movimiento::create($datosMovimiento);
 
             DB::commit();
 
@@ -721,6 +764,77 @@ class DocumentoService
             ->whereNull('fecha_recepcion')
             ->orderByDesc('au_fechacr')
             ->first()?->update(['fecha_recepcion' => Carbon::now()->format('Y-m-d H:i:s')]);
+    }
+
+    /**
+     * Procesa la observación de un documento, cambiando su estado, área y guardando evidencias.
+     */
+    public function observar(int $idDocumento, int $idAreaDestino, string $motivo, array $archivosEvidencia = [])
+    {
+        DB::beginTransaction();
+
+        try {
+            $documento = $this->repository->obtenerPorId($idDocumento);
+
+            if (!$documento) {
+                throw new \Exception('Documento no encontrado.');
+            }
+
+            // 1. Buscar la transición OBSERVAR (Debería ser ID 2 según tu imagen)
+            // Estado Actual (8 - RECEPCIONADO) -> Siguiente (4 - OBSERVADO)
+            $transicion = Transicion::where('evento_transicion', 'OBSERVAR')
+                ->where('id_estado_actual_transicion', $documento->id_estado)
+                ->first();
+
+            if (!$transicion) {
+                // Intento fallback por si el nombre es diferente o para asegurar flexibilidad
+                $transicion = Transicion::where('evento_transicion', 'OBSERVAR')->first();
+            }
+
+            if (!$transicion) {
+                throw new \Exception('No existe una transición de observación configurada para el estado actual.');
+            }
+
+            // 2. Procesar el cambio de estado y movimiento usando tu método existente
+            // Pasamos el área destino seleccionada en el modal
+            $this->procesarTransicion(
+                $documento->id_documento,
+                $transicion->id_transicion,
+                [
+                    'id_area_destino' => $idAreaDestino, // El área a la que devuelves
+                    'observacion'     => $motivo
+                ]
+            );
+
+            // 3. Guardar archivos de evidencia si existen
+            if (!empty($archivosEvidencia)) {
+                $archivoService = resolve(ArchivoDocumentoService::class);
+
+                // Usamos el área del usuario actual (quien observa) como propietaria de los archivos
+                $idAreaUsuario = Auth::user()->persona->id_area ?? null;
+
+                $archivosInfo = $archivoService->guardarMultiplesArchivos(
+                    archivos: $archivosEvidencia,
+                    ruta: 'gestion/documentos/evidencias_observacion',
+                    idDocumento: $documento->id_documento,
+                    idArea: $idAreaUsuario
+                );
+
+                foreach ($archivosInfo as $info) {
+                    // Guardamos con un tipo específico para distinguirlos de los originales
+                    \App\Models\ArchivoDocumento::create(array_merge($info, [
+                        'tipo_archivo' => 'evidencia_observacion'
+                    ]));
+                }
+            }
+
+            DB::commit();
+            return $documento->refresh();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw new \Exception('Error al observar el documento: ' . $e->getMessage());
+        }
     }
 }
 

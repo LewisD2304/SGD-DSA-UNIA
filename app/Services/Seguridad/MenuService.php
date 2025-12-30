@@ -57,9 +57,7 @@ class MenuService
     // Registrar un nuevo menu
     public function registrar(array $datos, array $acciones)
     {
-        // if (!Gate::allows('autorizacion', ['REGISTRAR', 'MENÚ'])) {
-        //     throw new \Exception(config('settings.mensaje_error_acceso') . 'registrar menús' . config('settings.mensaje_final_error_acceso'));
-        // }
+        
         DB::beginTransaction();
 
         try {

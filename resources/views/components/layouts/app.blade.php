@@ -16,59 +16,61 @@
     <link href="{{ asset('assets/css/style.bundle.css') }}" rel="stylesheet" type="text/css" />
 
     <style>
-    @font-face {
-        font-family: 'Inter';
-        src: url("{{ asset('assets/files/fonts/Inter-Regular.otf') }}") format('truetype');
-        font-weight: 400;
-        font-style: normal;
-    }
+        @font-face {
+            font-family: 'Inter';
+            src: url("{{ asset('assets/files/fonts/Inter-Regular.otf') }}") format('truetype');
+            font-weight: 400;
+            font-style: normal;
+        }
 
-    @font-face {
-        font-family: 'Inter';
-        src: url("{{ asset('assets/files/fonts/Inter-Medium.otf') }}") format('truetype');
-        font-weight: 500;
-        font-style: normal;
-    }
+        @font-face {
+            font-family: 'Inter';
+            src: url("{{ asset('assets/files/fonts/Inter-Medium.otf') }}") format('truetype');
+            font-weight: 500;
+            font-style: normal;
+        }
 
-    @font-face {
-        font-family: 'Inter';
-        src: url("{{ asset('assets/files/fonts/Inter-SemiBold.otf') }}") format('truetype');
-        font-weight: 600;
-        font-style: normal;
-    }
+        @font-face {
+            font-family: 'Inter';
+            src: url("{{ asset('assets/files/fonts/Inter-SemiBold.otf') }}") format('truetype');
+            font-weight: 600;
+            font-style: normal;
+        }
 
-    @font-face {
-        font-family: 'Inter';
-        src: url("{{ asset('assets/files/fonts/Inter-Bold.otf') }}") format('truetype');
-        font-weight: 700;
-        font-style: normal;
-    }
+        @font-face {
+            font-family: 'Inter';
+            src: url("{{ asset('assets/files/fonts/Inter-Bold.otf') }}") format('truetype');
+            font-weight: 700;
+            font-style: normal;
+        }
 
-    @font-face {
-        font-family: 'Inter';
-        src: url("{{ asset('assets/files/fonts/Inter-ExtraBold.otf') }}") format('truetype');
-        font-weight: 800;
-        font-style: normal;
-    }
+        @font-face {
+            font-family: 'Inter';
+            src: url("{{ asset('assets/files/fonts/Inter-ExtraBold.otf') }}") format('truetype');
+            font-weight: 800;
+            font-style: normal;
+        }
 
-    @font-face {
-        font-family: 'Inter';
-        src: url("{{ asset('assets/files/fonts/Inter-Black.otf') }}") format('truetype');
-        font-weight: 900;
-        font-style: normal;
-    }
+        @font-face {
+            font-family: 'Inter';
+            src: url("{{ asset('assets/files/fonts/Inter-Black.otf') }}") format('truetype');
+            font-weight: 900;
+            font-style: normal;
+        }
 
-    :root {
-        --bs-font-sans-serif: 'Inter', sans-serif;
-        --bs-body-font-family: 'Inter', sans-serif;
-        --bs-body-font-size: 0.875rem; /* 14px */
-        --bs-body-line-height: 1.5;
-    }
+        :root {
+            --bs-font-sans-serif: 'Inter', sans-serif;
+            --bs-body-font-family: 'Inter', sans-serif;
+            --bs-body-font-size: 0.875rem;
+            /* 14px */
+            --bs-body-line-height: 1.5;
+        }
 
-    body {
-        font-family: 'Inter', sans-serif;
-    }
-</style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+    </style>
 
     <script>
         // Frame-busting to prevent site from being loaded within a frame without permission (click-jacking)
@@ -153,8 +155,20 @@
                                 </div>
                             </div>
                             <div class="app-navbar-item ms-1 ms-md-4" id="kt_header_user_menu_toggle">
-                                <div class="cursor-pointer symbol symbol-35px" data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-attach="parent" data-kt-menu-placement="bottom-end">
-                                    <img src="{{ asset('assets/media/avatars/300-23.jpg') }}" class="rounded-3" alt="user" />
+                                <div class="cursor-pointer d-flex align-items-center gap-2" data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-attach="parent" data-kt-menu-placement="bottom-end">
+
+                                    <div class="d-none d-md-block text-end">
+                                        <div class="fw-bold text-gray-800 fs-7">
+                                            {{ Auth::user()->persona->nombres_persona ?? 'Usuario' }} {{ Auth::user()->persona->apellido_paterno_persona ?? '' }}
+                                        </div>
+                                        <a href="#" class="fw-semibold text-muted text-hover-primary fs-7">
+                                            {{ Auth::user()->nombre_usuario }}
+                                        </a>
+                                    </div>
+
+                                    <div class="symbol symbol-35px">
+                                        <img src="{{ asset('assets/media/avatars/300-23.jpg') }}" class="rounded-3" alt="user" />
+                                    </div>
                                 </div>
                                 <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-color fw-semibold py-4 fs-6 w-275px" data-kt-menu="true">
                                     <div class="menu-item px-3">

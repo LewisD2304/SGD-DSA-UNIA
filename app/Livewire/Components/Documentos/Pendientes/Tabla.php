@@ -108,10 +108,21 @@ class Tabla extends Component
 
                 $mensajeExito = 'Documento archivado correctamente';
             } else {
-                // Buscar la transición RECEPCIONAR
-                $transicion = Transicion::where('evento_transicion', 'RECEPCIONAR')
-                    ->where('id_estado_actual_transicion', $documento->id_estado)
-                    ->first();
+                // Si está OBSERVADO, usar transición específica OBSERVACION RECEPCIONADO
+                $nombreEstado = strtoupper(optional($documento->estado)->nombre_estado);
+                if ($nombreEstado === 'OBSERVADO') {
+                    $transicion = Transicion::where('evento_transicion', 'OBSERVACION RECEPCIONADO')
+                        ->where('id_estado_actual_transicion', $documento->id_estado)
+                        ->first();
+                } else if ($nombreEstado === 'SUBSANADO' || $nombreEstado === 'RECEPCION SUBSANADA') {
+                    $transicion = Transicion::where('evento_transicion', 'RECEPCIONAR SUBSANACION')
+                        ->where('id_estado_actual_transicion', $documento->id_estado)
+                        ->first();
+                } else {
+                    $transicion = Transicion::where('evento_transicion', 'RECEPCIONAR')
+                        ->where('id_estado_actual_transicion', $documento->id_estado)
+                        ->first();
+                }
 
                 $mensajeExito = 'Documento recepcionado correctamente';
             }
@@ -427,7 +438,7 @@ class Tabla extends Component
             foreach ($menu->acciones as $accion) {
                 $nombre_accion = str_replace(' ', '_', strtoupper($accion->tipoAccion->descripcion_catalogo));
                 if ($nombre_accion !== 'LISTAR') {
-                    $this->permisos[$nombre_accion] = \Illuminate\Support\Facades\Gate::allows('autorizacion', [$nombre_accion, $menu->nombre_menu]);
+                    $this->permisos[$nombre_accion] = Gate::allows('autorizacion', [$nombre_accion, $menu->nombre_menu]);
                 }
             }
         }

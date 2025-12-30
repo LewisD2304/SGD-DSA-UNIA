@@ -106,7 +106,13 @@
                                                 $transiciones = $transiciones->filter(function($t) use ($nombreEstado) {
                                                 $evento = strtoupper($t->evento_transicion);
                                                 if ($nombreEstado === 'RECEPCIONADO') {
-                                                return in_array($evento, ['ARCHIVADO', 'ARCHIVAR']);
+                                                    return in_array($evento, ['ARCHIVADO', 'ARCHIVAR']);
+                                                }
+                                                if ($nombreEstado === 'OBSERVADO') {
+                                                    return $evento === 'OBSERVACION RECEPCIONADO';
+                                                }
+                                                if ($nombreEstado === 'RECEPCION SUBSANADA' || $nombreEstado === 'SUBSANADO') {
+                                                    return $evento === 'RECEPCIONAR SUBSANACION';
                                                 }
                                                 return $evento === 'RECEPCIONAR';
                                                 });
@@ -126,6 +132,8 @@
 
                                                 $config = [
                                                 'RECEPCIONAR' => ['color' => 'success', 'icono' => 'folder-check', 'texto' => 'Recepcionar'],
+                                                    'OBSERVACION RECEPCIONADO' => ['color' => 'success', 'icono' => 'folder-check', 'texto' => 'Recepcionar observado'],
+                                                'RECEPCIONAR SUBSANACION' => ['color' => 'success', 'icono' => 'shield-tick', 'texto' => 'Recepcionar subsanación'],
                                                 'ARCHIVADO' => ['color' => 'warning', 'icono' => 'archive', 'texto' => 'Archivar'],
                                                 'ARCHIVAR' => ['color' => 'warning', 'icono' => 'archive', 'texto' => 'Archivar'],
                                                 'DEVOLVER' => ['color' => 'danger', 'icono' => 'arrow-left', 'texto' => 'Devolver'],
@@ -136,7 +144,7 @@
                                                 $btnConfig = $config[$evento] ?? ['color' => 'secondary', 'icono' => 'abstract-26', 'texto' => $evento];
                                                 @endphp
 
-                                                @if($evento === 'RECEPCIONAR')
+                                                @if($evento === 'RECEPCIONAR' || $evento === 'OBSERVACION RECEPCIONADO' || $evento === 'RECEPCIONAR SUBSANACION')
                                                 <button type="button" class="btn btn-{{ $btnConfig['color'] }} btn-sm" wire:click="solicitarRecepcion({{ $documento->id_documento }}, false)">
                                                     <i class="ki-outline ki-{{ $btnConfig['icono'] }} fs-4 me-1"></i>
                                                     {{ $btnConfig['texto'] }}

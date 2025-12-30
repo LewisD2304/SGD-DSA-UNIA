@@ -3,86 +3,121 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3 class="fw-bold my-0">
-                    Observar Documento -_-
+                <h3 class="fw-bold my-0 text-warning">
+                    <i class="ki-outline ki-eye-slash fs-2 me-2 text-warning"></i> Observar Documento
                 </h3>
-
                 <div class="btn btn-icon btn-sm btn-active-icon-primary icon-rotate-custom" data-bs-dismiss="modal" aria-label="Close">
                     <i class="ki-outline ki-cross fs-1"></i>
                 </div>
             </div>
 
-            <form autocomplete="off" novalidate class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit="guardarRectificar">
-
+            <form autocomplete="off" wire:submit.prevent="guardarObservacion">
                 <div class="modal-body px-5">
                     <div class="d-flex flex-column px-5 px-lg-10">
 
-                        <div class="fw-bold text-dark mb-3 mt-3">
-                            <i class="ki-outline ki-document me-2"></i> Información del documento
+                        <div class="alert alert-dismissible bg-light-warning d-flex flex-column flex-sm-row p-5 mb-5">
+                            <div class="d-flex flex-column pe-0 pe-sm-10">
+                                <h5 class="mb-1">Documento: {{ $numeroDocumento }}</h5>
+                                <span>{{ Str::limit($asuntoDocumento, 100) }}</span>
+                            </div>
                         </div>
 
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control bg-light" id="numeroDocumento" readonly value="{{ $numeroDocumento }}" />
-                                    <label for="numeroDocumento">Número documento</label>
-                                </div>
+                        <div class="mb-4">
+                            <label class="required fw-semibold fs-6 mb-2">Devolver a (Área destino)</label>
+                            <div wire:ignore>
+                                <select class="form-select form-select-solid" id="select_area_observar" data-control="select2" data-placeholder="Seleccione un área">
+                                    <option></option>
+                                    @foreach($areas as $area)
+                                        <option value="{{ $area->id_area }}" @selected($idAreaObservar == $area->id_area)>{{ $area->nombre_area }}</option>
+                                    @endforeach
+                                </select>
                             </div>
+                            @error('idAreaObservar') <span class="text-danger fs-7">{{ $message }}</span> @enderror
+                        </div>
 
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control bg-light" id="folioDocumento" readonly value="{{ $folioDocumento }}" />
-                                    <label for="folioDocumento">Folio</label>
-                                </div>
+                        <div class="mb-4">
+                            <label class="required fw-semibold fs-6 mb-2">Motivo de la observación</label>
+                            <textarea
+                                wire:model.live="motivoObservacion"
+                                class="form-control form-control-solid @error('motivoObservacion') is-invalid @enderror"
+                                rows="4"
+                                placeholder="Indique detalladamente por qué se observa el documento..."
+                                maxlength="500"></textarea>
+
+                            <div class="text-muted fs-8 mt-1 text-end">
+                                {{ strlen($motivoObservacion ?? '') }}/500 caracteres
                             </div>
+                            @error('motivoObservacion') <span class="text-danger fs-7">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="mb-3">
-                            <div class="form-floating">
-                                <textarea class="form-control bg-light" id="asuntoDocumento" readonly style="height: 80px">{{ $asuntoDocumento }}</textarea>
-                                <label for="asuntoDocumento">Asunto</label>
-                            </div>
-                        </div>
+                            <label class="fw-semibold fs-6 mb-2">Adjuntar evidencia (Opcional)</label>
 
-                        <div class="mb-3">
-                            <div class="form-floating">
-                                <input type="text" class="form-control bg-light" id="idAreaDestino" readonly value="{{ $modeloDocumento?->areaDestino->nombre_area ?? 'Sin área' }}" />
-                                <label for="idAreaDestino">Área actual</label>
+                            <div class="d-flex align-items-center mb-3">
+                                <label class="btn btn-sm btn-light-primary me-3">
+                                    <i class="ki-outline ki-file-up fs-3"></i> Seleccionar archivos
+                                    <input type="file" wire:model="archivosEvidenciaObservacion" class="d-none" multiple accept=".pdf,.jpg,.jpeg,.png">
+                                </label>
+                                <span class="text-gray-500 fs-8">Máx 10MB (PDF, JPG, PNG)</span>
                             </div>
-                        </div>
 
-                        <div class="mb-3">
-                            <label class="required fw-semibold fs-6 mb-2">Observacion del documento</label>
-                            <textarea class="form-control form-control-solid text-uppercase @if ($errors->has('observacionesDerivar')) is-invalid @endif" id="observacionesDerivar" placeholder="Ingrese el motivo de la rectificación" wire:model="observacionesDerivar" maxlength="500" rows="4"></textarea>
-                            <div class="text-muted fs-8 mt-1">{{ strlen($observacionesDerivar) }}/500 caracteres</div>
-                            @error('observacionesDerivar')
-                            <div class="text-danger fs-7 mt-1">{{ $message }}</div>
+                            @error('archivosEvidenciaObservacion.*')
+                                <div class="text-danger fs-7 mb-2">{{ $message }}</div>
                             @enderror
+
+                            @if(is_array($archivosEvidenciaObservacion) && count($archivosEvidenciaObservacion) > 0)
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach($archivosEvidenciaObservacion as $index => $archivo)
+                                        <div class="badge badge-light-secondary d-flex align-items-center p-2">
+                                            <span class="me-2">
+                                                {{ method_exists($archivo, 'getClientOriginalName') ? Str::limit($archivo->getClientOriginalName(), 20) : 'Archivo' }}
+                                            </span>
+                                            <i class="ki-outline ki-trash fs-5 text-danger cursor-pointer" wire:click="quitarArchivoObservacion({{ $index }})"></i>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
 
                     </div>
                 </div>
 
                 <div class="modal-footer flex-center border-0">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
-                        Cancelar
-                    </button>
-
-                    <button type="submit" class="btn btn-primary">
-                        <span wire:loading.remove wire:target="guardarRectificar">
-                            <i class="ki-outline ki-check-circle fs-3 me-1"></i>
-                            Observar
+                    <button type="button" class="btn btn-light me-3" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <span wire:loading.remove wire:target="guardarObservacion">
+                            <i class="ki-outline ki-eye-slash fs-2 me-1"></i> Observar Documento
                         </span>
-                        <span wire:loading wire:target="guardarRectificar">
-                            <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
-                            Procesando...
+                        <span wire:loading wire:target="guardarObservacion">
+                            <span class="spinner-border spinner-border-sm align-middle ms-2"></span> Procesando...
                         </span>
                     </button>
                 </div>
-
             </form>
-
         </div>
     </div>
 </div>
 
+{{-- Script para inicializar Select2 dentro del modal --}}
+@script
+<script>
+    Livewire.on('inicializarSelect2Observacion', () => {
+        setTimeout(() => {
+            $('#select_area_observar').select2({
+                dropdownParent: $('#modal-observacion-documento')
+            }).on('change', function (e) {
+                @this.set('idAreaObservar', $(this).val());
+            });
+
+            // Establecer valor inicial si existe
+            const valorActual = @this.get('idAreaObservar');
+            if (valorActual) {
+                $('#select_area_observar').val(valorActual).trigger('change');
+            } else {
+                $('#select_area_observar').val(null).trigger('change');
+            }
+
+        }, 150);
+    });
+</script>
+@endscript

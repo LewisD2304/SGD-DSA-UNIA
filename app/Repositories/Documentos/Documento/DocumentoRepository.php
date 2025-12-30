@@ -92,9 +92,11 @@ class DocumentoRepository implements DocumentoRepositoryInterface
                 // Solo estados considerados pendientes para el área
                 $q->whereIn('nombre_estado', [
                     'DERIVADO',
+                    'OBSERVADO',
                     'SUBSANADO',
                     'RETORNADO',
                     'PARA ARCHIVAR',
+                    'RECEPCION SUBSANADA',
                 ])->orWhere('id_estado', 10); // 10=Solicitud rectificación
             });
 

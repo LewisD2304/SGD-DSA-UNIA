@@ -67,6 +67,39 @@
 							@enderror
 						</div>
 
+					@php
+						$nombreEstado = strtoupper($modeloDocumento?->estado?->nombre_estado ?? '');
+						$esObservacionRecepcionado = str_contains($nombreEstado, 'OBSERVACION RECEPCIONADO');
+					@endphp
+
+					@if($esObservacionRecepcionado)
+					<!-- Checkbox obligatorio para OBSERVACION RECEPCIONADO -->
+					<div class="mb-3">
+						<div class="alert alert-warning d-flex align-items-center p-4">
+							<i class="ki-outline ki-information-5 fs-2tx text-warning me-3"></i>
+							<div class="flex-grow-1">
+								<div class="form-check form-check-custom form-check-solid">
+									<input
+										class="form-check-input @error('observacionSubsanada') is-invalid @enderror"
+										type="checkbox"
+										wire:model="observacionSubsanada"
+										id="observacionSubsanada"
+									/>
+									<label class="form-check-label fw-bold text-gray-800 fs-6" for="observacionSubsanada">
+										<span class="required">Observación subsanada</span>
+									</label>
+								</div>
+								<div class="text-muted fs-7 mt-1">
+									Debe confirmar que la observación ha sido subsanada antes de derivar
+								</div>
+								@error('observacionSubsanada')
+									<div class="text-danger fs-7 mt-1">{{ $message }}</div>
+								@enderror
+							</div>
+						</div>
+					</div>
+					@endif
+
 					</div>
 				</div>
 

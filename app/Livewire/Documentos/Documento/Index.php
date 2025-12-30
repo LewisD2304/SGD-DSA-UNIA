@@ -59,9 +59,15 @@ class Index extends Component
     // Propiedades para derivar documento
     public $idAreaDerivar = '';
     public $observacionesDerivar = '';
+    public $observacionSubsanada = false;
     public $archivosEvidenciaRectificacion = [];
     public ?int $documentoArchivarId = null;
     public ?string $documentoArchivarTitulo = null;
+
+  // --- PROPIEDADES OBSERVACIÓN (NUEVO) ---
+    public $idAreaObservar = '';
+    public $motivoObservacion = '';
+    public $archivosEvidenciaObservacion = [];
 
     protected DocumentoService $documentoService;
     protected ArchivoDocumentoService $archivoService;
@@ -511,6 +517,7 @@ class Index extends Component
         $this->idAreaDestino = $this->modeloDocumento->id_area_destino;
         $this->idAreaDerivar = '';
         $this->observacionesDerivar = '';
+        $this->observacionSubsanada = false;
 
         $this->dispatch('cargando', cargando: 'false');
         $this->modalDocumento('#modal-derivar-documento', 'show');
@@ -518,14 +525,25 @@ class Index extends Component
 
     public function guardarDerivar()
     {
-        $this->validate([
+        $reglas = [
             'idAreaDerivar' => 'required|exists:ta_area,id_area',
             'observacionesDerivar' => 'nullable|max:500'
-        ], [
+        ];
+
+        $mensajes = [
             'idAreaDerivar.required' => 'Debe seleccionar un área de destino',
             'idAreaDerivar.exists' => 'El área seleccionada no existe',
             'observacionesDerivar.max' => 'Las observaciones no pueden exceder 500 caracteres'
-        ]);
+        ];
+
+        // Si el estado es OBSERVACION RECEPCIONADO, validar que el checkbox esté marcado
+        $nombreEstado = strtoupper($this->modeloDocumento?->estado?->nombre_estado ?? '');
+        if (str_contains($nombreEstado, 'OBSERVACION RECEPCIONADO')) {
+            $reglas['observacionSubsanada'] = 'accepted';
+            $mensajes['observacionSubsanada.accepted'] = 'Debe confirmar que la observación ha sido subsanada';
+        }
+
+        $this->validate($reglas, $mensajes);
 
         $mensajeToastr = null;
 
@@ -534,8 +552,14 @@ class Index extends Component
                 throw new \Exception('No se encontró el documento a derivar');
             }
 
-            // Buscar la transición DERIVAR según el estado actual del documento
-            $transicion = Transicion::where('evento_transicion', 'DERIVAR')
+            // Si el checkbox de subsanación está marcado, usar la transición SUBSANADO en lugar de DERIVAR
+            $eventoTransicion = 'DERIVAR';
+            if ($this->observacionSubsanada) {
+                $eventoTransicion = 'SUBSANADO';
+            }
+
+            // Buscar la transición según el estado actual del documento
+            $transicion = Transicion::where('evento_transicion', $eventoTransicion)
                 ->where('id_estado_actual_transicion', $this->modeloDocumento->id_estado)
                 ->first();
 
@@ -565,7 +589,7 @@ class Index extends Component
         }
 
         $this->modalDocumento('#modal-derivar-documento', 'hide');
-        $this->reset(['idAreaDerivar', 'observacionesDerivar']);
+        $this->reset(['idAreaDerivar', 'observacionesDerivar', 'observacionSubsanada']);
 
         if ($mensajeToastr !== null) {
             $this->dispatch(
@@ -776,6 +800,78 @@ class Index extends Component
                 posicion_y: $mensajeToastr['posicion_y'],
                 posicion_x: $mensajeToastr['posicion_x']
             );
+        }
+    }
+
+// --- OBSERVACIÓN (NUEVA FUNCIONALIDAD) ---
+
+    #[On('abrirModalObservarDocumento')]
+    public function abrirModalObservarDocumento($id_documento)
+    {
+        $this->limpiarModal();
+
+        $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento, ['areaRemitente', 'areaDestino', 'estado']);
+
+        if(!$this->modeloDocumento) return;
+
+        // Cargar datos para mostrar
+        $this->numeroDocumento = $this->modeloDocumento->numero_documento;
+        $this->folioDocumento = $this->modeloDocumento->folio_documento;
+        $this->asuntoDocumento = $this->modeloDocumento->asunto_documento;
+
+        // Configurar valores por defecto para observar
+        $this->idAreaObservar = $this->modeloDocumento->id_area_remitente; // Sugerir remitente original
+        $this->motivoObservacion = '';
+        $this->archivosEvidenciaObservacion = [];
+
+        $this->dispatch('cargando', cargando: 'false');
+        $this->dispatch('inicializarSelect2Observacion');
+        $this->modalDocumento('#modal-observacion-documento', 'show');
+    }
+
+    public function guardarObservacion()
+    {
+        $this->motivoObservacion = limpiarCadena($this->motivoObservacion, false);
+
+        $this->validate([
+            'idAreaObservar' => 'required|exists:ta_area,id_area',
+            'motivoObservacion' => 'required|max:500|min:5',
+            'archivosEvidenciaObservacion' => 'nullable|array',
+            'archivosEvidenciaObservacion.*' => 'file|mimetypes:application/pdf,image/png,image/jpeg|max:10240'
+        ], [
+            'idAreaObservar.required' => 'Debe seleccionar el área destino.',
+            'motivoObservacion.required' => 'El motivo es obligatorio.',
+        ]);
+
+        $mensajeToastr = null;
+
+        try {
+            $this->documentoService->observar(
+                $this->modeloDocumento->id_documento,
+                (int) $this->idAreaObservar,
+                $this->motivoObservacion,
+                $this->archivosEvidenciaObservacion
+            );
+
+            $this->dispatch('refrescarDocumentos');
+            $mensajeToastr = mensajeToastr(false, true, '3000', 'Observado', 'warning', 'Documento observado correctamente.', 'top', 'right');
+
+        } catch (\Exception $e) {
+            $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');
+        }
+
+        $this->modalDocumento('#modal-observacion-documento', 'hide');
+        $this->reset(['idAreaObservar', 'motivoObservacion', 'archivosEvidenciaObservacion']);
+
+        if ($mensajeToastr !== null) {
+            $this->dispatch('toastr', ...$mensajeToastr);
+        }
+    }
+
+    public function quitarArchivoObservacion($index)
+    {
+        if (isset($this->archivosEvidenciaObservacion[$index])) {
+            array_splice($this->archivosEvidenciaObservacion, $index, 1);
         }
     }
 

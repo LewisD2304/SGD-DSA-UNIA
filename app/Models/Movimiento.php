@@ -25,7 +25,8 @@ class Movimiento extends Model
         'id_estado',
         'observacion_doc_movimiento',
         'id_area_origen',
-        'id_area_destino'
+        'id_area_destino',
+        'fecha_recepcion'
     ];
 
     protected $hidden = [

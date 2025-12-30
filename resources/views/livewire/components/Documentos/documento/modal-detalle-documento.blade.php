@@ -124,6 +124,7 @@ use Illuminate\Support\Facades\Storage;
                 @php
                 $nombreEstadoDoc = strtoupper($modeloDocumento->estado->nombre_estado ?? '');
                 $esRectificacionAceptada = ($modeloDocumento->id_estado == 9) || str_contains($nombreEstadoDoc, 'POR RECTIFICAR');
+                $esObservado = str_contains($nombreEstadoDoc, 'OBSERVADO') || str_contains($nombreEstadoDoc, 'OBSERVACION');
 
                 // Buscar el motivo: primero en movimiento estado 10 (solicitud), luego en estado 9 (aceptación)
                 $movimientoConMotivo = $esRectificacionAceptada ? $modeloDocumento->movimientos()
@@ -133,6 +134,16 @@ use Illuminate\Support\Facades\Storage;
                     ->first() : null;
 
                 $motivoRectificacion = $movimientoConMotivo ? $movimientoConMotivo->observacion_doc_movimiento : null;
+
+                // Buscar el motivo de observación
+                $estadoObservado = DB::table('ta_estado')->whereIn('nombre_estado', ['OBSERVADO','OBSERVACION RECEPCIONADO'])->pluck('id_estado');
+                $movimientoObservacion = $esObservado && $estadoObservado ? $modeloDocumento->movimientos()
+                    ->whereIn('id_estado', $estadoObservado)
+                    ->whereNotNull('observacion_doc_movimiento')
+                    ->orderByDesc('au_fechacr')
+                    ->first() : null;
+
+                $motivoObservacion = $movimientoObservacion ? $movimientoObservacion->observacion_doc_movimiento : null;
                 @endphp
 
                 @if($motivoRectificacion)
@@ -151,6 +162,46 @@ use Illuminate\Support\Facades\Storage;
                 </div>
                 @endif
 
+                @php
+                // Mostrar observación y subsanación según el estado
+                $esObservacionRecepcionado = str_contains($nombreEstadoDoc, 'OBSERVACION RECEPCIONADO');
+                $esRecepcionSubsanada = str_contains($nombreEstadoDoc, 'RECEPCION SUBSANADA');
+                $puedeMostrarObservacion = $motivoObservacion && ($esObservacionRecepcionado || $esRecepcionSubsanada);
+                @endphp
+
+                @if($puedeMostrarObservacion)
+                <div class="notice d-flex bg-light-warning rounded border-warning border border-dashed p-4 mb-6">
+                    <i class="ki-outline ki-information-5 fs-2tx text-warning me-4"></i>
+                    <div class="d-flex flex-stack flex-grow-1">
+                        <div class="fw-semibold">
+                            <h4 class="text-gray-900 fw-bold mb-2">
+                                <i class="ki-outline ki-eye-slash fs-4 me-1"></i> Motivo de Observación
+                            </h4>
+                            <div class="fs-6 text-gray-800 lh-base" style="white-space: pre-wrap; word-wrap: break-word;">
+                                {{ $motivoObservacion }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Solo mostrar check de subsanación cuando está en RECEPCION SUBSANADA, NO en OBSERVACION RECEPCIONADO --}}
+                @if($esRecepcionSubsanada)
+                <div class="notice d-flex bg-light-success rounded border-success border border-dashed p-4 mb-6">
+                    <i class="ki-outline ki-check-circle fs-2tx text-success me-4"></i>
+                    <div class="d-flex flex-stack flex-grow-1">
+                        <div class="fw-semibold">
+                            <h4 class="text-success fw-bold mb-2">
+                                <i class="ki-outline ki-shield-tick fs-4 me-1"></i> Observación Subsanada
+                            </h4>
+                            <div class="fs-6 text-gray-700 lh-base">
+                                El documento ha sido corregido y puede ser derivado a otra área.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+                @endif
+
                 @if($modeloDocumento->archivos && count($modeloDocumento->archivos) > 0)
                     @php
                     $archivosOriginales = $modeloDocumento->archivos->where('tipo_archivo', 'original');
@@ -158,6 +209,8 @@ use Illuminate\Support\Facades\Storage;
                     $archivosEvidencia = ($modeloDocumento->id_estado != 10)
                         ? $modeloDocumento->archivos->where('tipo_archivo', 'evidencia_rectificacion')
                         : collect([]);
+                    // Archivos de evidencia de observación
+                    $archivosEvidenciaObservacion = $modeloDocumento->archivos->where('tipo_archivo', 'evidencia_observacion');
                     @endphp
 
                     @if($archivosOriginales->count() > 0)
@@ -194,7 +247,7 @@ use Illuminate\Support\Facades\Storage;
 
                     @if($archivosEvidencia->count() > 0)
                     <div class="separator separator-dashed my-6"></div>
-                    <div class="mb-0">
+                    <div class="mb-6">
                         <h4 class="fs-6 fw-bold text-gray-800 mb-4">
                             <i class="ki-outline ki-document-text fs-4 me-1 text-warning"></i> Evidencia de rectificación ({{ $archivosEvidencia->count() }})
                         </h4>
@@ -215,6 +268,38 @@ use Illuminate\Support\Facades\Storage;
                                             <span class="text-gray-600 fw-semibold fs-8">{{ $archivo->tamanio_formateado }}</span>
                                         </div>
                                         <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-icon btn-sm btn-warning ms-2" data-bs-toggle="tooltip" title="Ver Archivo">
+                                            <i class="ki-outline ki-eye fs-3"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                    @if($archivosEvidenciaObservacion->count() > 0)
+                    <div class="separator separator-dashed my-6"></div>
+                    <div class="mb-0">
+                        <h4 class="fs-6 fw-bold text-gray-800 mb-4">
+                            <i class="ki-outline ki-eye-slash fs-4 me-1 text-danger"></i> Evidencia de observación ({{ $archivosEvidenciaObservacion->count() }})
+                        </h4>
+
+                        <div class="row g-4">
+                            @foreach($archivosEvidenciaObservacion as $archivo)
+                                <div class="col-md-6" wire:key="archivo-evidencia-obs-{{ $archivo->id_archivo_documento }}">
+                                    <div class="d-flex align-items-center border border-dashed border-danger rounded p-3 bg-light-danger h-100 hover-elevate-up transition-300">
+                                        <div class="symbol symbol-45px me-4">
+                                            <span class="symbol-label bg-light-{{ $archivo->color }}">
+                                                <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
+                                            </span>
+                                        </div>
+                                        <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+                                            <span class="text-gray-800 fw-bold fs-6 text-truncate" title="{{ $archivo->nombre_original }}">
+                                                {{ Str::limit($archivo->nombre_original, 25) }}
+                                            </span>
+                                            <span class="text-gray-600 fw-semibold fs-8">{{ $archivo->tamanio_formateado }}</span>
+                                        </div>
+                                        <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-icon btn-sm btn-danger ms-2" data-bs-toggle="tooltip" title="Ver Archivo">
                                             <i class="ki-outline ki-eye fs-3"></i>
                                         </a>
                                     </div>

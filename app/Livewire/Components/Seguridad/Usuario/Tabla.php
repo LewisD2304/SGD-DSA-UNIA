@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Components\Seguridad\Usuario;
 
+use App\Services\Seguridad\MenuService;
 use App\Services\Seguridad\UsuarioService;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Attributes\Computed;
@@ -165,14 +167,14 @@ class Tabla extends Component
 
     public function mount()
     {
-        $menuService = resolve(\App\Services\Seguridad\MenuService::class);
+        $menuService = resolve(MenuService::class);
         $menu = $menuService->listarAccionesPorNombreMenu('USUARIOS');
 
         if ($menu) {
             foreach ($menu->acciones as $accion) {
                 $nombre_accion = str_replace(' ', '_', strtoupper($accion->tipoAccion->descripcion_catalogo));
                 if ($nombre_accion !== 'LISTAR') {
-                    $this->permisos[$nombre_accion] = \Illuminate\Support\Facades\Gate::allows('autorizacion', [$nombre_accion, $menu->nombre_menu]);
+                    $this->permisos[$nombre_accion] = Gate::allows('autorizacion', [$nombre_accion, $menu->nombre_menu]);
                 }
             }
         }
