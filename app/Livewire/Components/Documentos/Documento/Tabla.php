@@ -9,12 +9,14 @@ use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class Tabla extends Component
 {
     use WithPagination;
+    use WithFileUploads;
 
     #[Url('mostrar')]
     public $mostrarPaginate = 10;
@@ -60,7 +62,7 @@ class Tabla extends Component
             buscar: $this->buscar,
             columnaOrden: 'au_fechacr',
             orden: 'desc',
-            relaciones: ['area', 'tipoDocumento', 'estado', 'areaRemitente', 'areaDestino']
+            relaciones: ['area', 'tipoDocumento', 'estado', 'areaRemitente', 'areaDestino', 'movimientos.areaOrigen']
         );
     }
 

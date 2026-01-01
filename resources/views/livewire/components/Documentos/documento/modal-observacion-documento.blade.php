@@ -28,7 +28,7 @@
                                 <select class="form-select form-select-solid" id="select_area_observar" data-control="select2" data-placeholder="Seleccione un área">
                                     <option></option>
                                     @foreach($areas as $area)
-                                        <option value="{{ $area->id_area }}" @selected($idAreaObservar == $area->id_area)>{{ $area->nombre_area }}</option>
+                                    <option value="{{ $area->id_area }}">{{ $area->nombre_area }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -37,12 +37,7 @@
 
                         <div class="mb-4">
                             <label class="required fw-semibold fs-6 mb-2">Motivo de la observación</label>
-                            <textarea
-                                wire:model.live="motivoObservacion"
-                                class="form-control form-control-solid @error('motivoObservacion') is-invalid @enderror"
-                                rows="4"
-                                placeholder="Indique detalladamente por qué se observa el documento..."
-                                maxlength="500"></textarea>
+                            <textarea wire:model.live="motivoObservacion" class="form-control form-control-solid @error('motivoObservacion') is-invalid @enderror" rows="4" placeholder="Indique detalladamente por qué se observa el documento..." maxlength="500"></textarea>
 
                             <div class="text-muted fs-8 mt-1 text-end">
                                 {{ strlen($motivoObservacion ?? '') }}/500 caracteres
@@ -62,20 +57,21 @@
                             </div>
 
                             @error('archivosEvidenciaObservacion.*')
-                                <div class="text-danger fs-7 mb-2">{{ $message }}</div>
+                            <div class="text-danger fs-7 mb-2">{{ $message }}</div>
                             @enderror
 
                             @if(is_array($archivosEvidenciaObservacion) && count($archivosEvidenciaObservacion) > 0)
-                                <div class="d-flex flex-wrap gap-2">
-                                    @foreach($archivosEvidenciaObservacion as $index => $archivo)
-                                        <div class="badge badge-light-secondary d-flex align-items-center p-2">
-                                            <span class="me-2">
-                                                {{ method_exists($archivo, 'getClientOriginalName') ? Str::limit($archivo->getClientOriginalName(), 20) : 'Archivo' }}
-                                            </span>
-                                            <i class="ki-outline ki-trash fs-5 text-danger cursor-pointer" wire:click="quitarArchivoObservacion({{ $index }})"></i>
-                                        </div>
-                                    @endforeach
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                @foreach($archivosEvidenciaObservacion as $index => $archivo)
+                                <div class="badge badge-light-secondary d-flex align-items-center p-2">
+                                    <span class="me-2">
+                                        {{-- Verificamos si es un archivo temporal --}}
+                                        {{ method_exists($archivo, 'getClientOriginalName') ? Str::limit($archivo->getClientOriginalName(), 25) : 'Archivo' }}
+                                    </span>
+                                    <i class="ki-outline ki-trash fs-5 text-danger cursor-pointer" wire:click="quitarArchivoObservacion({{ $index }})"></i>
                                 </div>
+                                @endforeach
+                            </div>
                             @endif
                         </div>
 
@@ -84,7 +80,7 @@
 
                 <div class="modal-footer flex-center border-0">
                     <button type="button" class="btn btn-light me-3" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning">
+                    <button type="submit" class="btn btn-warning" wire:loading.attr="disabled">
                         <span wire:loading.remove wire:target="guardarObservacion">
                             <i class="ki-outline ki-eye-slash fs-2 me-1"></i> Observar Documento
                         </span>
@@ -105,7 +101,7 @@
         setTimeout(() => {
             $('#select_area_observar').select2({
                 dropdownParent: $('#modal-observacion-documento')
-            }).on('change', function (e) {
+            }).on('change', function(e) {
                 @this.set('idAreaObservar', $(this).val());
             });
 
@@ -119,5 +115,6 @@
 
         }, 150);
     });
+
 </script>
 @endscript

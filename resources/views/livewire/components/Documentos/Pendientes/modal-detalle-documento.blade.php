@@ -62,37 +62,37 @@ use Carbon\Carbon;
                     {{-- LÓGICA DE ESTADOS Y VISIBILIDAD DE ALERTAS --}}
                     {{-- ======================================================================== --}}
                     @php
-                        // 1. Datos básicos
-                        $nombreEstadoActual = strtoupper($modeloDocumento->estado->nombre_estado ?? '');
-                        $idAreaActualUsuario = Auth::user()->persona->id_area ?? null;
+                    // 1. Datos básicos
+                    $nombreEstadoActual = strtoupper($modeloDocumento->estado->nombre_estado ?? '');
+                    $idAreaActualUsuario = Auth::user()->persona->id_area ?? null;
 
-                        // 2. Lógica para RECTIFICACIÓN (Mesa de Partes - Público)
-                        $esSolicitudRectificacion = ($modeloDocumento->id_estado == 10) || str_contains($nombreEstadoActual, 'RECTIFIC');
-                        $ultimoMovimiento = $modeloDocumento->movimientos()->latest('au_fechacr')->first();
-                        $motivoRectificacion = $esSolicitudRectificacion && $ultimoMovimiento ? $ultimoMovimiento->observacion_doc_movimiento : null;
+                    // 2. Lógica para RECTIFICACIÓN (Mesa de Partes - Público)
+                    $esSolicitudRectificacion = ($modeloDocumento->id_estado == 10) || str_contains($nombreEstadoActual, 'RECTIFIC');
+                    $ultimoMovimiento = $modeloDocumento->movimientos()->latest('au_fechacr')->first();
+                    $motivoRectificacion = $esSolicitudRectificacion && $ultimoMovimiento ? $ultimoMovimiento->observacion_doc_movimiento : null;
 
-                        // 3. Lógica para OBSERVACIÓN (Áreas Internas)
-                        // Buscamos el último movimiento donde se marcó como OBSERVADO para saber quién lo hizo
-                        $movObservado = $modeloDocumento->movimientos()
-                            ->whereHas('estado', function($q){ $q->where('nombre_estado','OBSERVADO'); })
-                            ->latest('au_fechacr')
-                            ->first();
+                    // 3. Lógica para OBSERVACIÓN (Áreas Internas)
+                    // Buscamos el último movimiento donde se marcó como OBSERVADO para saber quién lo hizo
+                    $movObservado = $modeloDocumento->movimientos()
+                    ->whereHas('estado', function($q){ $q->where('nombre_estado','OBSERVADO'); })
+                    ->latest('au_fechacr')
+                    ->first();
 
-                        $motivoObservacion = $movObservado?->observacion_doc_movimiento;
-                        $idAreaQueObservo  = $movObservado?->id_area_origen; // ID del área que puso la observación
+                    $motivoObservacion = $movObservado?->observacion_doc_movimiento;
+                    $idAreaQueObservo = $movObservado?->id_area_origen; // ID del área que puso la observación
 
-                        // --- REGLAS DE VISIBILIDAD ---
+                    // --- REGLAS DE VISIBILIDAD ---
 
-                        // ROJO: Mostrar motivo solo si el documento sigue en estado OBSERVADO
-                        $mostrarAlertaRoja = ($nombreEstadoActual === 'OBSERVADO');
+                    // ROJO: Mostrar motivo solo si el documento sigue en estado OBSERVADO
+                    $mostrarAlertaRoja = ($nombreEstadoActual === 'OBSERVADO');
 
-                        // VERDE: Mostrar check solo si:
-                        //  a) El estado es SUBSANADO o RECEPCION SUBSANADA
-                        //  b) Y ADEMÁS, el usuario actual pertenece al área que hizo la observación (es quien debe verificar)
-                        $estaSubsanado = ($nombreEstadoActual === 'SUBSANADO' || $nombreEstadoActual === 'RECEPCION SUBSANADA');
-                        $soyElObservador = ($idAreaActualUsuario == $idAreaQueObservo);
+                    // VERDE: Mostrar check solo si:
+                    // a) El estado es SUBSANADO o RECEPCION SUBSANADA
+                    // b) Y ADEMÁS, el usuario actual pertenece al área que hizo la observación (es quien debe verificar)
+                    $estaSubsanado = ($nombreEstadoActual === 'SUBSANADO' || $nombreEstadoActual === 'RECEPCION SUBSANADA');
+                    $soyElObservador = ($idAreaActualUsuario == $idAreaQueObservo);
 
-                        $mostrarSubsanacion = $estaSubsanado && $soyElObservador;
+                    $mostrarSubsanacion = $estaSubsanado && $soyElObservador;
                     @endphp
 
                     {{-- 1. BLOQUE DE RECTIFICACIÓN (SOLO MESA DE PARTES) --}}
@@ -115,32 +115,32 @@ use Carbon\Carbon;
 
                     {{-- CASO A: Sigue observado (Muestra alerta roja con el motivo) --}}
                     @if($mostrarAlertaRoja && $motivoObservacion)
-                        <div class="mb-3">
-                            <div class="separator my-4"></div>
-                            <div class="fw-bold text-dark mb-3">
-                                <i class="ki-outline ki-eye-slash fs-3 me-2 text-danger"></i> Motivo de Observación
-                            </div>
-                            <div class="alert alert-danger d-flex align-items-start">
-                                <i class="ki-outline ki-message-text fs-2 me-3"></i>
-                                <div class="flex-grow-1">
-                                    <div class="text-gray-800 text-break">{{ $motivoObservacion }}</div>
-                                </div>
+                    <div class="mb-3">
+                        <div class="separator my-4"></div>
+                        <div class="fw-bold text-dark mb-3">
+                            <i class="ki-outline ki-eye-slash fs-3 me-2 text-danger"></i> Motivo de Observación
+                        </div>
+                        <div class="alert alert-danger d-flex align-items-start">
+                            <i class="ki-outline ki-message-text fs-2 me-3"></i>
+                            <div class="flex-grow-1">
+                                <div class="text-gray-800 text-break">{{ $motivoObservacion }}</div>
                             </div>
                         </div>
+                    </div>
                     @endif
 
                     {{-- CASO B: Ya fue subsanado Y soy el observador (Muestra check verde para verificar) --}}
                     @if($mostrarSubsanacion)
-                        <div class="mb-3">
-                            <div class="separator my-4"></div>
-                            <div class="alert alert-success d-flex align-items-center mt-3">
-                                <i class="ki-outline ki-check-circle fs-2 me-3 text-success"></i>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold text-success">✓ Observación subsanada</div>
-                                    <div class="text-gray-700 fs-7 mt-1">El documento ha sido corregido y está listo para ser recepcionado.</div>
-                                </div>
+                    <div class="mb-3">
+                        <div class="separator my-4"></div>
+                        <div class="alert alert-success d-flex align-items-center mt-3">
+                            <i class="ki-outline ki-check-circle fs-2 me-3 text-success"></i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-success">✓ Observación subsanada</div>
+                                <div class="text-gray-700 fs-7 mt-1">El documento ha sido corregido y está listo para ser recepcionado.</div>
                             </div>
                         </div>
+                    </div>
                     @endif
 
                     @if($modeloDocumento->fecha_recepcion_documento)
@@ -151,132 +151,228 @@ use Carbon\Carbon;
                     @endif
 
                     @if($modeloDocumento->archivos && count($modeloDocumento->archivos) > 0)
-                        @php
-                            $archivosOriginales = $modeloDocumento->archivos->where('tipo_archivo', 'original');
-                            $archivosEvidencia = $modeloDocumento->archivos->where('tipo_archivo', 'evidencia_rectificacion');
-                            $archivosEvidenciaObservacion = $modeloDocumento->archivos->where('tipo_archivo', 'evidencia_observacion');
-                        @endphp
+                    @php
+                    // 1. Archivos Originales
+                    $archivosOriginales = $modeloDocumento->archivos->where('tipo_archivo', 'original');
 
-                        {{-- ARCHIVOS ORIGINALES --}}
-                        @if($archivosOriginales->count() > 0)
-                        <div class="mb-3">
-                            <div class="separator my-4"></div>
-                            <div class="fw-bold text-dark mb-3">
-                                <i class="ki-outline ki-file-check fs-3 me-2 text-success"></i> Archivos adjuntos ({{ $archivosOriginales->count() }})
-                            </div>
-                            <div class="row g-3">
-                                @foreach($archivosOriginales as $archivo)
-                                <div class="col-md-6 col-lg-4" wire:key="archivo-{{ $archivo->id_archivo_documento }}">
-                                    <div class="card shadow-sm border border-gray-300 h-100">
-                                        <div class="card-body p-4 d-flex flex-column">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="symbol symbol-50px me-3">
-                                                    <span class="symbol-label bg-light-{{ $archivo->color }}">
-                                                        <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
-                                                    </span>
+                    // 2. Evidencias de Rectificación
+                    $archivosEvidencia = $modeloDocumento->archivos->where('tipo_archivo', 'evidencia_rectificacion');
+
+                    // 3. Evidencias de Observación
+                    $archivosEvidenciaObservacion = $modeloDocumento->archivos->where('tipo_archivo', 'evidencia_observacion');
+
+                    // 4. ARCHIVOS ADICIONALES (ANEXOS):
+                    // Obtenemos los IDs de los que ya clasificamos arriba
+                    $idsClasificados = $archivosOriginales->pluck('id_archivo_documento')
+                    ->merge($archivosEvidencia->pluck('id_archivo_documento'))
+                    ->merge($archivosEvidenciaObservacion->pluck('id_archivo_documento'))
+                    ->toArray();
+
+                    // Filtramos cualquier archivo que NO esté en los grupos anteriores (anexos agregados por áreas)
+                    $archivosOtros = $modeloDocumento->archivos->whereNotIn('id_archivo_documento', $idsClasificados);
+                    @endphp
+
+                    {{-- ARCHIVOS ORIGINALES --}}
+                    @if($archivosOriginales->count() > 0)
+                    <div class="mb-3">
+                        <div class="separator my-4"></div>
+                        <div class="fw-bold text-dark mb-3">
+                            <i class="ki-outline ki-file-check fs-3 me-2 text-success"></i> Archivos adjuntos ({{ $archivosOriginales->count() }})
+                        </div>
+                        <div class="row g-3">
+                            @foreach($archivosOriginales as $archivo)
+                            <div class="col-md-6 col-lg-4" wire:key="archivo-{{ $archivo->id_archivo_documento }}">
+                                <div class="card shadow-sm border border-gray-300 h-100">
+                                    <div class="card-body p-4 d-flex flex-column">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="symbol symbol-50px me-3">
+                                                <span class="symbol-label bg-light-{{ $archivo->color }}">
+                                                    <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
+                                                </span>
+                                            </div>
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivo->nombre_original }}">
+                                                    {{ Str::limit($archivo->nombre_original, 20) }}
                                                 </div>
-                                                <div class="flex-grow-1 overflow-hidden">
-                                                    <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivo->nombre_original }}">
-                                                        {{ Str::limit($archivo->nombre_original, 20) }}
-                                                    </div>
-                                                    <div class="text-muted fs-7">
-                                                        {{ $archivo->tamanio_formateado }}
-                                                    </div>
+                                                <div class="text-muted fs-7">
+                                                    {{ $archivo->tamanio_formateado }}
                                                 </div>
                                             </div>
-                                            <div class="d-flex gap-2 mt-auto">
-                                                <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-sm btn-light-success flex-fill">
-                                                    <i class="ki-outline ki-eye fs-5"></i> Ver
-                                                </a>
-                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2 mt-auto">
+                                            <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-sm btn-light-success flex-fill">
+                                                <i class="ki-outline ki-eye fs-5"></i> Ver
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
-                                @endforeach
                             </div>
+                            @endforeach
                         </div>
-                        @endif
+                    </div>
+                    @endif
 
-                        {{-- EVIDENCIA DE RECTIFICACIÓN (MESA DE PARTES) --}}
-                        @if($archivosEvidencia->count() > 0)
-                        <div class="mb-3">
-                            <div class="separator my-4"></div>
-                            <div class="fw-bold text-dark mb-3">
-                                <i class="ki-outline ki-document-text fs-3 me-2 text-warning"></i> Evidencia de rectificación ({{ $archivosEvidencia->count() }})
-                            </div>
-                            <div class="row g-3">
-                                @foreach($archivosEvidencia as $archivo)
-                                <div class="col-md-6 col-lg-4" wire:key="archivo-evidencia-{{ $archivo->id_archivo_documento }}">
-                                    <div class="card shadow-sm border border-warning h-100">
-                                        <div class="card-body p-4 d-flex flex-column">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="symbol symbol-50px me-3">
-                                                    <span class="symbol-label bg-light-{{ $archivo->color }}">
-                                                        <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
-                                                    </span>
+                    {{-- EVIDENCIA DE RECTIFICACIÓN (MESA DE PARTES) --}}
+                    @if($archivosEvidencia->count() > 0)
+                    <div class="mb-3">
+                        <div class="separator my-4"></div>
+                        <div class="fw-bold text-dark mb-3">
+                            <i class="ki-outline ki-document-text fs-3 me-2 text-warning"></i> Evidencia de rectificación ({{ $archivosEvidencia->count() }})
+                        </div>
+                        <div class="row g-3">
+                            @foreach($archivosEvidencia as $archivo)
+                            <div class="col-md-6 col-lg-4" wire:key="archivo-evidencia-{{ $archivo->id_archivo_documento }}">
+                                <div class="card shadow-sm border border-warning h-100">
+                                    <div class="card-body p-4 d-flex flex-column">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="symbol symbol-50px me-3">
+                                                <span class="symbol-label bg-light-{{ $archivo->color }}">
+                                                    <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
+                                                </span>
+                                            </div>
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivo->nombre_original }}">
+                                                    {{ Str::limit($archivo->nombre_original, 20) }}
                                                 </div>
-                                                <div class="flex-grow-1 overflow-hidden">
-                                                    <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivo->nombre_original }}">
-                                                        {{ Str::limit($archivo->nombre_original, 20) }}
-                                                    </div>
-                                                    <div class="text-muted fs-7">
-                                                        {{ $archivo->tamanio_formateado }}
-                                                    </div>
+                                                <div class="text-muted fs-7">
+                                                    {{ $archivo->tamanio_formateado }}
                                                 </div>
                                             </div>
-                                            <div class="d-flex gap-2 mt-auto">
-                                                <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-sm btn-light-warning flex-fill">
-                                                    <i class="ki-outline ki-eye fs-5"></i> Ver
-                                                </a>
-                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2 mt-auto">
+                                            <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-sm btn-light-warning flex-fill">
+                                                <i class="ki-outline ki-eye fs-5"></i> Ver
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
-                                @endforeach
                             </div>
+                            @endforeach
                         </div>
-                        @endif
+                    </div>
+                    @endif
 
-                        {{-- EVIDENCIA DE OBSERVACIÓN (ÁREAS INTERNAS) --}}
-                        {{-- Solo se muestra si hay alerta roja o verde activa --}}
-                        @if(($mostrarAlertaRoja || $mostrarSubsanacion) && $archivosEvidenciaObservacion->count() > 0)
-                        <div class="mb-3">
-                            <div class="separator my-4"></div>
-                            <div class="fw-bold text-dark mb-3">
-                                <i class="ki-outline ki-document-text fs-3 me-2 text-danger"></i> Evidencia de observación ({{ $archivosEvidenciaObservacion->count() }})
-                            </div>
-                            <div class="row g-3">
-                                @foreach($archivosEvidenciaObservacion as $archivo)
-                                <div class="col-md-6 col-lg-4" wire:key="archivo-evidencia-observacion-{{ $archivo->id_archivo_documento }}">
-                                    <div class="card shadow-sm border border-danger h-100">
-                                        <div class="card-body p-4 d-flex flex-column">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="symbol symbol-50px me-3">
-                                                    <span class="symbol-label bg-light-{{ $archivo->color }}">
-                                                        <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
-                                                    </span>
+                    {{-- ======================================================================== --}}
+                    {{-- LÓGICA DE ESTADOS Y VISIBILIDAD DE ALERTAS --}}
+                    {{-- ======================================================================== --}}
+                    @php
+                    // 1. Datos básicos
+                    $nombreEstadoActual = strtoupper($modeloDocumento->estado->nombre_estado ?? '');
+                    $idAreaActualUsuario = Auth::user()->persona->id_area ?? null;
+
+                    // 2. Lógica para RECTIFICACIÓN
+                    $esSolicitudRectificacion = ($modeloDocumento->id_estado == 10) || str_contains($nombreEstadoActual, 'RECTIFIC');
+                    $ultimoMovimiento = $modeloDocumento->movimientos()->latest('au_fechacr')->first();
+                    $motivoRectificacion = $esSolicitudRectificacion && $ultimoMovimiento ? $ultimoMovimiento->observacion_doc_movimiento : null;
+
+                    // 3. Lógica para OBSERVACIÓN
+                    $movObservado = $modeloDocumento->movimientos()
+                    ->whereHas('estado', function($q){ $q->where('nombre_estado','OBSERVADO'); })
+                    ->latest('au_fechacr')
+                    ->first();
+
+                    $motivoObservacion = $movObservado?->observacion_doc_movimiento;
+                    $idAreaQueObservo = $movObservado?->id_area_origen;
+
+                    // --- REGLAS DE VISIBILIDAD ---
+                    $mostrarAlertaRoja = ($nombreEstadoActual === 'OBSERVADO');
+                    $estaSubsanado = ($nombreEstadoActual === 'SUBSANADO' || $nombreEstadoActual === 'RECEPCION SUBSANADA');
+                    $soyElObservador = ($idAreaActualUsuario == $idAreaQueObservo);
+                    $mostrarSubsanacion = $estaSubsanado && $soyElObservador;
+
+                    // 4. Lógica de Archivos (Filtro Flexible)
+                    // Definimos en qué estados se deben ver estos archivos
+                    $estadosConEvidencia = ['OBSERVADO', 'SUBSANADO', 'RECEPCION SUBSANADA'];
+                    $mostrarEvidenciaObservacion = in_array($nombreEstadoActual, $estadosConEvidencia);
+
+                    // Filtramos buscando 'observacion' en el nombre del tipo, ignorando mayúsculas/minúsculas
+                    $archivosEvidenciaObservacion = $modeloDocumento->archivos->filter(function ($archivo) {
+                    return stripos($archivo->tipo_archivo, 'observacion') !== false;
+                    });
+                    @endphp
+
+                    {{-- ... (Bloques de alerta roja y verde se mantienen igual) ... --}}
+                    {{-- Solo pega el bloque de ARCHIVOS EVIDENCIA OBSERVACIÓN aquí abajo: --}}
+
+                    {{-- EVIDENCIA DE OBSERVACIÓN --}}
+                    @if($mostrarEvidenciaObservacion && $archivosEvidenciaObservacion->count() > 0)
+                    <div class="mb-3">
+                        <div class="separator my-4"></div>
+                        <div class="fw-bold text-dark mb-3">
+                            <i class="ki-outline ki-document-text fs-3 me-2 text-danger"></i> Evidencia de observación adjunta ({{ $archivosEvidenciaObservacion->count() }})
+                        </div>
+                        <div class="row g-3">
+                            @foreach($archivosEvidenciaObservacion as $archivo)
+                            <div class="col-md-6 col-lg-4" wire:key="archivo-evidencia-observacion-{{ $archivo->id_archivo_documento }}">
+                                <div class="card shadow-sm border border-danger h-100">
+                                    <div class="card-body p-4 d-flex flex-column">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="symbol symbol-50px me-3">
+                                                <span class="symbol-label bg-light-{{ $archivo->color }}">
+                                                    <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
+                                                </span>
+                                            </div>
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivo->nombre_original }}">
+                                                    {{ Str::limit($archivo->nombre_original, 20) }}
                                                 </div>
-                                                <div class="flex-grow-1 overflow-hidden">
-                                                    <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivo->nombre_original }}">
-                                                        {{ Str::limit($archivo->nombre_original, 20) }}
-                                                    </div>
-                                                    <div class="text-muted fs-7">
-                                                        {{ $archivo->tamanio_formateado }}
-                                                    </div>
+                                                <div class="text-muted fs-7">
+                                                    {{ $archivo->tamanio_formateado }}
                                                 </div>
                                             </div>
-                                            <div class="d-flex gap-2 mt-auto">
-                                                <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-sm btn-light-danger flex-fill">
-                                                    <i class="ki-outline ki-eye fs-5"></i> Ver
-                                                </a>
-                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2 mt-auto">
+                                            <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-sm btn-light-danger flex-fill">
+                                                <i class="ki-outline ki-eye fs-5"></i> Ver Evidencia
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
-                                @endforeach
                             </div>
+                            @endforeach
                         </div>
-                        @endif
+                    </div>
+                    @endif
+
+                    {{-- ARCHIVOS ADICIONALES / ANEXOS (Agregados por áreas) --}}
+                    @if($archivosOtros->count() > 0)
+                    <div class="mb-3">
+                        <div class="separator my-4"></div>
+                        <div class="fw-bold text-dark mb-3">
+                            <i class="ki-outline ki-file-added fs-3 me-2 text-primary"></i> Archivos adicionales ({{ $archivosOtros->count() }})
+                        </div>
+                        <div class="row g-3">
+                            @foreach($archivosOtros as $archivo)
+                            <div class="col-md-6 col-lg-4" wire:key="archivo-otros-{{ $archivo->id_archivo_documento }}">
+                                <div class="card shadow-sm border border-primary h-100">
+                                    <div class="card-body p-4 d-flex flex-column">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="symbol symbol-50px me-3">
+                                                <span class="symbol-label bg-light-{{ $archivo->color }}">
+                                                    <i class="ki-outline {{ $archivo->icono }} fs-2x text-{{ $archivo->color }}"></i>
+                                                </span>
+                                            </div>
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivo->nombre_original }}">
+                                                    {{ Str::limit($archivo->nombre_original, 20) }}
+                                                </div>
+                                                <div class="text-muted fs-7">
+                                                    {{ $archivo->tamanio_formateado }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2 mt-auto">
+                                            <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-sm btn-light-primary flex-fill">
+                                                <i class="ki-outline ki-eye fs-5"></i> Ver
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
                     @endif
 
                     {{-- ESTADO ACTUAL DEL DOCUMENTO --}}
@@ -284,23 +380,23 @@ use Carbon\Carbon;
                         <div class="fw-bold text-gray-600 mb-1">Estado:</div>
                         <div>
                             @if($modeloDocumento->estado)
-                                @php
-                                    $nombreEstado = strtoupper($modeloDocumento->estado->nombre_estado);
-                                    $colorEstado = match($nombreEstado) {
-                                        'RECEPCIONADO' => 'success',
-                                        'OBSERVADO' => 'danger',
-                                        'DERIVADO' => 'secondary',
-                                        'ARCHIVADO' => 'primary',
-                                        'SUBSANADO' => 'success',
-                                        'RECEPCION SUBSANADA' => 'success',
-                                        default => 'info'
-                                    };
-                                @endphp
-                                <span class="badge badge-light-{{ $colorEstado }} py-2 px-3">
-                                    {{ $modeloDocumento->estado->nombre_estado }}
-                                </span>
+                            @php
+                            $nombreEstado = strtoupper($modeloDocumento->estado->nombre_estado);
+                            $colorEstado = match($nombreEstado) {
+                            'RECEPCIONADO' => 'success',
+                            'OBSERVADO' => 'danger',
+                            'DERIVADO' => 'secondary',
+                            'ARCHIVADO' => 'primary',
+                            'SUBSANADO' => 'success',
+                            'RECEPCION SUBSANADA' => 'success',
+                            default => 'info'
+                            };
+                            @endphp
+                            <span class="badge badge-light-{{ $colorEstado }} py-2 px-3">
+                                {{ $modeloDocumento->estado->nombre_estado }}
+                            </span>
                             @else
-                                <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
+                            <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
                             @endif
                         </div>
                     </div>

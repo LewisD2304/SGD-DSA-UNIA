@@ -55,25 +55,28 @@ class DocumentoService
             // Solo incluir archivos de derivaciones cuando se pida explícitamente (Pendientes)
             // En "Mis Documentos" no se muestran los cambios de otras áreas hasta archivar
             if ($incluirDerivaciones && $documento->id_area_destino == $idAreaUsuario) {
-                // Determinar el área de origen del último DERIVAR hacia este destino
+                // Obtener TODAS las áreas que han participado en la derivación del documento
                 $estadoDerivado = DB::table('ta_estado')->where('nombre_estado', 'DERIVADO')->first();
-                $areaOrigenUltimoDerivar = null;
+                $areasQueDerivaron = [];
 
                 if ($estadoDerivado) {
-                    $ultimoDerivar = DB::table('ta_movimiento')
+                    // Obtener TODAS las áreas de origen de derivaciones, no solo la última
+                    $movimientosDerivacion = DB::table('ta_movimiento')
                         ->where('id_documento', $documento->id_documento)
                         ->where('id_estado', $estadoDerivado->id_estado)
-                        ->orderBy('au_fechacr', 'desc')
-                        ->first();
+                        ->whereNotNull('id_area_origen')
+                        ->pluck('id_area_origen')
+                        ->unique()
+                        ->toArray();
 
-                    $areaOrigenUltimoDerivar = $ultimoDerivar->id_area_origen ?? null;
+                    $areasQueDerivaron = $movimientosDerivacion;
                 }
 
-                // Incluir los adjuntos del área que realizó el último DERIVAR
-                if ($areaOrigenUltimoDerivar) {
+                // Incluir los adjuntos de TODAS las áreas que han derivado el documento
+                if (!empty($areasQueDerivaron)) {
                     $adjuntosExtra = $todosAdjuntos
-                        ->filter(function ($archivo) use ($areaOrigenUltimoDerivar) {
-                            return $archivo->id_area == $areaOrigenUltimoDerivar;
+                        ->filter(function ($archivo) use ($areasQueDerivaron) {
+                            return in_array($archivo->id_area, $areasQueDerivaron);
                         });
 
                     $documento->setRelation(
@@ -766,6 +769,7 @@ class DocumentoService
                     'DERIVADO',
                     'SUBSANADO',
                     'RETORNADO',
+                    'OBSERVADO',
                     'PARA ARCHIVAR'
                 ])->orWhere('id_estado', 10); // 10=Solicitud rectificación
             })

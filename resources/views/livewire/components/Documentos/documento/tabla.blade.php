@@ -52,11 +52,32 @@
                                         <td>
                                             <div class="text-gray-800">{{ Str::limit($documento->asunto_documento, 60) }}</div>
                                         </td>
+
+                                        @php
+                                        // Obtenemos el último movimiento registrado para ver quién lo envió por última vez
+                                        // Usamos la colección cargada para no hacer querys extra
+                                        $ultimoMovimiento = $documento->movimientos->sortByDesc('id_movimiento')->first();
+
+                                        // Si hay movimiento, el remitente actual es el origen de ese movimiento.
+                                        // Si no (es nuevo), es el creador original.
+                                        $nombreRemitenteActual = $ultimoMovimiento
+                                        ? ($ultimoMovimiento->areaOrigen->nombre_area ?? 'Sin Área')
+                                        : ($documento->areaRemitente->nombre_area ?? 'N/A');
+
+                                        // El destino siempre es donde está el documento actualmente
+                                        $nombreDestinoActual = $documento->areaDestino->nombre_area ?? 'N/A';
+                                        @endphp
+
                                         <td>
-                                            <div class="text-gray-800">{{ $documento->areaRemitente->nombre_area ?? 'N/A' }}</div>
+                                            {{-- Mostramos quién lo envió en esta etapa del flujo --}}
+                                            <div class="text-gray-800">{{ $nombreRemitenteActual }}</div>
+                                            {{-- Mostrar si es el creador original en pequeño --}}
+                                            @if($documento->id_area_remitente != ($ultimoMovimiento->id_area_origen ?? 0) && $ultimoMovimiento)
+                                            <span class="text-muted fs-9 d-block">Inicial: {{ $documento->areaRemitente->nombre_area ?? '' }}</span>
+                                            @endif
                                         </td>
                                         <td>
-                                            <div class="text-gray-800">{{ $documento->areaDestino->nombre_area ?? 'N/A' }}</div>
+                                            <div class="text-gray-800">{{ $nombreDestinoActual }}</div>
                                         </td>
                                         <td>{{ formatoFechaText($documento->au_fechacr)}}</td>
                                         <td>
@@ -139,8 +160,11 @@
                                                     @php
                                                     $areaUsuario = Auth::user()->persona->id_area ?? null;
                                                     $puedeDerivar = $areaUsuario &&
+                                                    $documento->id_area_destino == $areaUsuario;
+
+                                                    $puedeArchivar = $areaUsuario &&
                                                     $documento->id_area_destino == $areaUsuario &&
-                                                    $documento->fecha_recepcion_documento !== null;
+                                                    strtoupper($documento->estado->nombre_estado ?? '') === 'RECEPCIONADO';
 
                                                     $puedeArchivar = $areaUsuario &&
                                                     $documento->id_area_destino == $areaUsuario &&
