@@ -67,38 +67,50 @@
                             <button type="button" class="btn btn-light-primary" onclick="document.getElementById('evidenciaInput').click()">
                                 <i class="bi bi-upload me-2"></i> Elegir archivos
                             </button>
-                            <div class="text-muted fs-8 mt-2">Puedes adjuntar archivos PDF o imágenes JPG/PNG (máx. 10MB cada uno)</div>
+                            <div class="text-muted fs-8 mt-2">
+                                <div>Formatos permitidos: PDF, PNG, JPEG</div>
+                                <div>Máximo 10MB por archivo | Máximo 10 archivos</div>
+                            </div>
 
                             @error('archivosEvidenciaRectificacion')
-                            <div class="text-danger fs-7 mt-1">{{ $message }}</div>
+                            <div class="alert alert-danger fs-7 mt-2 mb-0">
+                                <i class="bi bi-exclamation-triangle me-2"></i> {{ $message }}
+                            </div>
                             @enderror
                             @error('archivosEvidenciaRectificacion.*')
-                            <div class="text-danger fs-7 mt-1">{{ $message }}</div>
+                            <div class="alert alert-danger fs-7 mt-2 mb-0">
+                                <i class="bi bi-exclamation-triangle me-2"></i> {{ $message }}
+                            </div>
                             @enderror
 
                             @if($archivosEvidenciaRectificacion && count($archivosEvidenciaRectificacion) > 0)
                             <div class="mt-3">
                                 <div class="fw-semibold text-gray-700 mb-2">
-                                    <i class="bi bi-paperclip me-1"></i> Archivos a subir ({{ count($archivosEvidenciaRectificacion) }})
+                                    <i class="bi bi-paperclip me-1"></i> Archivos a subir ({{ count($archivosEvidenciaRectificacion) }}/10)
                                 </div>
                                 <div class="row g-3">
                                     @foreach($archivosEvidenciaRectificacion as $idx => $archivo)
                                     @php
                                         $nombre = $archivo->getClientOriginalName();
-                                        $sizeKB = number_format($archivo->getSize() / 1024, 0);
+                                        $sizeKB = number_format($archivo->getSize() / 1024, 2);
+                                        $sizeValidation = ($archivo->getSize() <= 10485760) ? 'text-success' : 'text-danger';
                                         $ext = strtolower($archivo->getClientOriginalExtension());
                                         $isPdf = $ext === 'pdf';
+                                        $isValid = $archivo->getSize() <= 10485760;
                                     @endphp
                                     <div class="col-md-6 col-lg-4" wire:key="file-{{ $idx }}">
-                                        <div class="card border border-gray-300 h-100">
+                                        <div class="card border {{ $isValid ? 'border-gray-300' : 'border-danger' }} h-100">
                                             <div class="card-body p-3 d-flex flex-column">
                                                 <div class="d-flex align-items-center mb-2">
                                                     <div class="me-3">
                                                         <i class="bi {{ $isPdf ? 'bi-file-earmark-pdf text-danger' : 'bi-image text-primary' }} fs-2x"></i>
                                                     </div>
                                                     <div class="flex-grow-1 overflow-hidden">
-                                                        <div class="fw-bold text-gray-800 text-truncate" title="{{ $nombre }}">{{ Str::limit($nombre, 30) }}</div>
-                                                        <div class="text-muted fs-7">{{ $sizeKB }} KB</div>
+                                                        <div class="fw-bold text-gray-800 text-truncate text-sm" title="{{ $nombre }}">{{ Str::limit($nombre, 25) }}</div>
+                                                        <div class="text-muted fs-7 {{ $sizeValidation }}">{{ $sizeKB }} KB</div>
+                                                        @if (!$isValid)
+                                                        <div class="text-danger fs-7 fw-semibold">Archivo muy grande</div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                                 <button type="button" class="btn btn-sm btn-light-danger w-100 mt-auto" wire:click="quitarArchivoEvidencia({{ $idx }})">

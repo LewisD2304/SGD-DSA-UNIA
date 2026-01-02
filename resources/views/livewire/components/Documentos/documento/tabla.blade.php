@@ -3,15 +3,36 @@
     <div class="row g-5 gx-xl-10 mb-5 mb-xl-10">
         <div class="col-12">
             <div class="card">
-                <div class="d-flex flex-wrap flex-stack my-5 mx-8">
-                    <div class="d-flex align-items-center position-relative my-1 me-4 fs-7">
+                <div class="d-flex flex-wrap flex-stack my-5 mx-8 gap-3">
+                    <!-- BÚSQUEDA -->
+                    <div class="d-flex align-items-center position-relative my-1 fs-7">
                         <i class="ki-outline ki-magnifier fs-3 position-absolute ms-5"></i>
-                        <input type="text" data-kt-user-table-filter="buscar" class="form-control form-control-solid ps-13 w-xl-350px w-300" placeholder="Buscar documento" wire:model.live.debounce.500ms="buscar" />
+                        <input type="text" data-kt-user-table-filter="buscar" class="form-control form-control-solid ps-13 w-xl-300px w-250" placeholder="Buscar documento" wire:model.live.debounce.500ms="buscar" />
                     </div>
 
+                    <!-- FILTRO DE FECHAS -->
+                    <div class="d-flex gap-2 my-1">
+                        <input type="date" class="form-control form-control-solid" placeholder="Fecha inicio" wire:model.live="fechaInicio" max="{{ $fechaFin }}" title="Fecha de inicio" style="max-width: 150px;" />
+                        <input type="date" class="form-control form-control-solid" placeholder="Fecha fin" wire:model.live="fechaFin" min="{{ $fechaInicio }}" title="Fecha fin" style="max-width: 150px;" />
+                    </div>
+
+                    <!-- FILTRO DE ESTADO -->
+                    <select class="form-select form-select-solid my-1" wire:model.live="idEstadoFiltro" style="max-width: 200px;">
+                        <option value="">Todos los estados</option>
+                        @foreach($estados as $idEstado => $nombreEstado)
+                        <option value="{{ $idEstado }}">{{ $nombreEstado }}</option>
+                        @endforeach
+                    </select>
+
+                    <!-- BOTÓN LIMPIAR FILTROS -->
+                    <button type="button" class="btn btn-light-secondary fw-bold my-1" wire:click="limpiarFiltros">
+                        <i class="ki-outline ki-trash fs-2"></i>
+                        Limpiar
+                    </button>
+
                     @can('autorizacion',['REGISTRAR','DOCUMENTOS'])
-                    <div class="d-flex justify-content-end">
-                        <button type="button" class="btn btn-primary fw-bold mx-2" x-data @click="$dispatch('abrirModalDocumento')">
+                    <div class="ms-auto">
+                        <button type="button" class="btn btn-primary fw-bold" x-data @click="$dispatch('abrirModalDocumento')">
                             <i class="ki-outline ki-plus-circle fs-2"></i>
                             Nuevo
                         </button>

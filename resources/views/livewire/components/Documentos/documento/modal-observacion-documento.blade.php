@@ -48,29 +48,65 @@
                         <div class="mb-3">
                             <label class="fw-semibold fs-6 mb-2">Adjuntar evidencia (Opcional)</label>
 
-                            <div class="d-flex align-items-center mb-3">
-                                <label class="btn btn-sm btn-light-primary me-3">
+                            <div class="d-flex gap-2 align-items-center mb-3">
+                                <label class="btn btn-sm btn-light-primary">
                                     <i class="ki-outline ki-file-up fs-3"></i> Seleccionar archivos
                                     <input type="file" wire:model="archivosEvidenciaObservacion" class="d-none" multiple accept=".pdf,.jpg,.jpeg,.png">
                                 </label>
-                                <span class="text-gray-500 fs-8">Máx 10MB (PDF, JPG, PNG)</span>
+                                <span class="text-gray-500 fs-8">
+                                    Formatos: PDF, PNG, JPEG | Máx 10MB c/u | Máx 10 archivos
+                                </span>
                             </div>
 
+                            @error('archivosEvidenciaObservacion')
+                            <div class="alert alert-danger fs-7 mb-2">
+                                <i class="bi bi-exclamation-triangle me-2"></i> {{ $message }}
+                            </div>
+                            @enderror
                             @error('archivosEvidenciaObservacion.*')
-                            <div class="text-danger fs-7 mb-2">{{ $message }}</div>
+                            <div class="alert alert-danger fs-7 mb-2">
+                                <i class="bi bi-exclamation-triangle me-2"></i> {{ $message }}
+                            </div>
                             @enderror
 
                             @if(is_array($archivosEvidenciaObservacion) && count($archivosEvidenciaObservacion) > 0)
-                            <div class="d-flex flex-wrap gap-2 mt-2">
-                                @foreach($archivosEvidenciaObservacion as $index => $archivo)
-                                <div class="badge badge-light-secondary d-flex align-items-center p-2">
-                                    <span class="me-2">
-                                        {{-- Verificamos si es un archivo temporal --}}
-                                        {{ method_exists($archivo, 'getClientOriginalName') ? Str::limit($archivo->getClientOriginalName(), 25) : 'Archivo' }}
-                                    </span>
-                                    <i class="ki-outline ki-trash fs-5 text-danger cursor-pointer" wire:click="quitarArchivoObservacion({{ $index }})"></i>
+                            <div>
+                                <div class="fw-semibold text-gray-700 mb-2">
+                                    <i class="bi bi-paperclip me-1"></i> Archivos a subir ({{ count($archivosEvidenciaObservacion) }}/10)
                                 </div>
-                                @endforeach
+                                <div class="row g-2">
+                                    @foreach($archivosEvidenciaObservacion as $index => $archivo)
+                                    @php
+                                        $nombre = method_exists($archivo, 'getClientOriginalName') ? $archivo->getClientOriginalName() : 'Archivo';
+                                        $size = method_exists($archivo, 'getSize') ? $archivo->getSize() : 0;
+                                        $sizeKB = number_format($size / 1024, 2);
+                                        $ext = strtolower(pathinfo($nombre, PATHINFO_EXTENSION));
+                                        $isPdf = $ext === 'pdf';
+                                        $isValid = $size <= 10485760;
+                                    @endphp
+                                    <div class="col-md-6" wire:key="obs-file-{{ $index }}">
+                                        <div class="card border {{ $isValid ? 'border-gray-300' : 'border-danger' }} h-100">
+                                            <div class="card-body p-3 d-flex flex-column">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <div class="me-2">
+                                                        <i class="bi {{ $isPdf ? 'bi-file-earmark-pdf text-danger' : 'bi-image text-primary' }} fs-2"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1 overflow-hidden">
+                                                        <div class="fw-bold text-gray-800 text-truncate text-sm" title="{{ $nombre }}">{{ Str::limit($nombre, 25) }}</div>
+                                                        <div class="text-muted fs-7 {{ $isValid ? '' : 'text-danger' }}">{{ $sizeKB }} KB</div>
+                                                        @if (!$isValid)
+                                                        <div class="text-danger fs-7 fw-semibold">Archivo muy grande</div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-light-danger w-100 mt-auto" wire:click="quitarArchivoObservacion({{ $index }})">
+                                                    <i class="bi bi-trash me-1"></i> Quitar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
                             </div>
                             @endif
                         </div>

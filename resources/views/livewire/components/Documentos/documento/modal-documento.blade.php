@@ -136,39 +136,65 @@ use Illuminate\Support\Facades\Storage;
                             <label for="archivosDocumento" class="form-label">
                                 Adjuntar documentos (PDF, JPG, PNG - máx. 10MB c/u) <span class="text-danger">*</span>
                             </label>
-                            <input type="file" class="form-control @error('archivosDocumento.*') is-invalid @enderror"
-                                   id="archivosDocumento"
-                                   accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-                                   multiple
-                                   wire:model="archivosDocumento" />
+                            <div class="mb-2">
+                                <input type="file" class="form-control @error('archivosDocumento') is-invalid @enderror @error('archivosDocumento.*') is-invalid @enderror"
+                                       id="archivosDocumento"
+                                       accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                                       multiple
+                                       wire:model="archivosDocumento" />
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Formatos: PDF, PNG, JPEG | Máximo 10MB por archivo | Máximo 10 archivos
+                                </small>
+                            </div>
+
+                            @error('archivosDocumento')
+                            <div class="alert alert-danger fs-7 mb-3">
+                                <i class="bi bi-exclamation-triangle me-2"></i> {{ $message }}
+                            </div>
+                            @enderror
                             @error('archivosDocumento.*')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                            <div class="alert alert-danger fs-7 mb-3">
+                                <i class="bi bi-exclamation-triangle me-2"></i> {{ $message }}
+                            </div>
                             @enderror
 
                             <!-- Archivos en cola para subir -->
                             @if(!empty($archivosDocumento))
                             <div class="mt-4">
                                 <div class="fw-bold text-dark mb-3">
-                                    <i class="ki-outline ki-file-up fs-3 me-2"></i> Archivos a subir ({{ count($archivosDocumento) }})
+                                    <i class="bi bi-file-earmark-arrow-up me-2"></i> Archivos a subir ({{ count($archivosDocumento) }}/10)
                                 </div>
                                 <div class="row g-3">
                                     @foreach($archivosDocumento as $index => $archivo)
-                                    <div class="col-md-6 col-lg-4" wire:key="nuevo-archivo-{{ $index }}">
-                                        <div class="card shadow-sm border border-gray-300 h-100">
+                                    @php
+                                        $nombre = $archivo->getClientOriginalName();
+                                        $sizeBytes = $archivo->getSize();
+                                        $sizeKB = number_format($sizeBytes / 1024, 2);
+                                        $sizeMB = number_format($sizeBytes / (1024 * 1024), 2);
+                                        $ext = strtolower($archivo->getClientOriginalExtension());
+                                        $isPdf = $ext === 'pdf';
+                                        $isValid = $sizeBytes <= 10485760; // 10MB
+                                    @endphp
+                                    <div class="col-md-6 col-lg-4" wire:key="nuevo-arquivo-{{ $index }}">
+                                        <div class="card shadow-sm border {{ $isValid ? 'border-gray-300' : 'border-danger' }} h-100">
                                             <div class="card-body p-4 d-flex flex-column">
                                                 <div class="d-flex align-items-center mb-3">
                                                     <div class="symbol symbol-50px me-3">
-                                                        <span class="symbol-label bg-light-primary">
-                                                            <i class="ki-outline ki-file-sheet fs-2x text-primary"></i>
+                                                        <span class="symbol-label {{ $isValid ? 'bg-light-primary' : 'bg-light-danger' }}">
+                                                            <i class="bi {{ $isPdf ? 'bi-file-earmark-pdf text-danger' : 'bi-image text-primary' }} fs-3"></i>
                                                         </span>
                                                     </div>
                                                     <div class="flex-grow-1 overflow-hidden">
-                                                        <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivo->getClientOriginalName() }}">
-                                                            {{ Str::limit($archivo->getClientOriginalName(), 20) }}
+                                                        <div class="fw-bold text-gray-800 text-truncate text-sm" title="{{ $nombre }}">
+                                                            {{ Str::limit($nombre, 25) }}
                                                         </div>
-                                                        <div class="text-muted fs-7">
-                                                            {{ number_format($archivo->getSize() / 1024, 0) }} KB
+                                                        <div class="text-muted fs-7 {{ $isValid ? '' : 'text-danger fw-semibold' }}">
+                                                            {{ $sizeMB }} MB ({{ $sizeKB }} KB)
                                                         </div>
+                                                        @if (!$isValid)
+                                                        <div class="text-danger fs-7 fw-semibold">⚠️ Archivo muy grande</div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                                 <div class="d-flex gap-2 mt-auto">
@@ -189,7 +215,7 @@ use Illuminate\Support\Facades\Storage;
                             <div class="mt-4">
                                 <div class="separator my-4"></div>
                                 <div class="fw-bold text-dark mb-3">
-                                    <i class="ki-outline ki-file-check fs-3 me-2 text-success"></i> Archivos guardados ({{ count($archivosExistentes) }})
+                                    <i class="bi bi-file-earmark-check text-success me-2"></i> Archivos guardados ({{ count($archivosExistentes) }})
                                 </div>
                                 <div class="row g-3">
                                     @foreach($archivosExistentes as $archivoExistente)
@@ -199,15 +225,15 @@ use Illuminate\Support\Facades\Storage;
                                                 <div class="d-flex align-items-center mb-3">
                                                     <div class="symbol symbol-50px me-3">
                                                         <span class="symbol-label bg-light-{{ $archivoExistente->color }}">
-                                                            <i class="ki-outline {{ $archivoExistente->icono }} fs-2x text-{{ $archivoExistente->color }}"></i>
+                                                            <i class="bi {{ $archivoExistente->icono }} fs-3 text-{{ $archivoExistente->color }}"></i>
                                                         </span>
                                                     </div>
                                                     <div class="flex-grow-1 overflow-hidden">
-                                                        <div class="fw-bold text-gray-800 text-truncate" title="{{ $archivoExistente->nombre_original }}">
+                                                        <div class="fw-bold text-gray-800 text-truncate text-sm" title="{{ $archivoExistente->nombre_original }}">
                                                             {{ Str::limit($archivoExistente->nombre_original, 20) }}
                                                         </div>
                                                         <div class="text-muted fs-7">
-                                                            {{ $archivoExistente->tamanio_formateado }}
+                                                            <i class="bi bi-check-circle-fill text-success"></i> {{ $archivoExistente->tamanio_formateado }}
                                                         </div>
                                                     </div>
                                                 </div>

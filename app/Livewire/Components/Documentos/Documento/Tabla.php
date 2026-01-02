@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Components\Documentos\Documento;
 
+use App\Models\Estado;
 use App\Services\Documento\DocumentoService;
 use App\Services\Configuracion\AreaService;
+use App\Services\Seguridad\MenuService;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
@@ -22,7 +24,14 @@ class Tabla extends Component
     public $mostrarPaginate = 10;
     #[Url('buscar')]
     public $buscar = '';
+    #[Url('fecha_inicio')]
+    public $fechaInicio = '';
+    #[Url('fecha_fin')]
+    public $fechaFin = '';
+    #[Url('estado')]
+    public $idEstadoFiltro = '';
     public $permisos = [];
+    public $estados = [];
     public ?int $documentoArchivarId = null;
     public ?string $documentoArchivarTitulo = null;
     public ?int $documentoObservarId = null;
@@ -56,10 +65,13 @@ class Tabla extends Component
             return new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->mostrarPaginate);
         }
 
-        return $this->documentoService->listarPorArea(
+        return $this->documentoService->listarPorAreaConFiltros(
             idArea: $areaUsuario,
             paginado: $this->mostrarPaginate,
             buscar: $this->buscar,
+            fechaInicio: $this->fechaInicio,
+            fechaFin: $this->fechaFin,
+            idEstado: $this->idEstadoFiltro,
             columnaOrden: 'au_fechacr',
             orden: 'desc',
             relaciones: ['area', 'tipoDocumento', 'estado', 'areaRemitente', 'areaDestino', 'movimientos.areaOrigen']
@@ -393,7 +405,10 @@ class Tabla extends Component
 
     public function mount()
     {
-        $menuService = resolve(\App\Services\Seguridad\MenuService::class);
+        // Cargar todos los estados para el filtro
+        $this->estados = Estado::all()->pluck('nombre_estado', 'id_estado');
+
+        $menuService = resolve(MenuService::class);
         $menu = $menuService->listarAccionesPorNombreMenu('DOCUMENTOS');
 
         if ($menu) {
@@ -415,5 +430,10 @@ class Tabla extends Component
     public function render()
     {
         return view('livewire.components.documentos.documento.tabla');
+    }
+
+    public function limpiarFiltros()
+    {
+        $this->reset(['fechaInicio', 'fechaFin', 'idEstadoFiltro', 'buscar']);
     }
 }

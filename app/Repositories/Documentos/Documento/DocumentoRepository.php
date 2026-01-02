@@ -78,6 +78,40 @@ class DocumentoRepository implements DocumentoRepositoryInterface
         return $query->orderBy($columnaOrden, $orden)->paginate($paginado);
     }
 
+    public function listarPaginadoPorAreaConFiltros(int $idArea, int $paginado = 10, ?string $buscar = null, ?string $fechaInicio = null, ?string $fechaFin = null, ?string $idEstado = null, string $columnaOrden = 'id_documento', string $orden = 'asc', array $relaciones = [])
+    {
+        $query = $this->model::query()
+            ->with($relaciones)
+            ->where(function ($q) use ($idArea) {
+                // Documentos creados por el área (siempre visibles en "Mis Documentos")
+                $q->where('id_area_remitente', $idArea)
+                    // O documentos que tiene actualmente en su poder (recepcionados y aún en destino)
+                    ->orWhere(function ($subQuery) use ($idArea) {
+                        $subQuery->where('id_area_destino', $idArea)
+                            ->whereNotNull('fecha_recepcion_documento');
+                    });
+            });
+
+        if (!empty($buscar)) {
+            $query->buscar($buscar);
+        }
+
+        // Filtro por rango de fechas
+        if (!empty($fechaInicio)) {
+            $query->whereDate('au_fechacr', '>=', $fechaInicio);
+        }
+        if (!empty($fechaFin)) {
+            $query->whereDate('au_fechacr', '<=', $fechaFin);
+        }
+
+        // Filtro por estado
+        if (!empty($idEstado)) {
+            $query->where('id_estado', $idEstado);
+        }
+
+        return $query->orderBy($columnaOrden, $orden)->paginate($paginado);
+    }
+
     public function listarPendientesPorArea(int $idArea, int $paginado = 10, ?string $buscar = null, string $columnaOrden = 'id_documento', string $orden = 'asc', array $relaciones = [])
     {
         $query = $this->model::query()

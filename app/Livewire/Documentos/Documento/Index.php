@@ -64,10 +64,11 @@ class Index extends Component
     public ?int $documentoArchivarId = null;
     public ?string $documentoArchivarTitulo = null;
 
-  // --- PROPIEDADES OBSERVACIÓN (NUEVO) ---
+    // --- PROPIEDADES OBSERVACIÓN (NUEVO) ---
     public $idAreaObservar = '';
     public $motivoObservacion = '';
     public $archivosEvidenciaObservacion = [];
+
 
     protected DocumentoService $documentoService;
     protected ArchivoDocumentoService $archivoService;
@@ -112,25 +113,12 @@ class Index extends Component
         $mensajeToastr = null;
 
         try {
-            // ==============================================================================
-            // 1. SOLUCIÓN AL ERROR SQL: ASIGNAR REMITENTE AUTOMÁTICAMENTE
-            // ==============================================================================
-            // Obtenemos el área del usuario logueado.
-            // Usamos el operador ?? null por si la relación persona o area no existe.
             $areaUsuario = Auth::user()->persona->id_area ?? null;
 
-            // Validamos que el usuario tenga un área antes de continuar.
             if (!$areaUsuario) {
                 throw new \Exception('Su usuario no tiene un Área asignada, por lo tanto no puede registrar documentos.');
             }
-
-            // Asignamos el valor a la propiedad del componente para que se guarde en la BD.
             $this->idAreaRemitente = $areaUsuario;
-
-
-            // ==============================================================================
-            // 2. LÓGICA DE VALIDACIÓN (Tu código original continúa aquí)
-            // ==============================================================================
             $tieneArchivos = !empty($this->archivosDocumento) || !empty($this->archivosExistentes);
 
             $reglaFolio = $tieneArchivos ? 'required|numeric|min:1|max:999999' : 'nullable|numeric|min:1|max:999999';
@@ -151,7 +139,7 @@ class Index extends Component
 
             // Validar archivos (múltiples) solo si se está creando o modificando con nuevos archivos
             if ($this->modoModal == 1 || !empty($this->archivosDocumento)) {
-                $reglas['archivosDocumento'] = 'nullable|array';
+                $reglas['archivosDocumento'] = 'nullable|array|max:10';
                 $reglas['archivosDocumento.*'] = 'file|mimetypes:application/pdf,image/png,image/jpeg|max:10240';
             }
 
@@ -160,6 +148,11 @@ class Index extends Component
                 'folioDocumento.numeric' => 'El campo folio debe ser un número.',
                 'folioDocumento.min' => 'El campo folio debe ser al menos 1.',
                 'folioDocumento.max' => 'El campo folio no puede ser mayor a 999999.',
+                'archivosDocumento.array' => 'Los archivos deben ser un conjunto válido.',
+                'archivosDocumento.max' => 'No puedes subir más de 10 archivos.',
+                'archivosDocumento.*.file' => 'Cada archivo debe ser un archivo válido.',
+                'archivosDocumento.*.mimetypes' => 'Solo se permiten archivos PDF, PNG o JPEG.',
+                'archivosDocumento.*.max' => 'Cada archivo no debe exceder 10MB.',
             ];
 
             $this->validate($reglas, $mensajes);
@@ -628,14 +621,27 @@ class Index extends Component
     {
         $this->observacionesDerivar = limpiarCadena($this->observacionesDerivar);
 
-        $this->validate([
+        $reglas = [
             'observacionesDerivar' => 'required|max:500',
-            'archivosEvidenciaRectificacion' => 'nullable|array',
-            'archivosEvidenciaRectificacion.*' => 'file|mimetypes:application/pdf,image/png,image/jpeg|max:10240'
-        ], [
+        ];
+
+        // Validaciones de archivos solo si se adjuntaron archivos
+        if (!empty($this->archivosEvidenciaRectificacion)) {
+            $reglas['archivosEvidenciaRectificacion'] = 'nullable|array|max:10';
+            $reglas['archivosEvidenciaRectificacion.*'] = 'file|mimetypes:application/pdf,image/png,image/jpeg|max:10240';
+        }
+
+        $mensajesCustim = [
             'observacionesDerivar.required' => 'El motivo de rectificación es obligatorio',
-            'observacionesDerivar.max' => 'El motivo de rectificación no puede exceder 500 caracteres'
-        ]);
+            'observacionesDerivar.max' => 'El motivo de rectificación no puede exceder 500 caracteres',
+            'archivosEvidenciaRectificacion.array' => 'Los archivos deben ser un conjunto válido.',
+            'archivosEvidenciaRectificacion.max' => 'No puedes subir más de 10 archivos de evidencia.',
+            'archivosEvidenciaRectificacion.*.file' => 'Cada archivo de evidencia debe ser un archivo válido.',
+            'archivosEvidenciaRectificacion.*.mimetypes' => 'Solo se permiten archivos PDF, PNG o JPEG.',
+            'archivosEvidenciaRectificacion.*.max' => 'Cada archivo de evidencia no debe exceder 10MB.',
+        ];
+
+        $this->validate($reglas, $mensajesCustim);
 
         $mensajeToastr = null;
 
@@ -718,7 +724,8 @@ class Index extends Component
         $documento = $this->documentoService->obtenerPorId($id_documento);
 
         if (!$documento) {
-            $this->dispatch('toastr',
+            $this->dispatch(
+                'toastr',
                 boton_cerrar: false,
                 progreso_avance: true,
                 duracion: '5000',
@@ -803,7 +810,7 @@ class Index extends Component
         }
     }
 
-// --- OBSERVACIÓN (NUEVA FUNCIONALIDAD) ---
+    // --- OBSERVACIÓN (NUEVA FUNCIONALIDAD) ---
 
     #[On('abrirModalObservarDocumento')]
     public function abrirModalObservarDocumento($id_documento)
@@ -812,7 +819,7 @@ class Index extends Component
 
         $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento, ['areaRemitente', 'areaDestino', 'estado']);
 
-        if(!$this->modeloDocumento) return;
+        if (!$this->modeloDocumento) return;
 
         // Cargar datos para mostrar
         $this->numeroDocumento = $this->modeloDocumento->numero_documento;
@@ -833,15 +840,30 @@ class Index extends Component
     {
         $this->motivoObservacion = limpiarCadena($this->motivoObservacion, false);
 
-        $this->validate([
+        $reglas = [
             'idAreaObservar' => 'required|exists:ta_area,id_area',
             'motivoObservacion' => 'required|max:500|min:5',
-            'archivosEvidenciaObservacion' => 'nullable|array',
-            'archivosEvidenciaObservacion.*' => 'file|mimetypes:application/pdf,image/png,image/jpeg|max:10240'
-        ], [
+        ];
+
+        // Validaciones de archivos solo si se adjuntaron archivos
+        if (!empty($this->archivosEvidenciaObservacion)) {
+            $reglas['archivosEvidenciaObservacion'] = 'nullable|array|max:10';
+            $reglas['archivosEvidenciaObservacion.*'] = 'file|mimetypes:application/pdf,image/png,image/jpeg|max:10240';
+        }
+
+        $mensajesCustim = [
             'idAreaObservar.required' => 'Debe seleccionar el área destino.',
-            'motivoObservacion.required' => 'El motivo es obligatorio.',
-        ]);
+            'motivoObservacion.required' => 'El motivo de la observación es obligatorio.',
+            'motivoObservacion.min' => 'El motivo debe tener al menos 5 caracteres.',
+            'motivoObservacion.max' => 'El motivo no puede exceder 500 caracteres.',
+            'archivosEvidenciaObservacion.array' => 'Los archivos deben ser un conjunto válido.',
+            'archivosEvidenciaObservacion.max' => 'No puedes subir más de 10 archivos de evidencia.',
+            'archivosEvidenciaObservacion.*.file' => 'Cada archivo de evidencia debe ser un archivo válido.',
+            'archivosEvidenciaObservacion.*.mimetypes' => 'Solo se permiten archivos PDF, PNG o JPEG.',
+            'archivosEvidenciaObservacion.*.max' => 'Cada archivo de evidencia no debe exceder 10MB.',
+        ];
+
+        $this->validate($reglas, $mensajesCustim);
 
         $mensajeToastr = null;
 
@@ -855,7 +877,6 @@ class Index extends Component
 
             $this->dispatch('refrescarDocumentos');
             $mensajeToastr = mensajeToastr(false, true, '3000', 'Observado', 'warning', 'Documento observado correctamente.', 'top', 'right');
-
         } catch (\Exception $e) {
             $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');
         }
@@ -873,6 +894,11 @@ class Index extends Component
         if (isset($this->archivosEvidenciaObservacion[$index])) {
             array_splice($this->archivosEvidenciaObservacion, $index, 1);
         }
+    }
+
+    public function limpiarFechas()
+    {
+        $this->reset(['fechaInicio', 'fechaFin']);
     }
 
     public function render()
