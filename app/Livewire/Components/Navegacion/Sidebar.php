@@ -70,6 +70,11 @@ class Sidebar extends Component
                 'ruta' => 'seguridad.catalogo.index',
                 'routePattern' => 'seguridad.catalogo'
             ],
+            'REPORTES' => [
+                'nombre' => 'Reportes',
+                'ruta' => 'reportes.index',
+                'routePattern' => 'reportes'
+            ],
         ];
 
         // Filtrar menús según permisos (acción LISTAR)

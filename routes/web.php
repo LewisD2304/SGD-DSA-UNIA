@@ -11,6 +11,7 @@ use App\Livewire\Seguridad\Persona\Index as PersonaIndex;
 use App\Livewire\Seguridad\Catalogo\Index as CatalogoIndex;
 use App\Livewire\Seguridad\Menu\Index as MenuIndex;
 use \App\Livewire\Documentos\Historial\Index as HistorialIndex;
+use App\Livewire\Reportes\Index as ReportesIndex;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -78,8 +79,23 @@ Route::middleware(['throttle:100,1'])->group(function () {
             Route::get('/historial', HistorialIndex::class)->name('historial.index');
         });
 
+        /*
+    |--------------------------------------------------------------------------
+    | MODULO DE REPORTES
+    |--------------------------------------------------------------------------
+    */
 
-        // Servir archivos desde el disco 'share' (funciona para Disco D, C, o donde sea)
+        Route::prefix('reportes')->name('reportes.')->group(function () {
+            // Reportes
+            Route::get('/index', ReportesIndex::class)->name('index');
+        });
+
+
+             /*
+    |--------------------------------------------------------------------------
+    | SUBIDAS Y DESCARGAS DE ARCHIVOS COMPARTIDOS (DISCO SHARE D,C, ETC)
+    |--------------------------------------------------------------------------
+    */
         Route::get('/storage/shared/{path}', function ($path) {
 
             // 1. Decodificar la ruta (espacios y tildes)
@@ -96,8 +112,6 @@ Route::middleware(['throttle:100,1'])->group(function () {
             if (Storage::disk('share')->exists($path)) {
                 return response()->file(Storage::disk('share')->path($path));
             }
-
-            // Si no existe, abortamos
             abort(404);
         })->where('path', '.*')->name('archivo.ver');
     });

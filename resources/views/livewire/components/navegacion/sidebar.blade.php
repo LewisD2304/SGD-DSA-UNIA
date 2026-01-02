@@ -127,7 +127,8 @@
                             <div class="menu-item">
                                 <a class="menu-link {{ request()->routeIs('documentos.pendientes.*') || request()->routeIs('documentos.pendientes.index') ? 'active' : '' }}" href="{{ route('documentos.pendientes.index') }}">
                                     <span class="menu-bullet">
-                                        <i class="ki-outline ki-notification-status fs-3"></i>
+                                        {{-- Se cambió ki-notification-status por ki-notification (Campana) --}}
+                                        <i class="ki-outline ki-notification fs-3"></i>
                                     </span>
                                     <span class="menu-title">Pendientes</span>
                                     <livewire:components.navegacion.sidebar-badge />
@@ -144,6 +145,17 @@
                             </div>
                         </div>
                     </div>
+
+                    @if(isset($menusPermitidos['REPORTES']))
+                    <div class="menu-item">
+                        <a class="menu-link {{ request()->routeIs($menusPermitidos['REPORTES']['routePattern'].'.*') || request()->routeIs($menusPermitidos['REPORTES']['routePattern'].'.index') ? 'active' : '' }}" href="{{ route($menusPermitidos['REPORTES']['ruta']) }}">
+                            <span class="menu-icon">
+                                <i class="ki-outline ki-chart-line fs-2"></i>
+                            </span>
+                            <span class="menu-title">{{ $menusPermitidos['REPORTES']['nombre'] }}</span>
+                        </a>
+                    </div>
+                    @endif
 
                 </div>
             </div>
