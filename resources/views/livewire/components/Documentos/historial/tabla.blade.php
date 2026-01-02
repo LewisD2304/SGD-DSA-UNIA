@@ -1,18 +1,32 @@
 <div class="row g-5 gx-xl-10 mb-5 mb-xl-10">
     <div class="col-12">
         <div class="card">
-            <div class="d-flex flex-wrap flex-stack my-5 mx-8">
-                <div class="d-flex flex-column">
-                    <div class="d-flex align-items-center position-relative my-1 me-4 fs-7">
-                        <i class="ki-outline ki-magnifier fs-3 position-absolute ms-5"></i>
-                        <input type="text" class="form-control form-control-solid ps-13 w-xl-350px w-300"
-                               placeholder="Buscar documento" wire:model.live.debounce.500ms="buscar" />
-                    </div>
-                    <div class="text-muted fs-7 mt-2">
-                        <i class="ki-outline ki-information-5 fs-5"></i>
-                        Aquí se muestran todos los documentos que tu área ha derivado a otras áreas
-                    </div>
+            <div class="d-flex flex-wrap flex-stack my-5 mx-8 gap-3">
+                <!-- BÚSQUEDA -->
+                <div class="d-flex align-items-center position-relative my-1 fs-7">
+                    <i class="ki-outline ki-magnifier fs-3 position-absolute ms-5"></i>
+                    <input type="text" class="form-control form-control-solid ps-13 w-xl-300px w-250" placeholder="Buscar documento" wire:model.live.debounce.500ms="buscar" />
                 </div>
+
+                <!-- FILTRO DE FECHAS -->
+                <div class="d-flex gap-2 my-1">
+                    <input type="date" class="form-control form-control-solid" placeholder="Fecha inicio" wire:model.live="fechaInicio" max="{{ $fechaFin }}" title="Fecha de inicio" style="max-width: 150px;" />
+                    <input type="date" class="form-control form-control-solid" placeholder="Fecha fin" wire:model.live="fechaFin" min="{{ $fechaInicio }}" title="Fecha fin" style="max-width: 150px;" />
+                </div>
+
+                <!-- FILTRO DE ESTADO -->
+                <select class="form-select form-select-solid my-1" wire:model.live="idEstadoFiltro" style="max-width: 200px;">
+                    <option value="">Todos los estados</option>
+                    @foreach($estados as $idEstado => $nombreEstado)
+                    <option value="{{ $idEstado }}">{{ $nombreEstado }}</option>
+                    @endforeach
+                </select>
+
+                <!-- BOTÓN LIMPIAR FILTROS -->
+                <button type="button" class="btn btn-light-secondary fw-bold my-1" wire:click="limpiarFiltros">
+                    <i class="ki-outline ki-trash fs-2"></i>
+                    Limpiar
+                </button>
             </div>
 
             <div class="card-body py-4">
@@ -24,10 +38,10 @@
                                     <th class="w-10px pe-2">N°</th>
                                     <th class="min-w-125px">EXPEDIENTE</th>
                                     <th class="min-w-250px">ASUNTO</th>
-                                    <th class="min-w-150px">REMITENTE</th>
-                                    <th class="min-w-150px">DESTINO</th>
-                                    <th class="min-w-125px">FECHA RECEPCION</th>
-                                    <th class="min-w-125px">FECHA EMISION</th>
+                                    <th class="min-w-120px">ACCIÓN / MOVIMIENTO</th>
+                                    <th class="min-w-120px">ÁREA ORIGEN</th>
+                                    <th class="min-w-120px">ÁREA DESTINO</th>
+                                    <th class="min-w-140px">FECHA DEL MOVIMIENTO</th>
                                     <th class="min-w-100px">ESTADO</th>
                                     <th class="text-center min-w-70px">VER</th>
                                 </tr>
@@ -39,48 +53,73 @@
                                 @forelse ($this->historial as $movimiento)
                                 @php
                                     $documento = $movimiento->documento;
+                                    $estadoMovimiento = $movimiento->estado?->nombre_estado ?? 'SIN ESTADO';
+                                    $areaOrigen = $movimiento->areaOrigen?->nombre_area ?? $documento?->areaRemitente?->nombre_area ?? 'N/A';
+                                    $areaDestino = $movimiento->areaDestino?->nombre_area ?? $documento?->areaDestino?->nombre_area ?? 'N/A';
+                                    $fechaMovimiento = $movimiento->au_fechacr;
                                 @endphp
                                 <tr wire:key="historial-mov-{{ $movimiento->id_movimiento }}">
                                     <td>{{ $contador++ }}</td>
                                     <td>
                                         <div class="fw-bold text-primary">{{ $documento->expediente_documento }}</div>
                                         @if($documento->numero_documento)
-                                        <div class="text-muted fs-7">{{ $documento->numero_documento }}</div>
+                                        <div class="text-muted fs-7">{{ Str::limit($documento->numero_documento, 20) }}</div>
                                         @endif
                                     </td>
                                     <td>
-                                        <div class="text-gray-800">{{ Str::limit($documento->asunto_documento, 100) }}</div>
+                                        <div class="text-gray-800 fw-semibold">{{ Str::limit($documento->asunto_documento, 80) }}</div>
                                     </td>
-                                    <td>
-                                        <div class="text-gray-800">{{ $documento->areaRemitente->nombre_area ?? 'N/A' }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="text-gray-800">{{ $documento->areaDestino->nombre_area ?? 'N/A' }}</div>
-                                    </td>
-                                    @php
-                                        $nombreEstadoMov = strtoupper($movimiento->estado->nombre_estado ?? '');
-                                        $esRecepcion = in_array($nombreEstadoMov, ['EN TRÁMITE', 'EN TRAMITE', 'RECEPCIONADO']);
-                                        $esDerivar = $nombreEstadoMov === 'DERIVADO';
-                                    @endphp
-                                    <td>{{ $esRecepcion ? formatoFechaText($movimiento->fecha_recepcion ?? $movimiento->au_fechacr) : '' }}</td>
-                                    <td>{{ $esDerivar ? formatoFechaText($movimiento->au_fechacr) : '' }}</td>
                                     <td>
                                         @php
-                                        $estadoVis = $movimiento->estado ?: $documento->estado;
+                                            // Determinar el tipo de acción
+                                            $tipoAccion = strtoupper($estadoMovimiento);
+                                            $badgeClass = match($tipoAccion) {
+                                                'RECEPCIONADO', 'FINALIZADO', 'SUBSANADO' => 'badge-light-success',
+                                                'DERIVADO' => 'badge-light-primary',
+                                                'OBSERVADO' => 'badge-light-danger',
+                                                'ARCHIVADO' => 'badge-light-info',
+                                                'POR RECTIFICAR', 'SOLICITAR RECTIFICACION' => 'badge-light-warning',
+                                                default => 'badge-light-secondary'
+                                            };
                                         @endphp
-                                        @if($estadoVis)
+                                        <span class="badge {{ $badgeClass }} fw-bold">
+                                            {{ $tipoAccion }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="text-gray-800 fw-semibold">{{ $areaOrigen }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="text-gray-800 fw-semibold">{{ $areaDestino }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-medium text-gray-800">
+                                            <i class="bi bi-calendar-event me-2 text-primary"></i>
+                                            {{ \Carbon\Carbon::parse($fechaMovimiento)->format('d/m/Y') }}
+                                        </div>
+                                        <div class="text-muted fs-7">
+                                            <i class="bi bi-clock me-2"></i>
+                                            {{ \Carbon\Carbon::parse($fechaMovimiento)->format('H:i A') }}
+                                        </div>
+                                    </td>
+                                    <td>
                                         @php
-                                        $nombreEstado = strtoupper($estadoVis->nombre_estado);
+                                        $estadoDoc = $documento->estado;
+                                        @endphp
+                                        @if($estadoDoc)
+                                        @php
+                                        $nombreEstado = strtoupper($estadoDoc->nombre_estado);
                                         $colorEstado = match($nombreEstado) {
                                             'RECEPCIONADO' => 'success',
                                             'OBSERVADO' => 'danger',
                                             'DERIVADO' => 'secondary',
                                             'ARCHIVADO' => 'primary',
-                                            default => 'info'
+                                            'FINALIZADO' => 'info',
+                                            default => 'warning'
                                         };
                                         @endphp
-                                        <span class="badge badge-light-{{ $colorEstado }} py-2 px-3">
-                                            {{ $estadoVis->nombre_estado }}
+                                        <span class="badge badge-light-{{ $colorEstado }} fw-bold py-2 px-3">
+                                            {{ Str::limit($nombreEstado, 15) }}
                                         </span>
                                         @else
                                         <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
@@ -91,7 +130,7 @@
                                             type="button"
                                             class="btn btn-icon btn-light-primary btn-sm"
                                             wire:click="$dispatch('abrirModalDetalleDocumento', { id_documento: {{ $documento->id_documento }} })"
-                                            title="Ver detalles"
+                                            title="Ver detalles completos"
                                         >
                                             <i class="ki-outline ki-eye fs-3"></i>
                                         </button>
@@ -99,10 +138,10 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-8 text-muted">
+                                    <td colspan="9" class="text-center py-8 text-muted">
                                         <div x-data="{ cargado: false }" x-init="cargado = true">
                                             <template x-if="cargado">
-                                                <x-blank-state-table mensaje="No se encontraron documentos en el historial" />
+                                                <x-blank-state-table mensaje="No se encontraron movimientos en el historial" />
                                             </template>
                                         </div>
                                     </td>

@@ -528,61 +528,26 @@ class DocumentoService
     }
 
     /**
-     * Historial por área basado en movimientos (recepción y derivación).
-     * Muestra entradas separadas por cada recepción o derivación hecha por el área.
+     * Historial de movimientos PROPIOS de cada área.
+     * Cada área solo ve los movimientos y acciones que ELLA misma ha realizado.
+     * No se muestran movimientos de otras áreas, solo los originados por el área actual.
      */
-    public function obtenerHistorialMovimientosArea(int $idArea, ?string $buscar = null)
+    public function obtenerHistorialMovimientosArea(int $idArea, ?string $buscar = null, ?string $fechaInicio = null, ?string $fechaFin = null, ?string $idEstado = null)
     {
-        // Obtener TODOS los estados de recepción (puede haber múltiples)
-        $idsRecepcion = DB::table('ta_estado')
-            ->where(function ($q) {
-                $q->where('nombre_estado', 'LIKE', '%TRÁMITE%')
-                    ->orWhere('nombre_estado', 'LIKE', '%TRAMITE%')
-                    ->orWhere('nombre_estado', '=', 'RECEPCIONADO');
-            })
-            ->pluck('id_estado')
-            ->toArray();
-
-        // Obtener estado DERIVADO
-        $estadoDerivado = DB::table('ta_estado')
-            ->where('nombre_estado', 'DERIVADO')
-            ->first();
-
-        $idDerivado = $estadoDerivado->id_estado ?? null;
-
+        // Obtener SOLO los movimientos ORIGINADOS por el área actual (id_area_origen)
+        // Esto significa acciones que el área realizó: derivaciones, observaciones, archivados, etc.
         $query = Movimiento::with([
                 'estado',
-                'documento.estado',
-                'documento.areaRemitente',
-                'documento.areaDestino',
+                'documento' => function($q) {
+                    $q->with(['estado', 'areaRemitente', 'areaDestino']);
+                },
+                'areaOrigen',
+                'areaDestino'
             ])
-            ->where(function ($q) use ($idArea, $idsRecepcion, $idDerivado) {
-                // Recepciones del área (debe haber al menos una condición base)
-                if (!empty($idsRecepcion)) {
-                    $q->where(function ($sub) use ($idArea, $idsRecepcion) {
-                        $sub->where('id_area_destino', $idArea)
-                            ->whereIn('id_estado', $idsRecepcion);
-                    });
-                }
+            ->where('id_area_origen', $idArea)  // Solo movimientos originados por esta área
+            ->orderBy('au_fechacr', 'desc');  // Ordenar por fecha más reciente primero
 
-                // Derivaciones hechas por el área
-                if ($idDerivado) {
-                    if (!empty($idsRecepcion)) {
-                        $q->orWhere(function ($sub) use ($idArea, $idDerivado) {
-                            $sub->where('id_area_origen', $idArea)
-                                ->where('id_estado', $idDerivado);
-                        });
-                    } else {
-                        // Si no hay recepciones, usar where en lugar de orWhere
-                        $q->where(function ($sub) use ($idArea, $idDerivado) {
-                            $sub->where('id_area_origen', $idArea)
-                                ->where('id_estado', $idDerivado);
-                        });
-                    }
-                }
-            })
-            ->orderBy('au_fechacr', 'desc');
-
+        // Filtro de búsqueda por documento
         if ($buscar) {
             $query->whereHas('documento', function ($q) use ($buscar) {
                 $q->where('numero_documento', 'LIKE', "%$buscar%")
@@ -590,6 +555,21 @@ class DocumentoService
                     ->orWhere('folio_documento', 'LIKE', "%$buscar%")
                     ->orWhere('asunto_documento', 'LIKE', "%$buscar%");
             });
+        }
+
+        // Filtro por fecha de inicio
+        if ($fechaInicio) {
+            $query->whereDate('au_fechacr', '>=', $fechaInicio);
+        }
+
+        // Filtro por fecha de fin
+        if ($fechaFin) {
+            $query->whereDate('au_fechacr', '<=', $fechaFin);
+        }
+
+        // Filtro por estado del movimiento
+        if ($idEstado) {
+            $query->where('id_estado', $idEstado);
         }
 
         return $query->paginate(10);
