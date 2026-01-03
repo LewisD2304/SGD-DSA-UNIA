@@ -508,6 +508,15 @@ use Illuminate\Support\Facades\Storage;
         }
     });
 
+    window.addEventListener('preseleccionar_area_destino', (e) => {
+        // Esperamos un momento a que el modal se renderice
+        setTimeout(() => {
+            // Buscamos el select con la clase .idAreaDestino
+            // Le asignamos el valor y disparamos el evento 'change' para que Select2 se entere
+            $('.idAreaDestino').val(e.detail.valor).trigger('change');
+        }, 200); // 200ms de retraso para asegurar que el modal ya abrió
+    });
+
 </script>
 
 @endscript

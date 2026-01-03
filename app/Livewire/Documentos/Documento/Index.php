@@ -301,6 +301,25 @@ class Index extends Component
         } else {
             $this->tituloModal = 'Registrar nuevo documento';
             $this->modoModal = 1;
+
+            //SECRE a DIRECCION DSA
+            $usuario = Auth::user();
+            $nombreAreaUsuario = strtoupper($usuario->persona->area->nombre_area ?? '');
+
+            // Verificamos si el área del usuario contiene "MESA DE PARTES"
+            if (str_contains($nombreAreaUsuario, 'MESA DE PARTES')) {
+                // Buscamos el ID del área "DIRECCION DSA"
+                foreach ($this->areas as $area) {
+                    if (str_contains(strtoupper($area->nombre_area), 'DIRECCION DSA')) {
+                        // 1. Asignamos el valor a la propiedad de Livewire
+                        $this->idAreaDestino = $area->id_area;
+
+                        // 2. Enviamos evento al navegador para actualizar visualmente el Select2
+                        $this->dispatch('preseleccionar_area_destino', valor: $area->id_area);
+                        break;
+                    }
+                }
+            }
         }
 
         $this->dispatch('cargando', cargando: 'false');
