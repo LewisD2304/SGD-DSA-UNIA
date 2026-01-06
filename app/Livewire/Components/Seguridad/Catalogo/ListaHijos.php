@@ -81,7 +81,7 @@ class ListaHijos extends Component
 
     public function render()
     {
-        return view('livewire.components.seguridad.catalogo.lista-hijos');
+        return view('livewire.components.seguridad.Catalogo.lista-hijos');
     }
 
     #[Computed()]

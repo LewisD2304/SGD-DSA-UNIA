@@ -176,6 +176,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('livewire.documentos.pendientes.index');
+        return view('livewire.Documentos.pendientes.index');
     }
 }

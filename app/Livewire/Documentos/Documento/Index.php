@@ -481,7 +481,7 @@ class Index extends Component
     public function eliminarArchivoExistente($idArchivo)
     {
         try {
-            $archivo = \App\Models\ArchivoDocumento::find($idArchivo);
+            $archivo = ArchivoDocumento::find($idArchivo);
             if ($archivo) {
                 // Eliminar archivo físico
                 $this->archivoService->eliminarArchivo($archivo->ruta_archivo);
@@ -922,6 +922,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('livewire.documentos.Documento.index');
+        return view('livewire.Documentos.Documento.index');
     }
 }

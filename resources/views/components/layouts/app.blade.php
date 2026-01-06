@@ -388,8 +388,9 @@
 
     <script src="{{ asset('assets/plugins/global/plugins.bundle.js') }}"></script>
     <script src="{{ asset('assets/js/scripts.bundle.js') }}"></script>
-    <script src="{{ asset('assets/js/highcharts/highcharts.js') }}"></script>
-    <script src="{{ asset('assets/js/highcharts/modules/exporting.js') }}"></script>
-    <script src="{{ asset('assets/js/highcharts/modules/export-data.js') }}"></script>
+    {{-- Highcharts scripts comentados - se usa Chart.js desde CDN en vistas específicas --}}
+    {{-- <script src="{{ asset('assets/js/highcharts/highcharts.js') }}"></script> --}}
+    {{-- <script src="{{ asset('assets/js/highcharts/modules/exporting.js') }}"></script> --}}
+    {{-- <script src="{{ asset('assets/js/highcharts/modules/export-data.js') }}"></script> --}}
 </body>
 </html>

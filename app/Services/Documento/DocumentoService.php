@@ -785,5 +785,25 @@ class DocumentoService
         }
     }
 
+    // Métodos para estadísticas
+    public function contarDocumentosPorArea(int $idArea): int
+    {
+        return Documento::where('id_area_remitente', $idArea)
+            ->orWhere('id_area_destino', $idArea)
+            ->count();
+    }
+
+    public function contarDocumentosPorEstado(int $idArea, string $nombreEstado): int
+    {
+        return Documento::where(function ($query) use ($idArea) {
+                $query->where('id_area_remitente', $idArea)
+                      ->orWhere('id_area_destino', $idArea);
+            })
+            ->whereHas('estado', function ($query) use ($nombreEstado) {
+                $query->where('nombre_estado', 'LIKE', '%' . $nombreEstado . '%');
+            })
+            ->count();
+    }
+
 }
 

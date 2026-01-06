@@ -29,9 +29,9 @@
                                         <i class="ki-outline ki-document fs-3x text-primary mb-3"></i>
                                         <h4 class="mb-2">Reporte de Documentos</h4>
                                         <p class="text-muted fs-6 mb-3">Genera reportes de documentos registrados, filtrados por fecha, estado y área.</p>
-                                        <button class="btn btn-sm btn-primary" disabled>
-                                            Próximamente
-                                        </button>
+                                        <a href="{{ route('reportes.documentos') }}" class="btn btn-sm btn-primary">
+                                            Ver reporte
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -42,9 +42,9 @@
                                         <i class="ki-outline ki-chart-simple fs-3x text-success mb-3"></i>
                                         <h4 class="mb-2">Estadísticas</h4>
                                         <p class="text-muted fs-6 mb-3">Visualiza estadísticas de documentos procesados, tiempos de respuesta y más.</p>
-                                        <button class="btn btn-sm btn-success" disabled>
-                                            Próximamente
-                                        </button>
+                                        <a href="{{ route('reportes.estadisticas') }}" class="btn btn-sm btn-success">
+                                            Ver estadísticas
+                                        </a>
                                     </div>
                                 </div>
                             </div>
