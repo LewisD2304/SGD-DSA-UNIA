@@ -270,6 +270,7 @@
                                                     str_contains($estado, 'RECEPCIONADO') || str_contains($estado, 'FINALIZADO') => 'success',
                                                     str_contains($estado, 'PENDIENTE') => 'warning',
                                                     str_contains($estado, 'OBSERVADO') => 'danger',
+                                                    str_contains($estado, 'ANULADO') => 'danger',
                                                     str_contains($estado, 'ARCHIVADO') => 'secondary',
                                                     default => 'primary'
                                                 };

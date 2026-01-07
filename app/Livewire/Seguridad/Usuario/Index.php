@@ -173,11 +173,23 @@ class Index extends Component
         if (!is_null($id_usuario)) {
             $this->tituloModal = 'Modificar usuario';
             $this->modoModal = 2; // Modificar
-            $this->modeloUsuario = $this->usuarioService->obtenerPorId($id_usuario);
+
+            // Cargar modelo y relaciones
+            $this->modeloUsuario = $this->usuarioService->obtenerPorId($id_usuario, ['persona', 'rol']);
+
+            // Asignar valores a las propiedades de Livewire
             $this->nombreUsuario = $this->modeloUsuario->nombre_usuario;
             $this->idRol = $this->modeloUsuario->id_rol;
             $this->idPersona = $this->modeloUsuario->id_persona;
-            $this->claveUsuario = '';
+            $this->claveUsuario = ''; // Contraseña vacía al editar
+
+            // IMPORTANTE: Enviar evento al Frontend para actualizar los Select2 y el nombre de usuario
+            $this->dispatch('cargarDatosModal', [
+                'nombreUsuario' => $this->nombreUsuario,
+                'idPersona' => $this->idPersona,
+                'idRol' => $this->idRol
+            ]);
+
         } else {
             $this->tituloModal = 'Registrar nuevo usuario';
             $this->modoModal = 1;

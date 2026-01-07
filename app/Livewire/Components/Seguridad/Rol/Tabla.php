@@ -151,6 +151,20 @@ class Tabla extends Component
                                                 <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
                                             </td>
                                         </tr>
+                                        <tr>
+                                            <td>
+                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
+                                            </td>
+                                            <td>
+                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
+                                            </td>
+                                            <td>
+                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
+                                            </td>
+                                            <td>
+                                                <span class="placeholder col-12" style="background-color: #c4c4c4; border-radius: 0.42rem; height: 1.5rem;"></span>
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>

@@ -1,3 +1,4 @@
+<div>
     <div class="row g-5 gx-xl-10 mb-5 mb-xl-10">
         <div class="col-12">
             <div class="card">
@@ -34,6 +35,7 @@
                                     <tr class="text-start text-muted fw-bold text-uppercase gs-0">
                                         <th class="w-10px pe-2">N°</th>
                                         <th class="min-w-200px">NOMBRE USUARIO</th>
+                                        <th class="min-w-250px">PERSONA</th>
                                         <th class="min-w-200px">ROL</th>
                                         <th class="min-w-60px">ESTADO</th>
                                         <th class="min-w-60px">FECHA DE CREACION</th>
@@ -49,6 +51,17 @@
                                         <td>{{ $contador++ }}</td>
                                         <td>
                                             <div class="fw-bold text-dark">{{ $item->nombre_usuario }}
+                                        </td>
+                                        <!-- PERSONA -->
+                                        <td>
+                                            @if($item->persona)
+                                                <div class="d-flex flex-column">
+                                                    <span class="text-gray-800 fw-semibold">{{ $item->persona->nombres_persona }} {{ $item->persona->apellido_paterno_persona }} {{ $item->persona->apellido_materno_persona }}</span>
+                                                    <span class="text-muted fs-7">{{ $item->persona->numerodocumento_persona }}</span>
+                                                </div>
+                                            @else
+                                                <span class="text-muted">Sin persona asignada</span>
+                                            @endif
                                         </td>
                                         <!-- ROL -->
                                         <td>{{ $item->rol ? $item->rol->nombre_rol : 'Sin rol' }}</td>
@@ -150,4 +163,4 @@
             </div>
         </div>
     </div>
-    </div>
+</div>

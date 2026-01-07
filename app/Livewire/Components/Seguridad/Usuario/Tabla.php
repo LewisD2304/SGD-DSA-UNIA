@@ -34,7 +34,7 @@ class Tabla extends Component
     #[On('refrescarUsuarios')]
     public function usuarios()
     {
-        return $this->usuarioService->listarPaginado($this->mostrarPaginate, $this->buscar, 'id_usuario', 'desc');
+        return $this->usuarioService->listarPaginado($this->mostrarPaginate, $this->buscar, 'id_usuario', 'desc', ['persona', 'rol']);
     }
 
 
@@ -78,6 +78,7 @@ class Tabla extends Component
                                         <tr class="text-start text-muted fw-bold text-uppercase gs-0">
                                         <th class="w-10px pe-2">N°</th>
                                         <th class="min-w-200px">NOMBRE USUARIO</th>
+                                        <th class="min-w-250px">PERSONA</th>
                                         <th class="min-w-200px">ROL</th>
                                         <th class="min-w-60px">ESTADO</th>
                                         <th class="min-w-60px">FECHA DE CREACION</th>

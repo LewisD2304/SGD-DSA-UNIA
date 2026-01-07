@@ -90,6 +90,10 @@ class DocumentoRepository implements DocumentoRepositoryInterface
                         $subQuery->where('id_area_destino', $idArea)
                             ->whereNotNull('fecha_recepcion_documento');
                     });
+            })
+            // Excluir documentos anulados
+            ->whereHas('estado', function($q) {
+                $q->where('nombre_estado', '!=', 'ANULADO');
             });
 
         if (!empty($buscar)) {

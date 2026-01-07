@@ -158,10 +158,10 @@
                                                     </div>
                                                     @endcan
 
-                                                    @can('autorizacion', ['ELIMINAR', 'DOCUMENTOS'])
+                                                    @can('autorizacion', ['ANULAR', 'DOCUMENTOS'])
                                                     <div class="menu-item px-3">
-                                                        <a href="#" class="menu-link px-3 text-danger" wire:click="$dispatch('abrirModalEliminarDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                            <span class="menu-icon"><i class="ki-outline ki-trash fs-3 text-danger"></i></span> Eliminar
+                                                        <a href="#" class="menu-link px-3 text-danger" wire:click="$dispatch('abrirModalAnularDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                            <span class="menu-icon"><i class="ki-outline ki-cross-circle fs-3 text-danger"></i></span> Anular
                                                         </a>
                                                     </div>
                                                     @endcan

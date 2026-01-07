@@ -143,6 +143,7 @@
                             str_contains($estado, 'RECEPCIONADO') || str_contains($estado, 'FINALIZADO') => 'badge-success',
                             str_contains($estado, 'PENDIENTE') => 'badge-warning',
                             str_contains($estado, 'OBSERVADO') => 'badge-danger',
+                            str_contains($estado, 'ANULADO') => 'badge-danger',
                             str_contains($estado, 'ARCHIVADO') => 'badge-secondary',
                             default => 'badge-secondary'
                         };

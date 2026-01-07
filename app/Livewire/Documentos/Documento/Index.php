@@ -4,6 +4,8 @@ namespace App\Livewire\Documentos\Documento;
 
 use App\Enums\EstadoEnum;
 use App\Models\ArchivoDocumento;
+use App\Models\Estado;
+use App\Models\Movimiento;
 use App\Models\Transicion;
 use App\Services\Documento\DocumentoService;
 use App\Services\Documento\ArchivoDocumentoService;
@@ -17,6 +19,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 #[Layout('components.layouts.app')]
@@ -28,6 +31,7 @@ class Index extends Component
     public $modeloDocumento = null;
     public $nombreDocumentoEstado = '';
     public $nombreDocumentoEliminar = '';
+    public $nombreDocumentoAnular = '';
 
     #[Validate('required|max:100|min:1', as: 'numero_documento')]
     public $numeroDocumento = '';
@@ -413,6 +417,122 @@ class Index extends Component
 
         $this->dispatch('cargando', cargando: 'false');
         $this->modalDocumento('#modal-eliminar-documento', 'show');
+    }
+
+    #[On('abrirModalAnularDocumento')]
+    public function abrirModalAnularDocumento($id_documento)
+    {
+        $mensajeToastr = null;
+
+        try {
+            $this->limpiarModal();
+
+            // Verificar permiso
+            if (!Gate::allows('autorizacion', ['ANULAR', 'DOCUMENTOS'])) {
+                throw new \Exception('No tiene permisos para anular documentos');
+            }
+
+            $this->modeloDocumento = $this->documentoService->obtenerPorId($id_documento, ['estado']);
+            $estadoDocumento = strtoupper(optional($this->modeloDocumento?->estado)->nombre_estado);
+
+            // Validar que no esté en estados protegidos
+            $estadosProtegidos = ['ARCHIVADO', 'RECEPCIONADO', 'EN TRÁMITE', 'EN TRAMITE'];
+            if (in_array($estadoDocumento, $estadosProtegidos)) {
+                throw new \Exception("No se puede anular un documento en estado {$estadoDocumento}");
+            }
+
+            $this->nombreDocumentoAnular = $this->modeloDocumento->numero_documento;
+
+            $this->dispatch('cargando', cargando: 'false');
+            $this->modalDocumento('#modal-anular-documento', 'show');
+
+        } catch (\Exception $e) {
+            $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');
+            $this->dispatch('cargando', cargando: 'false');
+        }
+
+        if ($mensajeToastr !== null) {
+            $this->dispatch(
+                'toastr',
+                boton_cerrar: $mensajeToastr['boton_cerrar'],
+                progreso_avance: $mensajeToastr['progreso_avance'],
+                duracion: $mensajeToastr['duracion'],
+                titulo: $mensajeToastr['titulo'],
+                tipo: $mensajeToastr['tipo'],
+                mensaje: $mensajeToastr['mensaje'],
+                posicion_y: $mensajeToastr['posicion_y'],
+                posicion_x: $mensajeToastr['posicion_x']
+            );
+        }
+    }
+
+    public function anularDocumento()
+    {
+        $mensajeToastr = null;
+
+        try {
+            // Verificar permiso nuevamente
+            if (!Gate::allows('autorizacion', ['ANULAR', 'DOCUMENTOS'])) {
+                throw new \Exception('No tiene permisos para anular documentos');
+            }
+
+            // Obtener el estado ANULADO (id 7)
+            $estadoAnulado = Estado::where('nombre_estado', 'ANULADO')->first();
+            if (!$estadoAnulado) {
+                throw new \Exception('No se encontró el estado ANULADO en el sistema');
+            }
+
+            // Validar estado actual
+            $this->modeloDocumento = $this->documentoService->obtenerPorId($this->modeloDocumento->id_documento, ['estado']);
+            $estadoDocumento = strtoupper(optional($this->modeloDocumento?->estado)->nombre_estado);
+
+            $estadosProtegidos = ['ARCHIVADO', 'RECEPCIONADO', 'EN TRÁMITE', 'EN TRAMITE'];
+            if (in_array($estadoDocumento, $estadosProtegidos)) {
+                throw new \Exception("No se puede anular un documento en estado {$estadoDocumento}");
+            }
+
+            // Actualizar estado del documento
+            $this->modeloDocumento->id_estado = $estadoAnulado->id_estado;
+            $this->modeloDocumento->au_fechamd = now();
+            $this->modeloDocumento->au_usuariomd = Auth::user()->id_usuario;
+            $this->modeloDocumento->save();
+
+            // Registrar en el historial (ta_movimiento)
+            $movimiento = new Movimiento();
+            $movimiento->id_documento = $this->modeloDocumento->id_documento;
+            $movimiento->id_estado = $estadoAnulado->id_estado;
+            $movimiento->id_area_origen = $this->modeloDocumento->id_area_origen;
+            $movimiento->id_area_destino = $this->modeloDocumento->id_area_origen; // Mismo origen y destino
+            $movimiento->observacion_doc_movimiento = 'Documento anulado por el usuario';
+            $movimiento->tipo_cargo_catalogo = null;
+            $movimiento->fecha_recepcion = now();
+            $movimiento->au_fechacr = now();
+            $movimiento->au_usuariocr = Auth::user()->id_usuario;
+            $movimiento->save();
+
+            $this->dispatch('refrescarDocumentos');
+
+            $mensajeToastr = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Documento anulado correctamente', 'top', 'right');
+        } catch (\Exception $e) {
+            $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');
+        }
+
+        $this->modalDocumento('#modal-anular-documento', 'hide');
+        $this->limpiarModal();
+
+        if ($mensajeToastr !== null) {
+            $this->dispatch(
+                'toastr',
+                boton_cerrar: $mensajeToastr['boton_cerrar'],
+                progreso_avance: $mensajeToastr['progreso_avance'],
+                duracion: $mensajeToastr['duracion'],
+                titulo: $mensajeToastr['titulo'],
+                tipo: $mensajeToastr['tipo'],
+                mensaje: $mensajeToastr['mensaje'],
+                posicion_y: $mensajeToastr['posicion_y'],
+                posicion_x: $mensajeToastr['posicion_x']
+            );
+        }
     }
 
     #[On('abrirModalDetalleDocumento')]
