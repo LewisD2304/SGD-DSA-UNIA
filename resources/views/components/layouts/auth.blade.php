@@ -11,58 +11,8 @@
 </head>
 
 <body id="kt_body" class="app-blank">
-    <div class="d-flex flex-column flex-root" id="kt_app_root">
-        <!-- Authentication - Login -->
-        <div class="d-flex flex-column flex-lg-row flex-column-fluid">
-            <!--begin::Body-->
-            <div class="d-flex flex-column flex-lg-row-fluid w-lg-50 p-10 order-2 order-lg-1">
-                <!--begin::Form-->
-                <div class="d-flex flex-center flex-column flex-lg-row-fluid">
-                    <!--begin::Wrapper-->
-                    {{ $slot }}
-                    <!--end::Wrapper-->
-                </div>
-                <!--end::Form-->
-
-                <!--begin::Footer-->
-                <div class="w-lg-500px d-flex px-10 mx-auto">
-                    <!--begin::Links-->
-                    <div class="d-flex fw-semibold text-primary fs-base gap-5 ms-auto">
-                        <a href="https://unia.edu.pe/contact/" target="_blank">Contáctanos </a>
-                    </div>
-                    <!--end::Links-->
-                </div>
-                <!--end::Footer-->
-
-            </div>
-            <!--end::Body-->
-
-            <!--begin::Aside-->
-            <div class="d-flex flex-lg-row-fluid w-lg-50 bgi-size-cover bgi-position-center order-1 order-lg-2">
-                <!--begin::Content-->
-                <div class="d-flex flex-column flex-center py-7 py-lg-15 px-5 px-md-15 w-100 bg-primary">
-
-                    <!--begin::Logo Unia -->
-                    <img class="d-none d-lg-block mx-auto w-275px w-md-50 w-xl-450px mb-10 mb-lg-20" src="{{ asset('media/logo-unia.webp') }}" alt="Logo UNIA">
-                    <!--end::Logo Unia-->
-
-                    <!--begin::Title-->
-                    <h1 class="d-none d-lg-block text-white fs-2qx fw-bolder text-center mb-7">
-                        SGD - UNIA
-                    </h1>
-                    <!--end::Title-->
-
-                    <!--begin::Text-->
-                    <div class="d-none d-lg-block fs-2 text-white fs-base text-center">
-                        Descubre todas las funcionalidades que hemos diseñado para tu aprendizaje y crecimiento
-                    </div>
-                    <!--end::Text-->
-
-                </div>
-                <!--end::Content-->
-            </div>
-            <!--end::Aside-->
-        </div>
+    <div id="kt_app_root" class="d-flex flex-column flex-root">
+        {{ $slot }}
     </div>
 
     <script src="{{ asset('assets/plugins/global/plugins.bundle.js') }}"></script>
