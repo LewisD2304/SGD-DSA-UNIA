@@ -21,13 +21,25 @@
                                 Regresar
                             </a>
 
-                            <button wire:click="exportarPDF" class="btn btn-sm btn-danger">
-                                <i class="ki-outline ki-file-down fs-4 me-1"></i>
-                                Exportar PDF
+                            <button wire:click="exportarPDF" class="btn btn-sm btn-danger" wire:loading.attr="disabled" wire:target="exportarPDF">
+                                <span wire:loading.remove wire:target="exportarPDF">
+                                    <i class="ki-outline ki-file-down fs-4 me-1"></i>
+                                    Exportar PDF
+                                </span>
+                                <span wire:loading wire:target="exportarPDF">
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    Generando PDF...
+                                </span>
                             </button>
-                            <button wire:click="exportarExcel" class="btn btn-sm btn-success">
-                                <i class="ki-outline ki-file-down fs-4 me-1"></i>
-                                Exportar Excel
+                            <button wire:click="exportarExcel" class="btn btn-sm btn-success" wire:loading.attr="disabled" wire:target="exportarExcel">
+                                <span wire:loading.remove wire:target="exportarExcel">
+                                    <i class="ki-outline ki-file-down fs-4 me-1"></i>
+                                    Exportar Excel
+                                </span>
+                                <span wire:loading wire:target="exportarExcel">
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    Generando Excel...
+                                </span>
                             </button>
                         </div>
                     </div>

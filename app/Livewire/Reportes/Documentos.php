@@ -2,16 +2,17 @@
 
 namespace App\Livewire\Reportes;
 
+use App\Exports\DocumentosExport;
 use App\Models\Area;
 use App\Models\Documento;
 use App\Models\Estado;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
-use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
 
 #[Layout('components.layouts.app')]
 #[Title('Reporte de Documentos | GESTIÓN DOCUMENTAL')]
@@ -19,59 +20,32 @@ class Documentos extends Component
 {
     use WithPagination;
 
-    #[Url]
-    public $fechaInicio = null;
+    protected $paginationTheme = 'bootstrap';
 
-    #[Url]
-    public $fechaFin = null;
+    public string $tipoReporte = 'todos';
+    public ?string $fechaInicio = null;
+    public ?string $fechaFin = null;
+    public ?string $idEstado = null;
+    public ?string $idArea = null;
+    public ?string $buscar = null;
 
-    #[Url]
-    public $idEstado = null;
-
-    #[Url]
-    public $idArea = null;
-
-    #[Url]
-    public $tipoReporte = 'recibidos'; // recibidos, enviados, todos
-
-    #[Url]
-    public $buscar = '';
-
-    public $estados = [];
-    public $areas = [];
-    public $idAreaUsuario = null;
-
-    // Estadísticas del reporte
-    public $totalDocumentos = 0;
-    public $documentosPendientes = 0;
-    public $documentosAtendidos = 0;
-
-    public function mount()
+    public function mount(): void
     {
-        $this->idAreaUsuario = Auth::user()->persona->id_area ?? null;
+        $this->fechaInicio = Carbon::now()->startOfMonth()->format('Y-m-d');
+        $this->fechaFin = Carbon::now()->format('Y-m-d');
+    }
 
-        // Cargar estados y áreas
-        $this->estados = Estado::orderBy('nombre_estado')->get();
-        $this->areas = Area::orderBy('nombre_area')->get();
-
-        // Establecer fechas por defecto (último mes)
-        if (!$this->fechaInicio) {
-            $this->fechaInicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        }
-        if (!$this->fechaFin) {
-            $this->fechaFin = Carbon::now()->format('Y-m-d');
+    public function updated($name): void
+    {
+        if (in_array($name, ['tipoReporte', 'fechaInicio', 'fechaFin', 'idEstado', 'idArea', 'buscar'], true)) {
+            $this->resetPage();
         }
     }
 
-    public function aplicarFiltro()
+    public function limpiarFiltros(): void
     {
-        $this->resetPage();
-    }
-
-    public function limpiarFiltros()
-    {
-        $this->reset(['fechaInicio', 'fechaFin', 'idEstado', 'idArea', 'buscar', 'tipoReporte']);
-        $this->tipoReporte = 'recibidos';
+        $this->reset(['tipoReporte', 'fechaInicio', 'fechaFin', 'idEstado', 'idArea', 'buscar']);
+        $this->tipoReporte = 'todos';
         $this->fechaInicio = Carbon::now()->startOfMonth()->format('Y-m-d');
         $this->fechaFin = Carbon::now()->format('Y-m-d');
         $this->resetPage();
@@ -79,131 +53,101 @@ class Documentos extends Component
 
     public function exportarPDF()
     {
-        try {
-            $documentos = $this->getBaseQuery()
-                ->with(['areaRemitente', 'areaDestino', 'estado', 'tipoDocumento'])
-                ->withCount('archivos')
-                ->orderBy('au_fechacr', 'desc')
-                ->get();
+        $documentos = $this->baseQuery()->get();
+        $total = $documentos->count();
 
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reportes.documentos-pdf', [
-                'documentos' => $documentos,
-                'fechaInicio' => $this->fechaInicio,
-                'fechaFin' => $this->fechaFin,
-                'tipoReporte' => $this->tipoReporte,
-                'total' => $documentos->count()
-            ])->setPaper('a4', 'landscape');
+        $pdf = Pdf::loadView('reportes.documentos-pdf', [
+            'documentos' => $documentos,
+            'fechaInicio' => $this->fechaInicio,
+            'fechaFin' => $this->fechaFin,
+            'tipoReporte' => $this->tipoReporte,
+            'total' => $total,
+        ])->setPaper('a4', 'landscape');
 
-            return response()->streamDownload(function() use ($pdf) {
-                echo $pdf->output();
-            }, 'reporte_documentos_' . date('YmdHis') . '.pdf');
+        $filename = 'reporte_documentos_' . Carbon::now()->format('YmdHis') . '.pdf';
 
-        } catch (\Exception $e) {
-            $this->dispatch('show-toast', [
-                'type' => 'error',
-                'message' => 'Error al generar PDF: ' . $e->getMessage()
-            ]);
-        }
+        return response()->streamDownload(fn () => print($pdf->output()), $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 
     public function exportarExcel()
     {
-        try {
-            $documentos = $this->getBaseQuery()
-                ->with(['areaRemitente', 'areaDestino', 'estado', 'tipoDocumento'])
-                ->withCount('archivos')
-                ->orderBy('au_fechacr', 'desc')
-                ->get();
+        $documentos = $this->baseQuery()->get();
+        $filename = 'reporte_documentos_' . Carbon::now()->format('YmdHis') . '.xlsx';
 
-            return \Maatwebsite\Excel\Facades\Excel::download(
-                new \App\Exports\DocumentosExport($documentos),
-                'reporte_documentos_' . date('YmdHis') . '.xlsx'
-            );
-
-        } catch (\Exception $e) {
-            $this->dispatch('show-toast', [
-                'type' => 'error',
-                'message' => 'Error al generar Excel: ' . $e->getMessage()
-            ]);
-        }
-    }
-
-    private function calcularEstadisticas()
-    {
-        $query = $this->getBaseQuery();
-
-        $this->totalDocumentos = $query->count();
-
-        $queryPendientes = clone $query;
-        $this->documentosPendientes = $queryPendientes->whereHas('estado', function($q) {
-            $q->where('nombre_estado', 'LIKE', '%PENDIENTE%');
-        })->count();
-
-        $this->documentosAtendidos = $this->totalDocumentos - $this->documentosPendientes;
-    }
-
-    private function getBaseQuery()
-    {
-        $query = Documento::query();
-
-        // Filtro por tipo de reporte
-        if ($this->tipoReporte === 'recibidos') {
-            $query->where('id_area_destino', $this->idAreaUsuario);
-        } elseif ($this->tipoReporte === 'enviados') {
-            $query->where('id_area_remitente', $this->idAreaUsuario);
-        } else {
-            // todos
-            $query->where(function($q) {
-                $q->where('id_area_destino', $this->idAreaUsuario)
-                  ->orWhere('id_area_remitente', $this->idAreaUsuario);
-            });
-        }
-
-        // Filtro por fecha
-        if ($this->fechaInicio && $this->fechaFin) {
-            $query->whereBetween('au_fechacr', [
-                $this->fechaInicio . ' 00:00:00',
-                $this->fechaFin . ' 23:59:59'
-            ]);
-        }
-
-        // Filtro por estado
-        if ($this->idEstado) {
-            $query->where('id_estado', $this->idEstado);
-        }
-
-        // Filtro por área
-        if ($this->idArea) {
-            $query->where(function($q) {
-                $q->where('id_area_destino', $this->idArea)
-                  ->orWhere('id_area_remitente', $this->idArea);
-            });
-        }
-
-        // Búsqueda por texto
-        if ($this->buscar) {
-            $query->where(function($q) {
-                $q->where('numero_documento', 'LIKE', '%' . $this->buscar . '%')
-                  ->orWhere('asunto_documento', 'LIKE', '%' . $this->buscar . '%')
-                  ->orWhere('remitente', 'LIKE', '%' . $this->buscar . '%');
-            });
-        }
-
-        return $query;
+        return Excel::download(new DocumentosExport($documentos), $filename);
     }
 
     public function render()
     {
-        $this->calcularEstadisticas();
+        $baseQuery = $this->baseQuery();
 
-        $documentos = $this->getBaseQuery()
-            ->with(['areaRemitente', 'areaDestino', 'estado', 'tipoDocumento'])
-            ->withCount('archivos')
-            ->orderBy('au_fechacr', 'desc')
-            ->paginate(15);
+        $documentos = (clone $baseQuery)->paginate(10);
+        $totalDocumentos = (clone $baseQuery)->count();
+        $documentosPendientes = (clone $baseQuery)
+            ->whereHas('estado', fn ($q) => $q->where('nombre_estado', 'like', '%PENDIENTE%'))
+            ->count();
+        $documentosAtendidos = (clone $baseQuery)
+            ->whereHas('estado', fn ($q) => $q->where(function ($query) {
+                $query->where('nombre_estado', 'like', '%RECEPCIONADO%')
+                    ->orWhere('nombre_estado', 'like', '%FINALIZADO%');
+            }))
+            ->count();
 
-        return view('livewire.reportes.Documentos', [
-            'documentos' => $documentos
+        $estados = Estado::orderBy('nombre_estado')->get();
+        $areas = Area::orderBy('nombre_area')->get();
+
+        return view('livewire.reportes.documentos', [
+            'documentos' => $documentos,
+            'estados' => $estados,
+            'areas' => $areas,
+            'totalDocumentos' => $totalDocumentos,
+            'documentosPendientes' => $documentosPendientes,
+            'documentosAtendidos' => $documentosAtendidos,
         ]);
+    }
+
+    private function baseQuery()
+    {
+        [$inicio, $fin] = $this->dateRange();
+
+        $query = Documento::with([
+            'tipoDocumento',
+            'areaRemitente',
+            'areaDestino',
+            'estado',
+        ])->withCount('archivos')
+            ->whereBetween('au_fechacr', [$inicio, $fin])
+            ->when($this->buscar, fn ($q) => $q->buscar($this->buscar))
+            ->when($this->idEstado, fn ($q) => $q->where('id_estado', $this->idEstado));
+
+        if ($this->idArea) {
+            $query->where(function ($q) {
+                $q->where('id_area_remitente', $this->idArea)
+                    ->orWhere('id_area_destino', $this->idArea);
+            });
+        }
+
+        if ($this->tipoReporte === 'recibidos') {
+            $query->whereNotNull('fecha_recepcion_documento');
+        } elseif ($this->tipoReporte === 'enviados') {
+            $query->whereNotNull('fecha_despacho_documento');
+        }
+
+        return $query->orderByDesc('au_fechacr');
+    }
+
+    private function dateRange(): array
+    {
+        $inicio = $this->fechaInicio
+            ? Carbon::parse($this->fechaInicio)->startOfDay()
+            : Carbon::now()->startOfMonth();
+
+        $fin = $this->fechaFin
+            ? Carbon::parse($this->fechaFin)->endOfDay()
+            : Carbon::now()->endOfDay();
+
+        return [$inicio, $fin];
     }
 }

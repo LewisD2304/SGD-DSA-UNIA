@@ -2,161 +2,262 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Documentos</title>
+    <title>Reporte de Documentos - UNIA</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* RESET Y BASE */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: Arial, sans-serif;
+            font-family: Arial, sans-serif; /* Fuente segura para PDF */
             font-size: 10px;
             color: #333;
-            padding: 15px;
+            padding: 30px;
         }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #4472C4;
-            padding-bottom: 10px;
+
+        /* COLORES Y VARIABLES VISUALES */
+        .color-primary { color: #0056b3; } /* Azul institucional similar a la imagen */
+        .border-primary { border: 2px solid #0056b3; }
+
+        /* CABECERA (Usamos tablas para alineación perfecta en PDF) */
+        .header-layout { width: 100%; margin-bottom: 10px; }
+        .header-layout td { vertical-align: top; }
+
+        /* LOGO Y TEXTOS IZQUIERDA */
+        .logo-container { width: 70px; padding-right: 15px; }
+        .logo { width: 60px; height: auto; }
+
+        .university-info h1 {
+            font-size: 14px;
+            font-weight: 800;
+            color: #0056b3;
+            margin-bottom: 4px;
+            text-transform: uppercase;
         }
-        .header h1 {
-            color: #4472C4;
-            font-size: 18px;
-            margin-bottom: 5px;
-        }
-        .header p {
+        .university-info h2 {
             font-size: 10px;
-            color: #666;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 2px;
+            text-transform: uppercase;
         }
-        .info-section {
+        .university-info p {
+            font-size: 9px;
+            color: #555;
+            line-height: 1.2;
+        }
+
+        /* CUADRO TIPO BOTÓN SUPERIOR */
+        .top-title-box {
+            display: inline-block;
+            border: 2px solid #0056b3;
+            color: #0056b3;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 11px;
+            text-transform: uppercase;
             margin-bottom: 15px;
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
         }
-        .info-section strong {
-            color: #4472C4;
+
+        /* CUADRO RESUMEN DERECHA (Con bordes redondeados) */
+        .summary-box-container {
+            text-align: right;
+            width: 280px; /* Ancho fijo para el cuadro derecho */
         }
-        table {
+        .summary-box {
+            background-color: #f8f9fa; /* Fondo muy suave */
+            border: 2px solid #0056b3; /* Borde Azul */
+            border-radius: 12px; /* BORDES REDONDEADOS SOLICITADOS */
+            padding: 10px 12px;
+            text-align: left;
+        }
+        .summary-item {
+            font-size: 9px;
+            margin-bottom: 3px;
+            color: #333;
+        }
+        .summary-item strong {
+            color: #0056b3;
+            font-weight: bold;
+            margin-right: 4px;
+        }
+
+        /* SEPARADOR AZUL */
+        .blue-divider {
+            width: 100%;
+            height: 2px;
+            background-color: #0056b3;
+            margin: 15px 0 20px 0;
+        }
+
+        /* TABLA DE DATOS */
+        .data-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
         }
-        th {
-            background-color: #4472C4;
-            color: white;
-            padding: 8px 5px;
-            text-align: left;
-            font-size: 9px;
+        .data-table th {
+            background-color: #f2f2f2; /* Fondo gris claro encabezado */
+            color: #0056b3; /* Texto azul encabezado */
             font-weight: bold;
-        }
-        td {
-            padding: 6px 5px;
+            font-size: 9px;
+            padding: 10px 6px;
+            text-align: left;
             border-bottom: 1px solid #ddd;
-            font-size: 8px;
+            border-top: 1px solid #ddd;
         }
-        tr:nth-child(even) {
-            background-color: #f8f9fa;
+        .data-table td {
+            padding: 8px 6px;
+            font-size: 9px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+            color: #333;
         }
+
+        /* ESTILOS ESPECÍFICOS DE COLUMNA */
+        .col-bold { font-weight: bold; color: #000; }
+        .col-gray { color: #666; font-size: 8.5px; }
+
+        /* BADGES (ESTADOS) */
         .badge {
             display: inline-block;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 7px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 8px;
             font-weight: bold;
+            text-transform: uppercase;
+            border: 1px solid #ddd;
         }
-        .badge-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .badge-warning {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        .badge-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .badge-secondary {
-            background-color: #e2e3e5;
-            color: #383d41;
-        }
+        /* Colores Badge similares a la imagen */
+        .bg-rectificar { background-color: #e2e6ea; color: #383d41; border-color: #d6d8db; } /* Gris */
+        .bg-archivado { background-color: #e2e6ea; color: #383d41; border-color: #d6d8db; } /* Gris */
+        .bg-recepcionado { background-color: #d1e7dd; color: #0f5132; border-color: #badbcc; } /* Verde suave */
+        .bg-pendiente { background-color: #fff3cd; color: #856404; border-color: #ffecb5; } /* Amarillo */
+        .bg-observado { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; } /* Rojo */
+
+        /* FOOTER */
         .footer {
-            margin-top: 20px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
             text-align: center;
             font-size: 8px;
-            color: #999;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
-        }
-        .text-truncate {
-            max-width: 200px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            color: #888;
+            border-top: 1px solid #eee;
+            padding-top: 5px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>REPORTE DE DOCUMENTOS</h1>
-        <p>Sistema de Gestión Documental - Universidad Nacional Intercultural de la Amazonía</p>
+
+    <div class="top-title-box">
+        REPORTE DE DOCUMENTOS
     </div>
 
-    <div class="info-section">
-        <strong>Período:</strong> {{ \Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($fechaFin)->format('d/m/Y') }} &nbsp;&nbsp;
-        <strong>Tipo:</strong> {{ ucfirst($tipoReporte) }} &nbsp;&nbsp;
-        <strong>Total Registros:</strong> {{ $total }} &nbsp;&nbsp;
-        <strong>Generado:</strong> {{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}
-    </div>
+    <table class="header-layout">
+        <tr>
+            <td class="logo-container">
+                <img src="{{ public_path('assets/media/logo-unia.webp') }}" class="logo" alt="UNIA">
+            </td>
 
-    <table>
+            <td class="university-info">
+                <h1>UNIVERSIDAD NACIONAL INTERCULTURAL DE LA AMAZONIA</h1>
+                <h2>DIRECCIÓN DE SERVICIOS ACADÉMICOS</h2>
+                <p>Sistema de Gestión Documental</p>
+                <p>Car. San José km. 0.9 Cas. San José (Costado Instituto Bilingüe) - RUC 20393146557</p>
+            </td>
+
+            <td class="summary-box-container">
+                <div class="summary-box">
+                    <div class="summary-item">
+                        <strong>Período:</strong> {{ \Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($fechaFin)->format('d/m/Y') }}
+                    </div>
+                    <div class="summary-item">
+                        <strong>Tipo:</strong> {{ ucfirst($tipoReporte) === 'Todos' ? 'Todos' : ucfirst($tipoReporte) }}
+                    </div>
+                    <div class="summary-item">
+                        <strong>Total Registros:</strong> {{ $total }}
+                    </div>
+                    <div class="summary-item">
+                        <strong>Generado:</strong> {{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="blue-divider"></div>
+
+    <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 10%;">N° Documento</th>
-                <th style="width: 8%;">Expediente</th>
-                <th style="width: 25%;">Asunto</th>
-                <th style="width: 12%;">Remitente</th>
-                <th style="width: 12%;">Origen</th>
-                <th style="width: 12%;">Destino</th>
-                <th style="width: 10%;">Estado</th>
-                <th style="width: 5%;">Folios</th>
-                <th style="width: 10%;">Fecha</th>
+                <th width="12%">N° Documento</th>
+                <th width="10%">Expediente</th>
+                <th width="22%">Asunto</th>
+                <th width="10%">Remitente</th>
+                <th width="10%">Origen</th>
+                <th width="10%">Destino</th>
+                <th width="12%" style="text-align: center;">Estado</th>
+                <th width="5%" style="text-align: center;">Folios</th>
+                <th width="9%" style="text-align: center;">Fecha</th>
             </tr>
         </thead>
         <tbody>
             @forelse($documentos as $doc)
             <tr>
-                <td><strong>{{ $doc->numero_documento }}</strong></td>
-                <td>{{ $doc->expediente_documento ?? 'S/N' }}</td>
-                <td class="text-truncate">{{ Str::limit($doc->asunto_documento ?? $doc->asunto, 80) }}</td>
-                <td>{{ Str::limit($doc->remitente ?? 'N/A', 30) }}</td>
-                <td>{{ Str::limit($doc->areaRemitente->nombre_area ?? 'Externo', 25) }}</td>
-                <td>{{ Str::limit($doc->areaDestino->nombre_area ?? 'Sin asignar', 25) }}</td>
+                <td class="col-bold">
+                    {{ $doc->numero_documento }}
+                </td>
+
+                <td class="col-gray">
+                    {{ $doc->expediente_documento ?? '-' }}
+                </td>
+
                 <td>
+                    {{ Str::limit($doc->asunto_documento ?? $doc->asunto, 85) }}
+                </td>
+
+                <td class="col-gray">
+                    {{ Str::limit($doc->remitente ?? 'N/A', 25) }}
+                </td>
+
+                <td>
+                    {{ Str::limit($doc->areaRemitente->nombre_area ?? 'EXTERNO', 20) }}
+                </td>
+
+                <td>
+                    {{ Str::limit($doc->areaDestino->nombre_area ?? 'SIN ASIGNAR', 20) }}
+                </td>
+
+                <td style="text-align: center;">
                     @php
                         $estado = strtoupper($doc->estado->nombre_estado ?? 'N/A');
-                        $badgeClass = match(true) {
-                            str_contains($estado, 'RECEPCIONADO') || str_contains($estado, 'FINALIZADO') => 'badge-success',
-                            str_contains($estado, 'PENDIENTE') => 'badge-warning',
-                            str_contains($estado, 'OBSERVADO') => 'badge-danger',
-                            str_contains($estado, 'ANULADO') => 'badge-danger',
-                            str_contains($estado, 'ARCHIVADO') => 'badge-secondary',
-                            default => 'badge-secondary'
-                        };
+                        $class = 'bg-archivado'; // Por defecto gris
+
+                        if(str_contains($estado, 'RECEPCIONADO') || str_contains($estado, 'FINALIZADO')) {
+                            $class = 'bg-recepcionado';
+                        } elseif(str_contains($estado, 'PENDIENTE')) {
+                            $class = 'bg-pendiente';
+                        } elseif(str_contains($estado, 'OBSERVADO') || str_contains($estado, 'ANULADO')) {
+                            $class = 'bg-observado';
+                        } elseif(str_contains($estado, 'RECTIFICAR')) {
+                            $class = 'bg-rectificar'; // Gris según imagen
+                        }
                     @endphp
-                    <span class="badge {{ $badgeClass }}">{{ $estado }}</span>
+                    <span class="badge {{ $class }}">{{ $estado }}</span>
                 </td>
-                <td style="text-align: center;">{{ $doc->folio_documento ?? 0 }}</td>
-                <td>{{ \Carbon\Carbon::parse($doc->au_fechacr)->format('d/m/Y') }}</td>
+
+                <td style="text-align: center;">
+                    {{ $doc->folio_documento ?? 0 }}
+                </td>
+
+                <td style="text-align: center;">
+                    {{ \Carbon\Carbon::parse($doc->au_fechacr)->format('d/m/Y') }}
+                </td>
             </tr>
             @empty
             <tr>
-                <td colspan="9" style="text-align: center; padding: 20px; color: #999;">
-                    No se encontraron documentos con los filtros aplicados
+                <td colspan="9" style="text-align: center; padding: 20px; color: #777;">
+                    No se encontraron documentos para este reporte.
                 </td>
             </tr>
             @endforelse
@@ -164,8 +265,8 @@
     </table>
 
     <div class="footer">
-        <p>Este documento fue generado automáticamente por el Sistema de Gestión Documental</p>
-        <p>{{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}</p>
+        Universidad Nacional Intercultural de la Amazonía - Sistema de Gestión Documental | {{ date('Y') }}
     </div>
+
 </body>
 </html>
