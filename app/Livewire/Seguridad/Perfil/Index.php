@@ -16,10 +16,10 @@ class Index extends Component
 {
     public $usuario;
     public $persona;
-    
+
     // Datos del usuario
     public $nombre_usuario;
-    
+
     // Datos de la persona
     public $nombres_persona;
     public $apellido_paterno_persona;
@@ -27,22 +27,22 @@ class Index extends Component
     public $documento_persona;
     public $telefono_persona;
         public $correo_persona;
-    
+
     // Cambio de contraseña
     public $password_actual;
     public $password_nuevo;
     public $password_confirmacion;
-    
+
     public $mostrarCambioPassword = false;
 
     public function mount(): void
     {
         $this->usuario = Auth::user();
         $this->persona = $this->usuario->persona;
-        
+
         // Cargar datos del usuario
         $this->nombre_usuario = $this->usuario->nombre_usuario ?? '';
-        
+
         // Cargar datos de la persona con seguridad
         if ($this->persona) {
             $this->nombres_persona = $this->persona->nombres_persona ?? '';
