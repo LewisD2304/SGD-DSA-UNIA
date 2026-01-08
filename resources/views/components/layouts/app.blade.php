@@ -188,7 +188,10 @@
                                     </div>
                                     <div class="separator my-2"></div>
                                     <div class="menu-item px-5">
-                                        <a href="#" class="menu-link px-5">Mi perfil</a>
+                                        <a href="{{ route('perfil.index') }}" class="menu-link px-5">
+                                            <i class="ki-outline ki-user-edit fs-5 me-2"></i>
+                                            Mi perfil
+                                        </a>
                                     </div>
                                     <div class="menu-item px-5">
                                         <a href="#" class="menu-link px-5" id="btnLogout">Cerrar sesión</a>

@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Reportes;
 
-use App\Exports\DocumentosExport;
 use App\Models\Area;
 use App\Models\Documento;
 use App\Models\Estado;
@@ -12,7 +11,6 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Maatwebsite\Excel\Facades\Excel;
 
 #[Layout('components.layouts.app')]
 #[Title('Reporte de Documentos | GESTIÓN DOCUMENTAL')]
@@ -69,14 +67,6 @@ class Documentos extends Component
         return response()->streamDownload(fn () => print($pdf->output()), $filename, [
             'Content-Type' => 'application/pdf',
         ]);
-    }
-
-    public function exportarExcel()
-    {
-        $documentos = $this->baseQuery()->get();
-        $filename = 'reporte_documentos_' . Carbon::now()->format('YmdHis') . '.xlsx';
-
-        return Excel::download(new DocumentosExport($documentos), $filename);
     }
 
     public function render()

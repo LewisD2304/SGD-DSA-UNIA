@@ -10,6 +10,7 @@ use App\Livewire\Seguridad\Usuario\Index as UsuarioIndex;
 use App\Livewire\Seguridad\Persona\Index as PersonaIndex;
 use App\Livewire\Seguridad\Catalogo\Index as CatalogoIndex;
 use App\Livewire\Seguridad\Menu\Index as MenuIndex;
+use App\Livewire\Seguridad\Perfil\Index as PerfilIndex;
 use \App\Livewire\Documentos\Historial\Index as HistorialIndex;
 use App\Livewire\Reportes\Index as ReportesIndex;
 use App\Livewire\Reportes\Estadisticas as ReportesEstadisticas;
@@ -45,6 +46,9 @@ Route::middleware(['throttle:100,1'])->group(function () {
     Route::middleware(['auth'])->group(function () {
 
         Route::get('/inicio', InicioIndex::class)->name('inicio.index');
+
+        // Mi Perfil
+        Route::get('/perfil', PerfilIndex::class)->name('perfil.index');
 
         /*
     |--------------------------------------------------------------------------

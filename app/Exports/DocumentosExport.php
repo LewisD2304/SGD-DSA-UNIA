@@ -10,6 +10,7 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Carbon\Carbon;
 use ParaTest\WrapperRunner\WorkerCrashedException;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class DocumentosExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
@@ -65,7 +66,7 @@ class DocumentosExport implements FromCollection, WithHeadings, WithMapping, Wit
             1 => [
                 'font' => ['bold' => true, 'size' => 12],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => '4472C4']
                 ],
                 'font' => ['color' => ['rgb' => 'FFFFFF'], 'bold' => true],
