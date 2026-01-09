@@ -15,7 +15,7 @@ class Index extends Component
 
     public function render()
     {
-        return view('livewire.seguridad.Catalogo.index');
+        return view('livewire.seguridad.catalogo.index');
     }
 
     public function mount()

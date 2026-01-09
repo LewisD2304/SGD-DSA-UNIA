@@ -429,7 +429,7 @@ class Tabla extends Component
 
     public function render()
     {
-        return view('livewire.components.Documentos.Documento.tabla');
+        return view('livewire.components.documentos.documento.tabla');
     }
 
     public function limpiarFiltros()

@@ -76,6 +76,6 @@ class Tabla extends Component
 
     public function render()
     {
-        return view('livewire.components.Documentos.historial.tabla');
+        return view('livewire.components.documentos.historial.tabla');
     }
 }
