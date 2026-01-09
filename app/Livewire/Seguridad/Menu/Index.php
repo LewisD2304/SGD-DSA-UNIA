@@ -3,7 +3,6 @@
 namespace App\Livewire\Seguridad\Menu;
 
 use App\Enums\EstadoEnum;
-use App\Models\Catalogo;
 use App\Services\Seguridad\MenuService;
 use App\Enums\CatalogoEnum;
 use App\Services\Configuracion\Catalogo\CatalogoService;
