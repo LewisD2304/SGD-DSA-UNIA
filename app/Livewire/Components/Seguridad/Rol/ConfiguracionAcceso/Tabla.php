@@ -29,7 +29,6 @@ class Tabla extends Component
     public function refrescarMenusSeleccionados($menus_seleccionados)
     {
         $this->menus_seleccionados = collect($menus_seleccionados ?? [])->values();
-
     }
 
     public function placeholder()
