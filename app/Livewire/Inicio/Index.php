@@ -10,6 +10,6 @@ class Index extends Component
 {
     public function render()
     {
-        return view('livewire.inicio.index');
+        return view('livewire.Inicio.index');
     }
 }
