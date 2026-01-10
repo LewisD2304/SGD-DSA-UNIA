@@ -200,6 +200,6 @@ class Tabla extends Component
 
     public function render()
     {
-        return view('livewire.components.seguridad.Menu.tabla');
+        return view('livewire.components.seguridad.menu.tabla');
     }
 }

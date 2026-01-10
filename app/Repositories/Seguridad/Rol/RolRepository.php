@@ -32,17 +32,17 @@ class RolRepository implements RolRepositoryInterface
 
     // Obtener menús asignados a un rol con sus permisos
     public function obtenerMenusAsignadosConPermisos(int $id_rol)
-{
-    return $this->model
-        ->with([
-            'permisos.accion.menu',       // Menu relacionado
-            'permisos.accion.tipoAccion', // Tipo de acción
-        ])
-        ->where('id_rol', $id_rol)
-        ->first()
-        ?->permisos
-        ->pluck('accion.menu')
-        ->unique('id_menu')
-        ->values();
-}
+    {
+        return $this->model
+            ->with([
+                'permisos.accion.menu',       // Menu relacionado
+                'permisos.accion.tipoAccion', // Tipo de acción
+            ])
+            ->where('id_rol', $id_rol)
+            ->first()
+            ?->permisos
+            ->pluck('accion.menu')
+            ->unique('id_menu')
+            ->values();
+    }
 }

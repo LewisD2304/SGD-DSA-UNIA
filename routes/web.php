@@ -16,6 +16,7 @@ use App\Livewire\Reportes\Index as ReportesIndex;
 use App\Livewire\Reportes\Estadisticas as ReportesEstadisticas;
 use App\Livewire\Reportes\Documentos as ReporteDocumentos;
 use App\Livewire\Reportes\DocumentosDetalles;
+use App\Livewire\Reportes\Usuarios as ReporteUsuarios;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -97,6 +98,7 @@ Route::middleware(['throttle:100,1'])->group(function () {
             Route::get('/index', ReportesIndex::class)->name('index');
             Route::get('/estadisticas', ReportesEstadisticas::class)->name('estadisticas');
             Route::get('/documentos', ReporteDocumentos::class)->name('documentos');
+            Route::get('/usuarios', ReporteUsuarios::class)->name('usuarios');
             Route::get('/documentos/{idDocumento}', DocumentosDetalles::class)->name('documentos.detalles');
         });
 

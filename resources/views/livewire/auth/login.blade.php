@@ -112,13 +112,6 @@
                             @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
-                        <div class="form-footer">
-                            <label class="checkbox-container">
-                                <input type="checkbox" class="checkbox">
-                                <span>Recordarme</span>
-                            </label>
-                            <a href="#" class="link">¿Olvidaste tu contraseña?</a>
-                        </div>
 
                         <div class="form-group mt-4">
                             <button type="submit" class="btn-submit" wire:loading.attr="disabled" wire:target="iniciarSesion">

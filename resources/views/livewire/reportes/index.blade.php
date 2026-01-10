@@ -54,10 +54,10 @@
                                     <div class="card-body d-flex flex-column justify-content-center">
                                         <i class="ki-outline ki-user-tick fs-3x text-info mb-3"></i>
                                         <h4 class="mb-2">Reporte de Usuarios</h4>
-                                        <p class="text-muted fs-6 mb-3">Reportes de actividad de usuarios, documentos gestionados y accesos.</p>
-                                        <button class="btn btn-sm btn-info" disabled>
-                                            Próximamente
-                                        </button>
+                                        <p class="text-muted fs-6 mb-3">Visualiza todas las acciones y movimientos de usuarios en el sistema.</p>
+                                        <a href="{{ route('reportes.usuarios') }}" class="btn btn-sm btn-info">
+                                            Ver reporte
+                                        </a>
                                     </div>
                                 </div>
                             </div>
