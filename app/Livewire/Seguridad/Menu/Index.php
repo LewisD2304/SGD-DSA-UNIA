@@ -299,3 +299,4 @@ class Index extends Component
         return view('livewire.seguridad.menu.index');
     }
 }
+    
