@@ -22,6 +22,7 @@
                                         <th class="min-w-150px">DESTINO</th>
                                         <th class="min-w-125px">FECHA CREACIÓN</th>
                                         <th class="min-w-100px">ESTADO</th>
+                                        <th class="text-center min-w-50px">VER</th>
                                         <th class="text-center min-w-100px">ACCIONES</th>
                                     </tr>
                                 </thead>
@@ -70,13 +71,19 @@
                                             @else
                                             <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
                                             @endif </td>
+
+                                        <td>
+                                            @can('autorizacion',['VER','DOCUMENTOS'])
+                                            <button type="button" class="btn btn-light btn-sm" wire:click="$dispatch('abrirModalDetalleDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                <i class="ki-outline ki-eye fs-4 me-1"></i> Ver
+                                            </button>
+                                            @endcan
+
+
+                                        </td>
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center gap-2 flex-wrap">
-                                                @can('autorizacion',['VER','DOCUMENTOS'])
-                                                <button type="button" class="btn btn-light btn-sm" wire:click="$dispatch('abrirModalDetalleDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                    <i class="ki-outline ki-eye fs-4 me-1"></i> Ver
-                                                </button>
-                                                @endcan
+
 
                                                 @php
                                                 $nombreEstado = strtoupper($documento->estado->nombre_estado ?? '');
@@ -106,13 +113,13 @@
                                                 $transiciones = $transiciones->filter(function($t) use ($nombreEstado) {
                                                 $evento = strtoupper($t->evento_transicion);
                                                 if ($nombreEstado === 'RECEPCIONADO') {
-                                                    return in_array($evento, ['ARCHIVADO', 'ARCHIVAR']);
+                                                return in_array($evento, ['ARCHIVADO', 'ARCHIVAR']);
                                                 }
                                                 if ($nombreEstado === 'OBSERVADO') {
-                                                    return $evento === 'OBSERVACION RECEPCIONADO';
+                                                return $evento === 'OBSERVACION RECEPCIONADO';
                                                 }
                                                 if ($nombreEstado === 'RECEPCION SUBSANADA' || $nombreEstado === 'SUBSANADO') {
-                                                    return $evento === 'RECEPCIONAR SUBSANACION';
+                                                return $evento === 'RECEPCIONAR SUBSANACION';
                                                 }
                                                 return $evento === 'RECEPCIONAR';
                                                 });
@@ -132,7 +139,7 @@
 
                                                 $config = [
                                                 'RECEPCIONAR' => ['color' => 'success', 'icono' => 'folder-check', 'texto' => 'Recepcionar'],
-                                                    'OBSERVACION RECEPCIONADO' => ['color' => 'success', 'icono' => 'folder-check', 'texto' => 'Recepcionar observado'],
+                                                'OBSERVACION RECEPCIONADO' => ['color' => 'success', 'icono' => 'folder-check', 'texto' => 'Recepcionar observado'],
                                                 'RECEPCIONAR SUBSANACION' => ['color' => 'success', 'icono' => 'shield-tick', 'texto' => 'Recepcionar subsanación'],
                                                 'ARCHIVADO' => ['color' => 'warning', 'icono' => 'archive', 'texto' => 'Archivar'],
                                                 'ARCHIVAR' => ['color' => 'warning', 'icono' => 'archive', 'texto' => 'Archivar'],

@@ -27,9 +27,9 @@ class DocumentoService
         return $this->repository->listarPaginadoPorArea($idArea, $paginado, $buscar, $columnaOrden, $orden, $relaciones);
     }
 
-    public function listarPorAreaConFiltros(int $idArea, int $paginado = 10, ?string $buscar = null, ?string $fechaInicio = null, ?string $fechaFin = null, ?string $idEstado = null, string $columnaOrden = 'id_documento', string $orden = 'asc', array $relaciones = [])
+    public function listarPorAreaConFiltros(int $idArea, int $paginado = 10, ?string $buscar = null, ?string $fechaInicio = null, ?string $fechaFin = null, ?string $idEstado = null, ?string $idOficinaCatalogo = null, string $columnaOrden = 'id_documento', string $orden = 'asc', array $relaciones = [])
     {
-        return $this->repository->listarPaginadoPorAreaConFiltros($idArea, $paginado, $buscar, $fechaInicio, $fechaFin, $idEstado, $columnaOrden, $orden, $relaciones);
+        return $this->repository->listarPaginadoPorAreaConFiltros($idArea, $paginado, $buscar, $fechaInicio, $fechaFin, $idEstado, $idOficinaCatalogo, $columnaOrden, $orden, $relaciones);
     }
 
     // Encontrar un documento por id

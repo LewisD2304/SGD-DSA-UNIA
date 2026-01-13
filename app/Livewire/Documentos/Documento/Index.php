@@ -52,6 +52,9 @@ class Index extends Component
     #[Validate('required|exists:ta_catalogo,id_catalogo', as: 'tipo de documento')]
     public $tipoDocumentoCatalogo = '';
 
+    #[Validate('required|exists:ta_catalogo,id_catalogo', as: 'oficina')]
+    public $oficina = '';
+
     #[Validate('max:250', as: 'ruta_documento')]
 
     public $archivosDocumento = [];
@@ -59,6 +62,7 @@ class Index extends Component
     public $rutaActual = 'gestion.documentos.documentos';
     public $areas = [];
     public $tiposDocumento = [];
+    public $oficinas = [];
 
     // Propiedades para derivar documento
     public $idAreaDerivar = '';
@@ -105,6 +109,21 @@ class Index extends Component
         if ($tipoDocumentoPadre) {
             $this->tiposDocumento = $this->catalogoService->listarHijos($tipoDocumentoPadre->id_catalogo, [], 0);
         }
+
+        // Cargar oficinas desde catálogo padre "OFICINAS" (por nombre)
+        // Si existe abreviatura para OFICINAS, se puede usar buscarPadre('OF')
+        $idPadreOficinas = null;
+        try {
+            $idPadreOficinas = $this->catalogoService->obtenerIdPorNombre('OFICINAS');
+        } catch (\Throwable $e) {
+            // fallback: intentar con abreviatura
+            $padre = $this->catalogoService->buscarPadre('OF');
+            $idPadreOficinas = $padre?->id_catalogo;
+        }
+
+        if ($idPadreOficinas) {
+            $this->oficinas = $this->catalogoService->listarHijos($idPadreOficinas, [], 0);
+        }
     }
 
     public function guardarDocumento()
@@ -138,6 +157,7 @@ class Index extends Component
                 'asuntoDocumento' => 'required|max:200|min:3',
                 'idAreaDestino' => 'required|exists:ta_area,id_area',
                 'tipoDocumentoCatalogo' => 'required|exists:ta_catalogo,id_catalogo',
+                'oficina' => 'required|exists:ta_catalogo,id_catalogo',
                 'observacionDocumento' => 'nullable|max:500',
             ];
 
@@ -213,6 +233,7 @@ class Index extends Component
             'id_area_remitente' => $this->idAreaRemitente,
             'id_area_destino' => $this->idAreaDestino,
             'tipo_documento_catalogo' => $this->tipoDocumentoCatalogo,
+            'oficina_catalogo' => $this->oficina,
             'fecha_recepcion_documento' => null,
         ]);
 
@@ -245,6 +266,7 @@ class Index extends Component
             'observacion_documento' => $this->observacionDocumento,
             'id_area_destino' => $this->idAreaDestino,
             'tipo_documento_catalogo' => $this->tipoDocumentoCatalogo,
+            'oficina_catalogo' => $this->oficina,
         ];
 
         // Modificar documento
@@ -301,6 +323,8 @@ class Index extends Component
             $this->asuntoDocumento = $this->modeloDocumento->asunto_documento;
             $this->observacionDocumento = $this->modeloDocumento->observacion_documento;
             $this->idAreaDestino = $this->modeloDocumento->id_area_destino;
+            $this->oficina = $this->modeloDocumento->id_area;
+            $this->oficina = $this->modeloDocumento->oficina_catalogo ?? '';
             $this->archivosExistentes = $this->modeloDocumento->archivos ?? collect();
         } else {
             $this->tituloModal = 'Registrar nuevo documento';
@@ -580,6 +604,7 @@ class Index extends Component
             'observacionDocumento',
             'idAreaDestino',
             'tipoDocumentoCatalogo',
+            'oficina',
             'archivosDocumento',
             'archivosExistentes',
             'nombreDocumentoEliminar',

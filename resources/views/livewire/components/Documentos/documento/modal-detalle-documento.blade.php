@@ -135,6 +135,18 @@
                             </div>
                         </div>
 
+                        <div class="row g-3 mb-5">
+                            <div class="col-sm-6">
+                                <div class="bg-light rounded p-3 h-100">
+                                    <div class="text-gray-500 fw-bold fs-9 text-uppercase mb-1">Oficina</div>
+                                    <div class="text-gray-800 fw-bold fs-7">{{ $modeloDocumento->oficina->descripcion_catalogo ?? 'N/A' }}</div>
+                                    @if(optional($modeloDocumento->oficina)->abreviatura_catalogo)
+                                        <span class="text-muted fs-9">{{ $modeloDocumento->oficina->abreviatura_catalogo }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="bg-gray-100 border border-dashed border-gray-300 rounded p-4 mb-5">
                             <div class="row">
                                 <div class="col-6 border-end border-gray-300">

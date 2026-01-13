@@ -30,8 +30,11 @@ class Tabla extends Component
     public $fechaFin = '';
     #[Url('estado')]
     public $idEstadoFiltro = '';
+    #[Url('oficina')]
+    public $idOficinaCatalogo = '';
     public $permisos = [];
     public $estados = [];
+    public $oficinas = [];
     public ?int $documentoArchivarId = null;
     public ?string $documentoArchivarTitulo = null;
     public ?int $documentoObservarId = null;
@@ -55,6 +58,36 @@ class Tabla extends Component
         $this->areaService = resolve(AreaService::class);
     }
 
+    public function mount()
+    {
+        $catalogoService = resolve(\App\Services\Configuracion\Catalogo\CatalogoService::class);
+        $idPadreOficinas = null;
+        try {
+            $idPadreOficinas = $catalogoService->obtenerIdPorNombre('OFICINAS');
+        } catch (\Throwable $e) {
+            $padre = $catalogoService->buscarPadre('OF');
+            $idPadreOficinas = $padre?->id_catalogo;
+        }
+        if ($idPadreOficinas) {
+            $this->oficinas = $catalogoService->listarHijos($idPadreOficinas, [], 0);
+        }
+
+        // Cargar todos los estados para el filtro
+        $this->estados = Estado::all()->pluck('nombre_estado', 'id_estado');
+
+        $menuService = resolve(MenuService::class);
+        $menu = $menuService->listarAccionesPorNombreMenu('DOCUMENTOS');
+
+        if ($menu) {
+            foreach ($menu->acciones as $accion) {
+                $nombre_accion = str_replace(' ', '_', strtoupper($accion->tipoAccion->descripcion_catalogo));
+                if ($nombre_accion !== 'LISTAR') {
+                    $this->permisos[$nombre_accion] = Gate::allows('autorizacion', [$nombre_accion, $menu->nombre_menu]);
+                }
+            }
+        }
+    }
+
     #[Computed()]
     #[On('refrescarDocumentos')]
     public function documentos()
@@ -72,9 +105,10 @@ class Tabla extends Component
             fechaInicio: $this->fechaInicio,
             fechaFin: $this->fechaFin,
             idEstado: $this->idEstadoFiltro,
+            idOficinaCatalogo: !empty($this->idOficinaCatalogo) ? $this->idOficinaCatalogo : null,
             columnaOrden: 'au_fechacr',
             orden: 'desc',
-            relaciones: ['area', 'tipoDocumento', 'estado', 'areaRemitente', 'areaDestino', 'movimientos.areaOrigen']
+            relaciones: ['area', 'tipoDocumento', 'oficina', 'estado', 'areaRemitente', 'areaDestino', 'movimientos.areaOrigen']
         );
     }
 
@@ -403,37 +437,14 @@ class Tabla extends Component
         HTML;
     }
 
-    public function mount()
+    public function limpiarFiltros()
     {
-        // Cargar todos los estados para el filtro
-        $this->estados = Estado::all()->pluck('nombre_estado', 'id_estado');
-
-        $menuService = resolve(MenuService::class);
-        $menu = $menuService->listarAccionesPorNombreMenu('DOCUMENTOS');
-
-        if ($menu) {
-            foreach ($menu->acciones as $accion) {
-                $nombre_accion = str_replace(' ', '_', strtoupper($accion->tipoAccion->descripcion_catalogo));
-                if ($nombre_accion !== 'LISTAR') {
-                    $this->permisos[$nombre_accion] = Gate::allows('autorizacion', [$nombre_accion, $menu->nombre_menu]);
-                }
-            }
-        }
-
-        // Cargar áreas activas para seleccionar destino de observación, excluyendo el área actual
-        $areaUsuario = Auth::user()?->persona?->id_area;
-        $this->areas = $this->areaService->listarActivas()->filter(function($area) use ($areaUsuario) {
-            return (int)$area->id_area !== (int)$areaUsuario;
-        })->values();
+        $this->reset(['buscar', 'fechaInicio', 'fechaFin', 'idEstadoFiltro', 'idOficinaCatalogo']);
+        $this->resetPage();
     }
 
     public function render()
     {
         return view('livewire.components.documentos.documento.tabla');
-    }
-
-    public function limpiarFiltros()
-    {
-        $this->reset(['fechaInicio', 'fechaFin', 'idEstadoFiltro', 'buscar']);
     }
 }

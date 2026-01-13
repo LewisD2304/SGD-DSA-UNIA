@@ -34,7 +34,8 @@ class Documento extends Model
         'id_estado',
         'tipo_documento_catalogo',
         'nombre_archivo_original',
-        'id_area'
+        'id_area',
+        'oficina_catalogo'
     ];
 
     protected $hidden = [
@@ -88,6 +89,10 @@ class Documento extends Model
 
     public function tipoDocumento() {
         return $this->belongsTo(Catalogo::class, 'tipo_documento_catalogo', 'id_catalogo');
+    }
+
+    public function oficina() {
+        return $this->belongsTo(Catalogo::class, 'oficina_catalogo', 'id_catalogo');
     }
 
     public function movimientos() {

@@ -24,6 +24,14 @@
                         @endforeach
                     </select>
 
+                    <!-- FILTRO DE OFICINA -->
+                    <select class="form-select form-select-solid my-1" wire:model.live="idOficinaCatalogo" style="max-width: 250px;">
+                        <option value="">Todas las oficinas</option>
+                        @foreach($oficinas as $oficina)
+                        <option value="{{ $oficina->id_catalogo }}">{{ ($oficina->abreviatura_catalogo ? $oficina->abreviatura_catalogo . ' - ' : '') . $oficina->descripcion_catalogo }}</option>
+                        @endforeach
+                    </select>
+
                     <!-- BOTÓN LIMPIAR FILTROS -->
                     <button type="button" class="btn btn-light-secondary fw-bold my-1" wire:click="limpiarFiltros">
                         <i class="ki-outline ki-trash fs-2"></i>
@@ -52,6 +60,7 @@
                                         <th class="min-w-250px">ASUNTO</th>
                                         <th class="min-w-150px">REMITENTE</th>
                                         <th class="min-w-150px">DESTINO</th>
+                                        <th class="min-w-150px">OFICINA</th>
                                         <th class="min-w-125px">FECHA DE CREACION</th>
                                         <th class="min-w-100px">ESTADO</th>
                                         <th class="text-center min-w-100px">ACCIONES</th>
@@ -100,6 +109,19 @@
                                         <td>
                                             <div class="text-gray-800">{{ $nombreDestinoActual }}</div>
                                         </td>
+                                        <td>
+                                            @php
+                                            $oficina = $documento->oficina;
+                                            @endphp
+                                            @if($oficina)
+                                            <div class="text-gray-800">{{ $oficina->descripcion_catalogo }}</div>
+                                            @if(!empty($oficina->abreviatura_catalogo))
+                                            <span class="text-muted fs-9 d-block">{{ $oficina->abreviatura_catalogo }}</span>
+                                            @endif
+                                            @else
+                                            <span class="text-muted">Sin oficina</span>
+                                            @endif
+                                        </td>
                                         <td>{{ formatoFechaText($documento->au_fechacr)}}</td>
                                         <td>
                                             @php
@@ -145,6 +167,18 @@
                                                     <div class="menu-item px-3">
                                                         <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalDetalleDocumento', { id_documento: {{ $documento->id_documento }} })">
                                                             <span class="menu-icon"><i class="ki-outline ki-eye fs-3"></i></span> Ver
+                                                        </a>
+                                                    </div>
+                                                    @endcan
+
+                                                    @can('autorizacion', ['RESPONDER', 'DOCUMENTOS'])
+                                                    <div class="menu-item px-3">
+                                                        <a href="#" class="menu-link px-3" wire:click="...">
+                                                            <span class="menu-icon">
+                                                                {{-- Opción 1: Avión de papel (Estándar para enviar/responder) --}}
+                                                                <i class="ki-outline ki-send fs-3"></i>
+                                                            </span>
+                                                            Responder
                                                         </a>
                                                     </div>
                                                     @endcan
