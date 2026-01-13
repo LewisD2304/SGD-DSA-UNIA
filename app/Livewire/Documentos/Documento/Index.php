@@ -77,6 +77,15 @@ class Index extends Component
     public $motivoObservacion = '';
     public $archivosEvidenciaObservacion = [];
 
+    // --- PROPIEDADES RESPONDER DOCUMENTO ---
+    public $idAreaRespuesta = '';
+    public $comentarioRespuesta = '';
+    public $archivosRespuesta = [];
+    public $tipoDocumentoNombre = '';
+    public $areaRemitenteNombre = '';
+    public $oficinaNombre = '';
+    public $areaDestinoNombre = '';
+
 
     protected DocumentoService $documentoService;
     protected ArchivoDocumentoService $archivoService;
@@ -1063,6 +1072,161 @@ class Index extends Component
     public function limpiarFechas()
     {
         $this->reset(['fechaInicio', 'fechaFin']);
+    }
+
+    // ============ MÉTODOS RESPONDER DOCUMENTO ============
+
+    #[On('abrirModalResponderDocumento')]
+    public function abrirModalResponderDocumento($id_documento)
+    {
+        $this->limpiarModalResponder();
+
+        // Obtener documento con relaciones
+        $docEstado = $this->documentoService->obtenerPorId($id_documento, ['estado', 'tipoDocumento', 'oficina', 'areaRemitente', 'areaDestino', 'archivos']);
+
+        if (!$docEstado) {
+            $this->dispatch('toastr', ...mensajeToastr(false, true, '5000', 'Error', 'error', 'Documento no encontrado', 'top', 'right'));
+            return;
+        }
+
+        $this->modeloDocumento = $docEstado;
+
+        // Cargar datos para mostrar (solo lectura)
+        $this->numeroDocumento = $docEstado->numero_documento;
+        $this->folioDocumento = $docEstado->folio_documento ?? '';
+        $this->asuntoDocumento = $docEstado->asunto_documento;
+        $this->observacionDocumento = $docEstado->observacion_documento ?? '';
+        $this->tipoDocumentoNombre = $docEstado->tipoDocumento->descripcion_catalogo ?? 'N/A';
+        $this->areaRemitenteNombre = $docEstado->areaRemitente->nombre_area ?? 'N/A';
+        $this->oficinaNombre = $docEstado->oficina
+            ? ($docEstado->oficina->abreviatura_catalogo ? $docEstado->oficina->abreviatura_catalogo . ' - ' : '') . $docEstado->oficina->descripcion_catalogo
+            : 'N/A';
+        $this->areaDestinoNombre = $docEstado->areaDestino->nombre_area ?? 'N/A';
+        $this->archivosExistentes = $docEstado->archivos ?? collect();
+
+        $this->dispatch('cargando', cargando: 'false');
+        $this->modalDocumento('#modal-responder-documento', 'show');
+    }
+
+    public function guardarRespuesta()
+    {
+        $this->comentarioRespuesta = limpiarCadena($this->comentarioRespuesta, false);
+
+        $reglas = [
+            'idAreaRespuesta' => 'required|exists:ta_area,id_area',
+            'comentarioRespuesta' => 'nullable|max:500',
+        ];
+
+        // Validar archivos solo si se adjuntaron
+        if (!empty($this->archivosRespuesta)) {
+            $reglas['archivosRespuesta'] = 'nullable|array|max:10';
+            $reglas['archivosRespuesta.*'] = 'file|mimetypes:application/pdf,image/png,image/jpeg|max:10240';
+        }
+
+        $mensajes = [
+            'idAreaRespuesta.required' => 'Debe seleccionar un área de destino',
+            'idAreaRespuesta.exists' => 'El área seleccionada no existe',
+            'comentarioRespuesta.max' => 'El comentario no puede exceder 500 caracteres',
+            'archivosRespuesta.array' => 'Los archivos deben ser un conjunto válido',
+            'archivosRespuesta.max' => 'No puedes subir más de 10 archivos',
+            'archivosRespuesta.*.file' => 'Cada archivo debe ser un archivo válido',
+            'archivosRespuesta.*.mimetypes' => 'Solo se permiten archivos PDF, PNG o JPEG',
+            'archivosRespuesta.*.max' => 'Cada archivo no debe exceder 10MB',
+        ];
+
+        try {
+            $this->validate($reglas, $mensajes);
+
+            if (!$this->modeloDocumento) {
+                throw new \Exception('Documento no encontrado');
+            }
+
+            // Buscar la transición DERIVAR desde el estado actual
+            $transicion = Transicion::where('evento_transicion', 'DERIVAR')
+                ->where('id_estado_actual_transicion', $this->modeloDocumento->id_estado)
+                ->first();
+
+            if (!$transicion) {
+                // Si no hay transición, usar derivar directo
+                $resultado = $this->documentoService->derivar(
+                    $this->modeloDocumento->id_documento,
+                    $this->idAreaRespuesta,
+                    $this->comentarioRespuesta
+                );
+            } else {
+                // Usar procesarTransicion
+                $resultado = $this->documentoService->procesarTransicion(
+                    $this->modeloDocumento->id_documento,
+                    $transicion->id_transicion,
+                    [
+                        'id_area_destino' => $this->idAreaRespuesta,
+                        'observacion' => $this->comentarioRespuesta
+                    ]
+                );
+            }
+
+            // Guardar archivos de respuesta si existen
+            if (!empty($this->archivosRespuesta)) {
+                $usuario = Auth::user();
+                $idAreaUsuario = $usuario->persona->id_area ?? null;
+
+                $archivosInfo = $this->archivoService->guardarMultiplesArchivos(
+                    archivos: $this->archivosRespuesta,
+                    ruta: 'gestion.documentos.respuestas',
+                    idDocumento: $this->modeloDocumento->id_documento,
+                    idArea: $idAreaUsuario
+                );
+
+                foreach ($archivosInfo as $info) {
+                    ArchivoDocumento::create(array_merge($info, [
+                        'tipo_archivo' => 'respuesta'
+                    ]));
+                }
+            }
+
+            $this->dispatch('refrescarDocumentos');
+            $mensajeToastr = mensajeToastr(false, true, '3000', 'Éxito', 'success', 'Respuesta enviada correctamente', 'top', 'right');
+        } catch (ValidationException $e) {
+            $this->setErrorBag($e->validator->getMessageBag());
+            $this->dispatch('errores_validacion_respuesta', validacion: $this->getErrorBag()->messages());
+            return;
+        } catch (\Exception $e) {
+            $mensajeToastr = mensajeToastr(false, true, '5000', 'Error', 'error', $e->getMessage(), 'top', 'right');
+        }
+
+        $this->modalDocumento('#modal-responder-documento', 'hide');
+        $this->limpiarModalResponder();
+
+        if ($mensajeToastr !== null) {
+            $this->dispatch('toastr', ...$mensajeToastr);
+        }
+    }
+
+    public function eliminarArchivoRespuesta($index)
+    {
+        if (isset($this->archivosRespuesta[$index])) {
+            unset($this->archivosRespuesta[$index]);
+            $this->archivosRespuesta = array_values($this->archivosRespuesta);
+        }
+    }
+
+    public function limpiarModalResponder()
+    {
+        $this->reset([
+            'idAreaRespuesta',
+            'comentarioRespuesta',
+            'archivosRespuesta',
+            'numeroDocumento',
+            'folioDocumento',
+            'asuntoDocumento',
+            'observacionDocumento',
+            'tipoDocumentoNombre',
+            'areaRemitenteNombre',
+            'oficinaNombre',
+            'areaDestinoNombre',
+            'archivosExistentes'
+        ]);
+        $this->resetErrorBag();
     }
 
     public function render()

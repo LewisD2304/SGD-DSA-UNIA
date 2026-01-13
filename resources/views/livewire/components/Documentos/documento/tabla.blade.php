@@ -173,7 +173,7 @@
 
                                                     @can('autorizacion', ['RESPONDER', 'DOCUMENTOS'])
                                                     <div class="menu-item px-3">
-                                                        <a href="#" class="menu-link px-3" wire:click="...">
+                                                        <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalResponderDocumento', { id_documento: {{ $documento->id_documento }} })">
                                                             <span class="menu-icon">
                                                                 {{-- Opción 1: Avión de papel (Estándar para enviar/responder) --}}
                                                                 <i class="ki-outline ki-send fs-3"></i>
