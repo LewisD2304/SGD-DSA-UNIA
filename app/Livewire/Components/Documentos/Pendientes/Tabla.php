@@ -9,12 +9,14 @@ use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class Tabla extends Component
 {
     use WithPagination;
+    use WithFileUploads;
 
     #[Url('mostrar')]
     public $mostrarPaginate = 10;
@@ -27,6 +29,15 @@ class Tabla extends Component
     public ?int $documentoRectificacionId = null;
     public string $accionRectificacion = '';
     public string $motivoRectificacion = '';
+
+    // Propiedades para observar documento
+    public $idAreaObservar = '';
+    public $motivoObservacion = '';
+    public $archivosEvidenciaObservacion = [];
+    public $numeroDocumento = '';
+    public $asuntoDocumento = '';
+    public $areas = [];
+    public $documentoObservarId = null;
 
     protected DocumentoService $documentoService;
     protected $paginationTheme = 'bootstrap';
@@ -53,7 +64,7 @@ class Tabla extends Component
             buscar: $this->buscar,
             columnaOrden: 'au_fechacr',
             orden: 'desc',
-            relaciones: ['area', 'tipoDocumento', 'estado', 'areaRemitente', 'areaDestino', 'movimientos']
+            relaciones: ['area', 'tipoDocumento', 'estado', 'areaRemitente', 'areaDestino', 'movimientos.areaOrigen', 'movimientos.areaDestino', 'ultimoComentarioMovimiento']
         );
     }
 
@@ -444,8 +455,86 @@ class Tabla extends Component
         }
     }
 
+    #[On('abrirModalObservarDocumento')]
+    public function abrirModalObservarDocumento($id_documento)
+    {
+        $areaService = resolve(\App\Services\Configuracion\AreaService::class);
+        $areaUsuario = Auth::user()->persona->id_area ?? null;
+
+        // Obtener todas las áreas activas excepto la del usuario actual
+        $todasLasAreas = $areaService->listarActivas();
+        $this->areas = $todasLasAreas->filter(function ($area) use ($areaUsuario) {
+            return (int) $area->id_area !== (int) $areaUsuario;
+        })->values()->toArray();
+
+        $documento = $this->documentoService->obtenerPorId($id_documento);
+
+        if ($documento) {
+            $this->documentoObservarId = $id_documento;
+            $this->numeroDocumento = $documento->expediente_documento ?? 'N/A';
+            $this->asuntoDocumento = $documento->asunto_documento ?? 'Sin asunto';
+        }
+
+        $this->dispatch('modal', nombre: '#modal-observacion-documento', accion: 'show');
+    }
+
+    public function guardarObservacion()
+    {
+        $this->validate([
+            'idAreaObservar' => 'required|exists:ta_area,id_area',
+            'motivoObservacion' => 'required|min:10|max:500',
+            'archivosEvidenciaObservacion' => 'nullable|array|max:10',
+            'archivosEvidenciaObservacion.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+        ], [
+            'idAreaObservar.required' => 'Debe seleccionar un área',
+            'motivoObservacion.required' => 'Debe indicar el motivo de la observación',
+            'motivoObservacion.min' => 'El motivo debe tener al menos 10 caracteres',
+        ]);
+
+        // Aquí iría la lógica para guardar la observación
+        // Similar a como lo haces en el componente Index de Documentos
+
+        $this->dispatch('modal', nombre: '#modal-observacion-documento', accion: 'hide');
+        $this->limpiarModalObservacion();
+
+        $this->dispatch(
+            'toastr',
+            boton_cerrar: false,
+            progreso_avance: true,
+            duracion: '3000',
+            titulo: 'Éxito',
+            tipo: 'success',
+            mensaje: 'Documento observado correctamente',
+            posicion_y: 'top',
+            posicion_x: 'right'
+        );
+
+        $this->dispatch('refrescarDocumentosPendientes');
+    }
+
+    public function quitarArchivoObservacion($index)
+    {
+        if (isset($this->archivosEvidenciaObservacion[$index])) {
+            unset($this->archivosEvidenciaObservacion[$index]);
+            $this->archivosEvidenciaObservacion = array_values($this->archivosEvidenciaObservacion);
+        }
+    }
+
+    public function limpiarModalObservacion()
+    {
+        $this->reset([
+            'idAreaObservar',
+            'motivoObservacion',
+            'archivosEvidenciaObservacion',
+            'numeroDocumento',
+            'asuntoDocumento',
+            'documentoObservarId'
+        ]);
+        $this->resetErrorBag();
+    }
+
     public function render()
     {
-        return view('livewire.components.documentos.pendientes.tabla');
+        return view('livewire.components.Documentos.pendientes.tabla');
     }
 }

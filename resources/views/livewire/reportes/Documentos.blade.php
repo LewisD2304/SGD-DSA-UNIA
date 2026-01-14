@@ -231,11 +231,9 @@
                                                     </span>
                                                     @endif
                                                 </div>
-                                                @if($documento->remitente)
                                                 <div class="mt-1">
-                                                    <span class="text-gray-500 fs-8">Por: <span class="text-gray-700 fw-semibold">{{ Str::limit($documento->remitente, 40) }}</span></span>
+                                                    <span class="text-gray-500 fs-8">Remitente: <span class="text-gray-700 fw-semibold">{{ $documento->oficina->descripcion_catalogo ?? 'N/A' }}</span></span>
                                                 </div>
-                                                @endif
                                             </div>
                                         </td>
 

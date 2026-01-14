@@ -198,7 +198,7 @@
                 <th width="10%">Destino</th>
                 <th width="12%" style="text-align: center;">Estado</th>
                 <th width="5%" style="text-align: center;">Folios</th>
-                <th width="9%" style="text-align: center;">Fecha</th>
+                <th width="9%" style="text-align: center;">Fecha y Hora</th>
             </tr>
         </thead>
         <tbody>
@@ -217,7 +217,7 @@
                 </td>
 
                 <td class="col-gray">
-                    {{ Str::limit($doc->remitente ?? 'N/A', 25) }}
+                    {{ Str::limit($doc->oficina->descripcion_catalogo ?? 'N/A', 25) }}
                 </td>
 
                 <td>
@@ -251,7 +251,7 @@
                 </td>
 
                 <td style="text-align: center;">
-                    {{ \Carbon\Carbon::parse($doc->au_fechacr)->format('d/m/Y') }}
+                    {{ formatoFechaHoras($doc->au_fechacr) }}
                 </td>
             </tr>
             @empty

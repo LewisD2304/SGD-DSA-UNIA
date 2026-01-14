@@ -24,14 +24,14 @@
 
                         <div class="mb-4">
                             <label class="required fw-semibold fs-6 mb-2">Devolver a (Área destino)</label>
-                            <div wire:ignore>
-                                <select class="form-select form-select-solid" id="select_area_observar" data-control="select2" data-placeholder="Seleccione un área">
-                                    <option></option>
-                                    @foreach($areas as $area)
+                            <select wire:model.live="idAreaObservar" class="form-select form-select-solid @error('idAreaObservar') is-invalid @enderror">
+                                <option value="">Seleccione un área</option>
+                                @forelse($areas as $area)
                                     <option value="{{ $area->id_area }}">{{ $area->nombre_area }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                                @empty
+                                    <option value="" disabled>No hay áreas disponibles</option>
+                                @endforelse
+                            </select>
                             @error('idAreaObservar') <span class="text-danger fs-7">{{ $message }}</span> @enderror
                         </div>
 
@@ -130,27 +130,20 @@
     </div>
 </div>
 
-{{-- Script para inicializar Select2 dentro del modal --}}
+
+
+{{-- Script para inicializar tooltips dentro del modal --}}
 @script
 <script>
-    Livewire.on('inicializarSelect2Observacion', () => {
-        setTimeout(() => {
-            $('#select_area_observar').select2({
-                dropdownParent: $('#modal-observacion-documento')
-            }).on('change', function(e) {
-                @this.set('idAreaObservar', $(this).val());
-            });
-
-            // Establecer valor inicial si existe
-            const valorActual = @this.get('idAreaObservar');
-            if (valorActual) {
-                $('#select_area_observar').val(valorActual).trigger('change');
-            } else {
-                $('#select_area_observar').val(null).trigger('change');
+    Livewire.hook('morph.updated', () => {
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            const existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+            if (existingTooltip) {
+                existingTooltip.dispose();
             }
-
-        }, 150);
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
     });
-
 </script>
 @endscript

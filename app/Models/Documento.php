@@ -99,6 +99,14 @@ class Documento extends Model
         return $this->hasMany(Movimiento::class, 'id_documento');
     }
 
+    public function ultimoComentarioMovimiento()
+    {
+        return $this->hasOne(Movimiento::class, 'id_documento', 'id_documento')
+            ->whereNotNull('comentario_documento')
+            ->where('comentario_documento', '!=', '')
+            ->orderByDesc('au_fechacr');
+    }
+
     public function archivos() {
         return $this->hasMany(ArchivoDocumento::class, 'id_documento', 'id_documento')->orderBy('orden');
     }

@@ -247,20 +247,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            {{-- Alerta de Rectificación --}}
-                            @if($estadoNombre === 'ARCHIVADO')
-                            <div class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row align-items-sm-center p-5">
-                                <i class="bi bi-pencil-square fs-2x text-warning me-4 mb-3 mb-sm-0"></i>
-                                <div class="d-flex flex-column flex-grow-1 pe-0 pe-sm-3">
-                                    <span class="fw-bold text-gray-900 fs-6 mb-1">¿Necesitas corregir algo?</span>
-                                    <span class="text-gray-700 fs-7">Puedes solicitar una rectificación a Mesa de Partes.</span>
-                                </div>
-                                <button type="button" class="btn btn-warning fw-bold flex-shrink-0 mt-3 mt-sm-0" data-bs-toggle="modal" data-bs-target="#modal-rectificar-publico">
-                                    <i class="bi bi-pencil-fill me-1"></i>Solicitar Rectificación
-                                </button>
-                            </div>
-                            @endif
                         </div>
                     </div>
                 </div>

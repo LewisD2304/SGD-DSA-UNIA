@@ -24,6 +24,7 @@ class Responder extends Component
     public $oficina = '';
     public $areaDestino = '';
     public $archivosExistentes = [];
+    public $comentarioDerivacion = null;
 
     // Campos para la respuesta
     public $idAreaRespuesta = '';
@@ -62,7 +63,8 @@ class Responder extends Component
             'areaRemitente',
             'oficina',
             'areaDestino',
-            'archivos'
+            'archivos',
+            'ultimoComentarioMovimiento'
         ]);
 
         if (!$this->modeloDocumento) {
@@ -91,6 +93,12 @@ class Responder extends Component
                         ($this->modeloDocumento->oficina->descripcion_catalogo ?? '');
         $this->areaDestino = $this->modeloDocumento->areaDestino->nombre_area ?? '';
         $this->archivosExistentes = $this->modeloDocumento->archivos ?? collect();
+
+        // Obtener el comentario del último movimiento
+        $ultimoComentario = $this->modeloDocumento->ultimoComentarioMovimiento;
+        $this->comentarioDerivacion = ($ultimoComentario && !empty($ultimoComentario->comentario_documento))
+            ? $ultimoComentario->comentario_documento
+            : null;
 
         $this->dispatch('cargando', cargando: 'false');
         $this->dispatch('modal', nombre: '#modal-responder-documento', accion: 'show');
@@ -146,7 +154,8 @@ class Responder extends Component
                 $transicion->id_transicion,
                 [
                     'id_area_destino' => $this->idAreaRespuesta,
-                    'observacion' => $this->comentarioRespuesta ?? 'Respuesta enviada'
+                    'observacion' => $this->comentarioRespuesta ?? 'Respuesta enviada',
+                    'comentario_documento' => $this->comentarioRespuesta // Agregar el comentario para que se muestre en pendientes
                 ]
             );
 

@@ -24,6 +24,7 @@ class Movimiento extends Model
         'id_documento',
         'id_estado',
         'observacion_doc_movimiento',
+        'comentario_documento',
         'id_area_origen',
         'id_area_destino',
         'fecha_recepcion'

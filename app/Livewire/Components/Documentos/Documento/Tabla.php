@@ -221,6 +221,13 @@ class Tabla extends Component
             return;
         }
 
+        // Cargar las áreas disponibles
+        $areaUsuario = Auth::user()->persona->id_area ?? null;
+        $todasLasAreas = $this->areaService->listarActivas();
+        $this->areas = $todasLasAreas->filter(function ($area) use ($areaUsuario) {
+            return (int) $area->id_area !== (int) $areaUsuario;
+        })->values();
+
         $this->documentoObservarId = $documento->id_documento;
         $this->documentoObservarTitulo = $documento->asunto_documento ?? $documento->expediente_documento;
         $this->numeroDocumento = $documento->numero_documento;

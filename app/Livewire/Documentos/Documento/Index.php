@@ -7,6 +7,7 @@ use App\Models\ArchivoDocumento;
 use App\Models\Estado;
 use App\Models\Movimiento;
 use App\Models\Transicion;
+use Carbon\Carbon;
 use App\Services\Documento\DocumentoService;
 use App\Services\Documento\ArchivoDocumentoService;
 use App\Services\Configuracion\AreaService;
@@ -85,6 +86,8 @@ class Index extends Component
     public $areaRemitenteNombre = '';
     public $oficinaNombre = '';
     public $areaDestinoNombre = '';
+    public $comentarioDerivacion = null;
+    public $comentarioDerivacionNuevo = null;
 
 
     protected DocumentoService $documentoService;
@@ -141,6 +144,7 @@ class Index extends Component
         $this->folioDocumento = limpiarCadena($this->folioDocumento, false);
         $this->asuntoDocumento = limpiarCadena($this->asuntoDocumento, false);
         $this->observacionDocumento = limpiarCadena($this->observacionDocumento, false);
+        $this->comentarioDerivacionNuevo = limpiarCadena($this->comentarioDerivacionNuevo, false);
 
         $mensajeToastr = null;
 
@@ -168,6 +172,7 @@ class Index extends Component
                 'tipoDocumentoCatalogo' => 'required|exists:ta_catalogo,id_catalogo',
                 'oficina' => 'required|exists:ta_catalogo,id_catalogo',
                 'observacionDocumento' => 'nullable|max:500',
+                'comentarioDerivacionNuevo' => 'nullable|max:500',
             ];
 
             // Validar archivos (múltiples) solo si se está creando o modificando con nuevos archivos
@@ -259,6 +264,18 @@ class Index extends Component
             foreach ($archivosInfo as $archivoInfo) {
                 ArchivoDocumento::create($archivoInfo);
             }
+        }
+
+        // Registrar movimiento inicial con comentario de derivación (mensaje) si se proporcionó
+        if (!empty($this->comentarioDerivacionNuevo)) {
+            Movimiento::create([
+                'id_documento' => $documento->id_documento,
+                'id_estado' => $documento->id_estado, // DERIVADO al crear
+                'id_area_origen' => $this->idAreaRemitente,
+                'id_area_destino' => $this->idAreaDestino,
+                'observacion_doc_movimiento' => null,
+                'comentario_documento' => $this->comentarioDerivacionNuevo,
+            ]);
         }
 
         $this->dispatch('refrescarDocumentos');
@@ -619,7 +636,8 @@ class Index extends Component
             'nombreDocumentoEliminar',
             'nombreDocumentoEstado',
             'idAreaDerivar',
-            'observacionesDerivar'
+            'observacionesDerivar',
+            'comentarioDerivacionNuevo'
         ]);
         $this->resetErrorBag();
     }
@@ -640,7 +658,7 @@ class Index extends Component
                 // Eliminar archivo físico
                 $this->archivoService->eliminarArchivo($archivo->ruta_archivo);
                 // Eliminar registro de BD
-                $archivo->delete;
+                $archivo->delete();
 
                 // Actualizar lista
                 $this->archivosExistentes = collect($this->archivosExistentes)->reject(fn($item) => $item->id_archivo_documento == $idArchivo)->values()->all();
@@ -999,6 +1017,13 @@ class Index extends Component
         $this->folioDocumento = $this->modeloDocumento->folio_documento;
         $this->asuntoDocumento = $this->modeloDocumento->asunto_documento;
 
+        // Cargar todas las áreas activas excepto la del usuario actual
+        $areaUsuario = Auth::user()->persona->id_area ?? null;
+        $todasLasAreas = $this->areaService->listarActivas();
+        $this->areas = $todasLasAreas->filter(function ($area) use ($areaUsuario) {
+            return (int) $area->id_area !== (int) $areaUsuario;
+        })->values();
+
         // Configurar valores por defecto para observar
         $this->idAreaObservar = $this->modeloDocumento->id_area_remitente; // Sugerir remitente original
         $this->motivoObservacion = '';
@@ -1082,7 +1107,7 @@ class Index extends Component
         $this->limpiarModalResponder();
 
         // Obtener documento con relaciones
-        $docEstado = $this->documentoService->obtenerPorId($id_documento, ['estado', 'tipoDocumento', 'oficina', 'areaRemitente', 'areaDestino', 'archivos']);
+        $docEstado = $this->documentoService->obtenerPorId($id_documento, ['estado', 'tipoDocumento', 'oficina', 'areaRemitente', 'areaDestino', 'archivos', 'ultimoComentarioMovimiento', 'movimientos']);
 
         if (!$docEstado) {
             $this->dispatch('toastr', ...mensajeToastr(false, true, '5000', 'Error', 'error', 'Documento no encontrado', 'top', 'right'));
@@ -1103,6 +1128,28 @@ class Index extends Component
             : 'N/A';
         $this->areaDestinoNombre = $docEstado->areaDestino->nombre_area ?? 'N/A';
         $this->archivosExistentes = $docEstado->archivos ?? collect();
+
+        // Obtener el comentario del último movimiento
+        $ultimoComentario = $docEstado->ultimoComentarioMovimiento;
+        $this->comentarioDerivacion = ($ultimoComentario && !empty($ultimoComentario->comentario_documento))
+            ? $ultimoComentario->comentario_documento
+            : null;
+
+        // Obtener motivo de observación si el estado es OBSERVACION RECEPCIONADO
+        $nombreEstado = strtoupper($docEstado->estado->nombre_estado ?? '');
+        $esObservacionRecepcionado = str_contains($nombreEstado, 'OBSERVACION') && str_contains($nombreEstado, 'RECEPCIONADO');
+
+        if ($esObservacionRecepcionado) {
+            // Buscar el movimiento más reciente que cambió a OBSERVACION RECEPCIONADO (id_estado = 4)
+            $movimientoObservacion = $docEstado->movimientos
+                ->where('id_estado', 4)
+                ->sortByDesc('au_fechacr')
+                ->first();
+
+            if ($movimientoObservacion) {
+                $this->motivoObservacion = $movimientoObservacion->observacion_doc_movimiento ?? '';
+            }
+        }
 
         $this->dispatch('cargando', cargando: 'false');
         $this->modalDocumento('#modal-responder-documento', 'show');
@@ -1141,27 +1188,36 @@ class Index extends Component
                 throw new \Exception('Documento no encontrado');
             }
 
-            // Buscar la transición DERIVAR desde el estado actual
-            $transicion = Transicion::where('evento_transicion', 'DERIVAR')
-                ->where('id_estado_actual_transicion', $this->modeloDocumento->id_estado)
-                ->first();
+            // Detectar si es OBSERVACION RECEPCIONADO para usar la transición correcta
+            $nombreEstado = strtoupper($this->modeloDocumento->estado->nombre_estado ?? '');
+            $esObservacionRecepcionado = str_contains($nombreEstado, 'OBSERVACION') && str_contains($nombreEstado, 'RECEPCIONADO');
 
-            if (!$transicion) {
-                // Si no hay transición, usar derivar directo
-                $resultado = $this->documentoService->derivar(
-                    $this->modeloDocumento->id_documento,
-                    $this->idAreaRespuesta,
-                    $this->comentarioRespuesta
-                );
-            } else {
-                // Usar procesarTransicion
+            if ($esObservacionRecepcionado) {
+                // Usar transición SUBSANADO: actual 12 (OBSERVACION RECEPCIONADO) -> 5 (SUBSANADO)
+                $transicion = Transicion::where('evento_transicion', 'SUBSANADO')
+                    ->where('id_estado_actual_transicion', $this->modeloDocumento->id_estado)
+                    ->where('id_estado_siguiente_transicion', 5)
+                    ->first();
+
+                if (!$transicion) {
+                    throw new \Exception('No se encontró la transición SUBSANADO (12 -> 5).');
+                }
+
                 $resultado = $this->documentoService->procesarTransicion(
                     $this->modeloDocumento->id_documento,
                     $transicion->id_transicion,
                     [
                         'id_area_destino' => $this->idAreaRespuesta,
-                        'observacion' => $this->comentarioRespuesta
+                        'comentario_documento' => $this->comentarioRespuesta
                     ]
+                );
+            } else {
+                // Para derivar normal, usar el método derivar()
+                $resultado = $this->documentoService->derivar(
+                    $this->modeloDocumento->id_documento,
+                    $this->idAreaRespuesta,
+                    null, // No guardar en observacion del documento
+                    $this->comentarioRespuesta // Solo guardar en comentario del movimiento
                 );
             }
 
@@ -1210,6 +1266,50 @@ class Index extends Component
         }
     }
 
+    #[On('eliminar-archivo-documento')]
+    public function eliminarArchivoDocumento($idArchivo)
+    {
+        try {
+            $archivo = ArchivoDocumento::find($idArchivo);
+            if ($archivo) {
+                // Eliminar archivo físico
+                $this->archivoService->eliminarArchivo($archivo->ruta_archivo);
+                // Eliminar registro de BD
+                $archivo->delete;
+
+                // Actualizar lista
+                $this->archivosExistentes = collect($this->archivosExistentes)
+                    ->reject(fn($item) => $item->id_archivo_documento == $idArchivo)
+                    ->values()
+                    ->all();
+
+                $this->dispatch(
+                    'toastr',
+                    boton_cerrar: false,
+                    progreso_avance: true,
+                    duracion: '3000',
+                    titulo: 'Éxito',
+                    tipo: 'success',
+                    mensaje: 'Archivo eliminado correctamente',
+                    posicion_y: 'top',
+                    posicion_x: 'right'
+                );
+            }
+        } catch (\Exception $e) {
+            $this->dispatch(
+                'toastr',
+                boton_cerrar: false,
+                progreso_avance: true,
+                duracion: '5000',
+                titulo: 'Error',
+                tipo: 'error',
+                mensaje: 'Error al eliminar archivo: ' . $e->getMessage(),
+                posicion_y: 'top',
+                posicion_x: 'right'
+            );
+        }
+    }
+
     public function limpiarModalResponder()
     {
         $this->reset([
@@ -1224,7 +1324,8 @@ class Index extends Component
             'areaRemitenteNombre',
             'oficinaNombre',
             'areaDestinoNombre',
-            'archivosExistentes'
+            'archivosExistentes',
+            'comentarioDerivacion'
         ]);
         $this->resetErrorBag();
     }

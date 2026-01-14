@@ -4,19 +4,16 @@
         <div class="col-12">
             <div class="card">
                 <div class="d-flex flex-wrap flex-stack my-5 mx-8 gap-3">
-                    <!-- BÚSQUEDA -->
                     <div class="d-flex align-items-center position-relative my-1 fs-7">
                         <i class="ki-outline ki-magnifier fs-3 position-absolute ms-5"></i>
                         <input type="text" data-kt-user-table-filter="buscar" class="form-control form-control-solid ps-13 w-xl-300px w-250" placeholder="Buscar documento" wire:model.live.debounce.500ms="buscar" />
                     </div>
 
-                    <!-- FILTRO DE FECHAS -->
                     <div class="d-flex gap-2 my-1">
                         <input type="date" class="form-control form-control-solid" placeholder="Fecha inicio" wire:model.live="fechaInicio" max="{{ $fechaFin }}" title="Fecha de inicio" style="max-width: 150px;" />
                         <input type="date" class="form-control form-control-solid" placeholder="Fecha fin" wire:model.live="fechaFin" min="{{ $fechaInicio }}" title="Fecha fin" style="max-width: 150px;" />
                     </div>
 
-                    <!-- FILTRO DE ESTADO -->
                     <select class="form-select form-select-solid my-1" wire:model.live="idEstadoFiltro" style="max-width: 200px;">
                         <option value="">Todos los estados</option>
                         @foreach($estados as $idEstado => $nombreEstado)
@@ -24,7 +21,6 @@
                         @endforeach
                     </select>
 
-                    <!-- FILTRO DE OFICINA -->
                     <select class="form-select form-select-solid my-1" wire:model.live="idOficinaCatalogo" style="max-width: 250px;">
                         <option value="">Todas las oficinas</option>
                         @foreach($oficinas as $oficina)
@@ -32,7 +28,6 @@
                         @endforeach
                     </select>
 
-                    <!-- BOTÓN LIMPIAR FILTROS -->
                     <button type="button" class="btn btn-light-secondary fw-bold my-1" wire:click="limpiarFiltros">
                         <i class="ki-outline ki-trash fs-2"></i>
                         Limpiar
@@ -85,23 +80,17 @@
 
                                         @php
                                         // Obtenemos el último movimiento registrado para ver quién lo envió por última vez
-                                        // Usamos la colección cargada para no hacer querys extra
                                         $ultimoMovimiento = $documento->movimientos->sortByDesc('id_movimiento')->first();
 
-                                        // Si hay movimiento, el remitente actual es el origen de ese movimiento.
-                                        // Si no (es nuevo), es el creador original.
                                         $nombreRemitenteActual = $ultimoMovimiento
                                         ? ($ultimoMovimiento->areaOrigen->nombre_area ?? 'Sin Área')
                                         : ($documento->areaRemitente->nombre_area ?? 'N/A');
 
-                                        // El destino siempre es donde está el documento actualmente
                                         $nombreDestinoActual = $documento->areaDestino->nombre_area ?? 'N/A';
                                         @endphp
 
                                         <td>
-                                            {{-- Mostramos quién lo envió en esta etapa del flujo --}}
                                             <div class="text-gray-800">{{ $nombreRemitenteActual }}</div>
-                                            {{-- Mostrar si es el creador original en pequeño --}}
                                             @if($documento->id_area_remitente != ($ultimoMovimiento->id_area_origen ?? 0) && $ultimoMovimiento)
                                             <span class="text-muted fs-9 d-block">Inicial: {{ $documento->areaRemitente->nombre_area ?? '' }}</span>
                                             @endif
@@ -125,19 +114,21 @@
                                         <td>{{ formatoFechaText($documento->au_fechacr)}}</td>
                                         <td>
                                             @php
+                                            // CALCULO DEL ESTADO VISUAL (LO QUE VE EL USUARIO)
                                             $areaUsuario = Auth::user()->persona->id_area ?? null;
                                             $estadoVisual = $documento->getEstadoVisual($areaUsuario);
 
                                             if ($estadoVisual) {
-                                            $nombreEstado = strtoupper($estadoVisual->nombre_estado);
-                                            $colorEstado = match($nombreEstado) {
-                                            'RECEPCIONADO' => 'success',
-                                            'OBSERVADO' => 'danger',
-                                            'DERIVADO' => 'secondary',
-                                            'ARCHIVADO' => 'primary',
-                                            'EN TRÁMITE', 'EN TRAMITE' => 'info',
-                                            default => 'info'
-                                            };
+                                                // Usamos mb_strtoupper para asegurar que las tildes se conviertan bien (á -> Á)
+                                                $nombreEstado = mb_strtoupper($estadoVisual->nombre_estado, 'UTF-8');
+                                                $colorEstado = match($nombreEstado) {
+                                                    'RECEPCIONADO' => 'success',
+                                                    'OBSERVADO' => 'danger',
+                                                    'DERIVADO' => 'secondary',
+                                                    'ARCHIVADO' => 'primary',
+                                                    'EN TRÁMITE', 'EN TRAMITE' => 'info',
+                                                    default => 'info'
+                                                };
                                             }
                                             @endphp
 
@@ -161,6 +152,21 @@
 
                                                     @php
                                                     $estaArchivado = $documento->id_estado == 6;
+
+                                                    // Usamos el estadoVisual calculado en la celda anterior para ser consistentes con lo que ve el usuario.
+                                                    // Si no hay estado visual, usamos string vacío.
+                                                    $nombreEstadoParaLogica = isset($estadoVisual) ? mb_strtoupper($estadoVisual->nombre_estado, 'UTF-8') : '';
+                                                    $nombreEstadoParaLogica = trim($nombreEstadoParaLogica); // Quitamos espacios extra por si acaso
+
+                                                    // Verificamos ambas formas (con y sin tilde) para seguridad
+                                                    $estaEnTramite = ($nombreEstadoParaLogica === 'EN TRÁMITE' || $nombreEstadoParaLogica === 'EN TRAMITE');
+                                                    // Solo permitir Ver y Anular cuando está POR RECTIFICAR
+                                                    $estaPorRectificar = ($nombreEstadoParaLogica === 'POR RECTIFICAR');
+                                                    // Ocultar acción Modificar cuando el documento está recepcionado en Mesa de Partes
+                                                    $estaRecepcionado = ($nombreEstadoParaLogica === 'RECEPCIONADO');
+                                                    $nombreAreaDestino = $documento->areaDestino->nombre_area ?? '';
+                                                    $esDestinoMesaDePartes = (mb_strtoupper($nombreAreaDestino, 'UTF-8') === 'MESA DE PARTES');
+                                                    $ocultarModificar = $esDestinoMesaDePartes && $estaRecepcionado;
                                                     @endphp
 
                                                     @can('autorizacion', ['VER', 'DOCUMENTOS'])
@@ -171,42 +177,48 @@
                                                     </div>
                                                     @endcan
 
-                                                    @can('autorizacion', ['RESPONDER', 'DOCUMENTOS'])
-                                                    <div class="menu-item px-3">
-                                                        <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalResponderDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                            <span class="menu-icon">
-                                                                {{-- Opción 1: Avión de papel (Estándar para enviar/responder) --}}
-                                                                <i class="ki-outline ki-send fs-3"></i>
-                                                            </span>
-                                                            Responder
-                                                        </a>
-                                                    </div>
-                                                    @endcan
+                                                    @if(!$estaArchivado && !$estaEnTramite && !$estaPorRectificar)
+                                                        @can('autorizacion', ['RESPONDER', 'DOCUMENTOS'])
+                                                        <div class="menu-item px-3">
+                                                            <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalResponderDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                                <span class="menu-icon">
+                                                                    <i class="ki-outline ki-send fs-3"></i>
+                                                                </span>
+                                                                Responder
+                                                            </a>
+                                                        </div>
+                                                        @endcan
+                                                    @endif
+
+                                                    @if(!$estaArchivado && !$estaEnTramite && !$ocultarModificar && !$estaPorRectificar)
+                                                        @can('autorizacion', ['MODIFICAR', 'DOCUMENTOS'])
+                                                        <div class="menu-item px-3">
+                                                            <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                                <span class="menu-icon"><i class="ki-outline ki-pencil fs-3"></i></span> Modificar
+                                                            </a>
+                                                        </div>
+                                                        @endcan
+                                                    @endif
 
                                                     @if(!$estaArchivado)
-                                                    @can('autorizacion', ['MODIFICAR', 'DOCUMENTOS'])
-                                                    <div class="menu-item px-3">
-                                                        <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                            <span class="menu-icon"><i class="ki-outline ki-pencil fs-3"></i></span> Modificar
-                                                        </a>
-                                                    </div>
-                                                    @endcan
+                                                        @can('autorizacion', ['ANULAR', 'DOCUMENTOS'])
+                                                        <div class="menu-item px-3">
+                                                            <a href="#" class="menu-link px-3 text-danger" wire:click="$dispatch('abrirModalAnularDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                                <span class="menu-icon"><i class="ki-outline ki-cross-circle fs-3 text-danger"></i></span> Anular
+                                                            </a>
+                                                        </div>
+                                                        @endcan
+                                                    @endif
 
-                                                    @can('autorizacion', ['ANULAR', 'DOCUMENTOS'])
-                                                    <div class="menu-item px-3">
-                                                        <a href="#" class="menu-link px-3 text-danger" wire:click="$dispatch('abrirModalAnularDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                            <span class="menu-icon"><i class="ki-outline ki-cross-circle fs-3 text-danger"></i></span> Anular
-                                                        </a>
-                                                    </div>
-                                                    @endcan
-
-                                                    @can('autorizacion', ['OBSERVAR', 'DOCUMENTOS'])
-                                                    <div class="menu-item px-3">
-                                                        <a href="#" class="menu-link px-3 text-warning" wire:click="$dispatch('abrirModalObservarDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                            <span class="menu-icon"><i class="ki-outline ki-eye-slash fs-3 text-warning"></i></span> Observar
-                                                        </a>
-                                                    </div>
-                                                    @endcan
+                                                    @if(!$estaArchivado && !$estaEnTramite && !$estaPorRectificar)
+                                                        @can('autorizacion', ['OBSERVAR', 'DOCUMENTOS'])
+                                                        <div class="menu-item px-3">
+                                                            <a href="#" class="menu-link px-3 text-warning" wire:click="$dispatch('abrirModalObservarDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                                <span class="menu-icon"><i class="ki-outline ki-eye-slash fs-3 text-warning"></i></span> Observar
+                                                            </a>
+                                                        </div>
+                                                        @endcan
+                                                    @endif
 
                                                     @if(Auth::user()->can('autorizacion', ['DERIVAR', 'DOCUMENTOS']) || Auth::user()->can('autorizacion', ['ARCHIVAR', 'DOCUMENTOS']))
                                                     <div class="separator my-2"></div>
@@ -214,53 +226,42 @@
 
                                                     @php
                                                     $areaUsuario = Auth::user()->persona->id_area ?? null;
-                                                    $puedeDerivar = $areaUsuario &&
-                                                    $documento->id_area_destino == $areaUsuario;
 
-                                                    $puedeArchivar = $areaUsuario &&
-                                                    $documento->id_area_destino == $areaUsuario &&
-                                                    strtoupper($documento->estado->nombre_estado ?? '') === 'RECEPCIONADO';
+                                                    $puedeDerivar = $areaUsuario && $documento->id_area_destino == $areaUsuario;
 
+                                                    // Solo se puede archivar si está recepcionado
+                                                    $nombreEstadoParaArchivar = isset($estadoVisual) ? mb_strtoupper($estadoVisual->nombre_estado, 'UTF-8') : '';
                                                     $puedeArchivar = $areaUsuario &&
-                                                    $documento->id_area_destino == $areaUsuario &&
-                                                    strtoupper($documento->estado->nombre_estado ?? '') === 'RECEPCIONADO';
+                                                                     $documento->id_area_destino == $areaUsuario &&
+                                                                     $nombreEstadoParaArchivar === 'RECEPCIONADO';
                                                     @endphp
 
-                                                    @can('autorizacion', ['DERIVAR', 'DOCUMENTOS'])
-                                                    @if($puedeDerivar)
-                                                    <div class="menu-item px-3">
-                                                        <a href="#" class="menu-link px-3" wire:click="$dispatch('abrirModalDerivarDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                            <span class="menu-icon"><i class="ki-outline ki-arrow-right fs-3"></i></span> Derivar
-                                                        </a>
-                                                    </div>
-                                                    @endif
-                                                    @endcan
+
 
                                                     @can('autorizacion', ['ARCHIVAR', 'DOCUMENTOS'])
-                                                    @if($puedeArchivar)
-                                                    <div class="menu-item px-3">
-                                                        <a href="#" class="menu-link px-3 text-warning" wire:click="abrirModalArchivar({{ $documento->id_documento }})">
-                                                            <span class="menu-icon"><i class="ki-outline ki-archive fs-3 text-warning"></i></span> Archivar
-                                                        </a>
-                                                    </div>
-                                                    @endif
+                                                        @if($puedeArchivar && !$estaPorRectificar)
+                                                        <div class="menu-item px-3">
+                                                            <a href="#" class="menu-link px-3 text-warning" wire:click="abrirModalArchivar({{ $documento->id_documento }})">
+                                                                <span class="menu-icon"><i class="ki-outline ki-archive fs-3 text-warning"></i></span> Archivar
+                                                            </a>
+                                                        </div>
+                                                        @endif
                                                     @endcan
-                                                    @endif
 
                                                     @if($estaArchivado)
                                                     <div class="separator my-2"></div>
-
-                                                    @can('autorizacion', ['RECTIFICAR', 'DOCUMENTOS'])
-                                                    <div class="menu-item px-3">
-                                                        <a href="#" class="menu-link px-3 text-warning" wire:click="$dispatch('abrirModalRectificarDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                            <span class="menu-icon">
-                                                                <i class="ki-outline ki-pencil fs-4 text-warning"></i>
-                                                            </span>
-                                                            Rectificar
-                                                        </a>
-                                                    </div>
-                                                    @endcan
+                                                        @can('autorizacion', ['RECTIFICAR', 'DOCUMENTOS'])
+                                                        <div class="menu-item px-3">
+                                                            <a href="#" class="menu-link px-3 text-warning" wire:click="$dispatch('abrirModalRectificarDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                                <span class="menu-icon">
+                                                                    <i class="ki-outline ki-pencil fs-4 text-warning"></i>
+                                                                </span>
+                                                                Rectificar
+                                                            </a>
+                                                        </div>
+                                                        @endcan
                                                     @endif
+
                                                 </div>
                                             </div>
                                         </td>
@@ -305,18 +306,15 @@
     <div wire:ignore.self class="modal fade" id="modal-archivar-documento" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-
                 <div class="modal-header">
                     <h3 class="fw-bold my-0">Confirmar archivado</h3>
                     <div class="btn btn-icon btn-sm btn-active-icon-primary icon-rotate-custom" data-bs-dismiss="modal" aria-label="Close">
                         <i class="ki-outline ki-cross fs-1"></i>
                     </div>
                 </div>
-
                 <form autocomplete="off" novalidate class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit.prevent="confirmarArchivar">
                     <div class="modal-body px-5">
                         <div class="d-flex flex-column px-5 ">
-
                             <div class="modal-header text-center flex-column border-0">
                                 <p>
                                     <i class="ki-duotone ki-information-5 text-warning" style="font-size: 7rem !important;">
@@ -329,45 +327,36 @@
                                     ¿Estás seguro de realizar esta acción?
                                 </h4>
                             </div>
-
                             <div class="px-4 text-center fs-5">
                                 <p class="text-gray-700">
                                     Esta acción <strong>archivará</strong> el documento. El documento quedará finalizado y solo podrá ser visualizado.
                                 </p>
-
                                 <div class="d-flex justify-content-center mt-7">
                                     <div class="fw-bold">Documento:</div>
                                     <div class="px-2 text-gray-700 text-start">{{ $documentoArchivarTitulo }}</div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
-
                     <div class="modal-footer d-flex justify-content-center">
                         <button type="button" class="btn d-flex align-items-center btn-light-secondary me-4" data-bs-dismiss="modal" aria-label="cancel">
                             Cancelar
                         </button>
-
                         <button type="submit" class="btn d-flex align-items-center btn-warning" wire:loading.attr="disabled" wire:target="confirmarArchivar">
                             <span class="indicator-label" wire:loading.remove wire:target="confirmarArchivar">
                                 Archivar
                             </span>
                             <span class="indicator-progress" wire:loading wire:target="confirmarArchivar">
                                 Cargando...
-                                <span>
-                                    <x-spinner style="width: 20px; height: 20px;" />
-                                </span>
+                                <span><x-spinner style="width: 20px; height: 20px;" /></span>
                             </span>
                         </button>
                     </div>
-
                 </form>
-
             </div>
         </div>
     </div>
 
-    @include('livewire.components.Documentos.documento.modal-observacion-documento')
+    @include('livewire.components.documentos.documento.modal-observacion-documento')
 
 </div>

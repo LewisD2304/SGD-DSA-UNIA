@@ -3,7 +3,7 @@
 @endphp
 
 <div wire:ignore.self class="modal fade" id="modal-documento" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered mw-900px">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content">
 
             <div class="modal-header placeholder-glow">
@@ -18,15 +18,18 @@
 
             <form autocomplete="off" novalidate class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit="guardarDocumento">
 
-                <div class="modal-body px-5">
-                    <div class="d-flex flex-column px-5 px-lg-10">
+                <div class="modal-body px-5 py-4">
+                    <div class="px-3">
 
-                        <div class="fw-bold text-dark mb-3 mt-3">
-                            <i class="ki-outline ki-document me-2"></i> Información del documento
+                        {{-- Información del documento --}}
+                        <div class="fw-bold text-dark mb-4 d-flex align-items-center">
+                            <i class="ki-outline ki-document me-2 fs-3"></i>
+                            <span>Información del documento</span>
                         </div>
 
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
+                        {{-- Fila 1: Número y Folio --}}
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-8">
                                 <div class="form-floating">
                                     <input type="text" class="form-control text-uppercase @error('numeroDocumento') is-invalid @elseif($numeroDocumento) is-valid @enderror" id="numeroDocumento" autocomplete="off" placeholder="Ej: CARTA MULTIPLE Nº 004-2025-UNIA-VRA/DSA" wire:model.live="numeroDocumento" maxlength="100" />
                                     <label for="numeroDocumento">
@@ -38,7 +41,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-floating">
                                     <input type="number" class="form-control @error('folioDocumento') is-invalid @elseif($folioDocumento) is-valid @enderror" id="folioDocumento" autocomplete="off" placeholder="Folio" wire:model.live="folioDocumento" min="1" step="1" @keydown.minus.prevent />
 
@@ -56,9 +59,10 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
+                        {{-- Fila 2: Asunto --}}
+                        <div class="mb-4">
                             <div class="form-floating">
-                                <textarea class="form-control text-uppercase @error('asuntoDocumento') is-invalid @elseif($asuntoDocumento) is-valid @enderror" id="asuntoDocumento" autocomplete="off" placeholder="Asunto" wire:model.live="asuntoDocumento" maxlength="200" style="height: 100px" @keypress="if (!/[A-Za-z0-9\s,.]/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete') event.preventDefault()"></textarea>
+                                <textarea class="form-control text-uppercase @error('asuntoDocumento') is-invalid @elseif($asuntoDocumento) is-valid @enderror" id="asuntoDocumento" autocomplete="off" placeholder="Asunto" wire:model.live="asuntoDocumento" maxlength="200" style="height: 85px" @keypress="if (!/[A-Za-z0-9\s,.]/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete') event.preventDefault()"></textarea>
                                 <label for="asuntoDocumento">
                                     Asunto <span class="text-danger">*</span>
                                 </label>
@@ -68,37 +72,47 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <div class="form-floating">
-                                <textarea class="form-control text-uppercase @error('observacionDocumento') is-invalid @enderror" id="observacionDocumento" autocomplete="off" placeholder="Observación" wire:model="observacionDocumento" maxlength="500" style="height: 80px"></textarea>
-                                <label for="observacionDocumento">
-                                    Observación (Opcional)
+                        {{-- Fila 3: Tipo de Documento y Oficina Remitente --}}
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label for="tipoDocumentoCatalogo" class="form-label required fw-semibold">
+                                    Tipo de Documento
                                 </label>
-                                @error('observacionDocumento')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                <div wire:ignore>
+                                    <select class="form-select tipoDocumentoCatalogo" id="tipoDocumentoCatalogo" wire:model="tipoDocumentoCatalogo">
+                                        <option value="">Seleccione un tipo de documento</option>
+                                        @foreach($tiposDocumento as $tipo)
+                                            <option value="{{ $tipo->id_catalogo }}" {{ $tipoDocumentoCatalogo == $tipo->id_catalogo ? 'selected' : '' }}>{{ $tipo->descripcion_catalogo }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @error('tipoDocumentoCatalogo')
+                                    <div class="text-danger fs-7 mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="oficina" class="form-label required fw-semibold">
+                                    Oficina Remitente
+                                </label>
+                                <div wire:ignore>
+                                    <select class="form-select oficina" id="oficina" wire:model="oficina">
+                                        <option value="">Seleccione la oficina</option>
+                                        @foreach($oficinas as $of)
+                                            <option value="{{ $of->id_catalogo }}" data-abreviatura="{{ $of->abreviatura_catalogo }}">
+                                                {{ ($of->abreviatura_catalogo ? $of->abreviatura_catalogo . ' - ' : '') . $of->descripcion_catalogo }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @error('oficina')
+                                    <div class="text-danger fs-7 mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="tipoDocumentoCatalogo" class="form-label required">
-                                Tipo de Documento
-                            </label>
-                            <div wire:ignore>
-                                <select class="form-select tipoDocumentoCatalogo" id="tipoDocumentoCatalogo" wire:model="tipoDocumentoCatalogo">
-                                    <option value="">Seleccione un tipo de documento</option>
-                                    @foreach($tiposDocumento as $tipo)
-                                        <option value="{{ $tipo->id_catalogo }}" {{ $tipoDocumentoCatalogo == $tipo->id_catalogo ? 'selected' : '' }}>{{ $tipo->descripcion_catalogo }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            @error('tipoDocumentoCatalogo')
-                                <div class="text-danger fs-7 mt-1">{{ $message }}</div>
-                            @enderror
-                        </div>
-
                         @if ($modoModal === 2)
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <div class="form-floating">
                                 <input type="text" class="form-control bg-light" id="areaRemitente" readonly value="{{ auth()->user()->persona->area->nombre_area ?? 'Sin área asignada' }}" />
                                 <label for="areaRemitente">
@@ -108,28 +122,10 @@
                         </div>
                         @endif
 
-                        <div class="mb-3">
-                            <label for="oficina" class="form-label required">
-                                Oficina <span class="text-danger">*</span>
-                            </label>
-                            <div wire:ignore>
-                                <select class="form-select oficina" id="oficina" wire:model="oficina">
-                                    <option value="">Seleccione la oficina</option>
-                                    @foreach($oficinas as $of)
-                                        <option value="{{ $of->id_catalogo }}" data-abreviatura="{{ $of->abreviatura_catalogo }}">
-                                            {{ ($of->abreviatura_catalogo ? $of->abreviatura_catalogo . ' - ' : '') . $of->descripcion_catalogo }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            @error('oficina')
-                                <div class="text-danger fs-7 mt-1">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="idAreaDestino" class="form-label required">
-                                Destino (Área)
+                        {{-- Fila 4: Área Destino --}}
+                        <div class="mb-4">
+                            <label for="idAreaDestino" class="form-label required fw-semibold">
+                                Área Destino
                             </label>
                             <div wire:ignore>
                                 <select class="form-select idAreaDestino" id="idAreaDestino" wire:model="idAreaDestino">
@@ -144,120 +140,67 @@
                             @enderror
                         </div>
 
-                        <div class="mb-3">
-                            <label for="archivosDocumento" class="form-label">
-                                Adjuntar documentos (PDF, JPG, PNG - máx. 10MB c/u) <span class="text-danger">*</span>
-                            </label>
-                            <div class="mb-2">
-                                <input type="file" class="form-control @error('archivosDocumento') is-invalid @enderror @error('archivosDocumento.*') is-invalid @enderror" id="archivosDocumento" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" multiple wire:model="archivosDocumento" />
-                                <small class="text-muted d-block mt-2">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    Formatos: PDF, PNG, JPEG | Máximo 10MB por archivo | Máximo 10 archivos
-                                </small>
+                        {{-- Fila 5: Observación y Mensaje de Derivación en columnas --}}
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <textarea class="form-control text-uppercase @error('observacionDocumento') is-invalid @enderror" id="observacionDocumento" autocomplete="off" placeholder="Observación" wire:model="observacionDocumento" maxlength="500" style="height: 85px"></textarea>
+                                    <label for="observacionDocumento">
+                                        Observación (Opcional)
+                                    </label>
+                                    @error('observacionDocumento')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
                             </div>
 
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <textarea
+                                        class="form-control @error('comentarioDerivacionNuevo') is-invalid @enderror"
+                                        id="comentarioDerivacionNuevo"
+                                        placeholder="Respuesta o mensaje de derivación"
+                                        wire:model="comentarioDerivacionNuevo"
+                                        maxlength="500"
+                                        style="height: 85px"
+                                    ></textarea>
+                                    <label for="comentarioDerivacionNuevo">Mensaje de Derivación</label>
+                                    @error('comentarioDerivacionNuevo')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Separador --}}
+                        <div class="separator my-5"></div>
+
+                        {{-- Sección de Archivos --}}
+                        <div class="fw-bold text-dark mb-4 d-flex align-items-center">
+                            <i class="ki-outline ki-folder fs-3 me-2"></i>
+                            <span>Documentos adjuntos</span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="archivosDocumento" class="form-label fw-semibold">
+                                Adjuntar documentos <span class="text-danger">*</span>
+                            </label>
+                            <input type="file" class="form-control @error('archivosDocumento') is-invalid @enderror @error('archivosDocumento.*') is-invalid @enderror" id="archivosDocumento" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" multiple wire:model="archivosDocumento" />
+                            <small class="text-muted d-block mt-2">
+                                <i class="bi bi-info-circle me-1"></i>
+                                PDF, PNG, JPEG | Máximo 10MB por archivo | Máximo 10 archivos
+                            </small>
+
                             @error('archivosDocumento')
-                                <div class="alert alert-danger fs-7 mb-3">
+                                <div class="alert alert-danger fs-7 mb-3 mt-2">
                                     <i class="bi bi-exclamation-triangle me-2"></i> {{ $message }}
                                 </div>
                             @enderror
                             @error('archivosDocumento.*')
-                                <div class="alert alert-danger fs-7 mb-3">
+                                <div class="alert alert-danger fs-7 mb-3 mt-2">
                                     <i class="bi bi-exclamation-triangle me-2"></i> {{ $message }}
                                 </div>
                             @enderror
-
-                            @if(!empty($archivosDocumento))
-                            <div class="mt-4">
-                                <div class="fw-bold text-dark mb-3">
-                                    <i class="bi bi-file-earmark-arrow-up me-2"></i> Archivos a subir ({{ count($archivosDocumento) }}/10)
-                                </div>
-                                <div class="row g-3">
-                                    @foreach($archivosDocumento as $index => $archivo)
-                                    @php
-                                        $nombre = $archivo->getClientOriginalName();
-                                        $sizeBytes = $archivo->getSize();
-                                        $sizeKB = number_format($sizeBytes / 1024, 2);
-                                        $sizeMB = number_format($sizeBytes / (1024 * 1024), 2);
-                                        $ext = strtolower($archivo->getClientOriginalExtension());
-                                        $isPdf = $ext === 'pdf';
-                                        $isValid = $sizeBytes <= 10485760; // 10MB
-                                    @endphp
-                                    <div class="col-md-6 col-lg-4" wire:key="nuevo-arquivo-{{ $index }}">
-                                        <div class="card shadow-sm border {{ $isValid ? 'border-gray-300' : 'border-danger' }} h-100">
-                                            <div class="card-body p-4 d-flex flex-column">
-                                                <div class="d-flex align-items-center mb-3">
-                                                    <div class="symbol symbol-50px me-3">
-                                                        <span class="symbol-label {{ $isValid ? 'bg-light-primary' : 'bg-light-danger' }}">
-                                                            <i class="bi {{ $isPdf ? 'bi-file-earmark-pdf text-danger' : 'bi-image text-primary' }} fs-3"></i>
-                                                        </span>
-                                                    </div>
-                                                    <div class="flex-grow-1 overflow-hidden">
-                                                        <div class="fw-bold text-gray-800 text-truncate text-sm" title="{{ $nombre }}">
-                                                            {{ Str::limit($nombre, 25) }}
-                                                        </div>
-                                                        <div class="text-muted fs-7 {{ $isValid ? '' : 'text-danger fw-semibold' }}">
-                                                            {{ $sizeMB }} MB ({{ $sizeKB }} KB)
-                                                        </div>
-                                                        @if (!$isValid)
-                                                            <div class="text-danger fs-7 fw-semibold">⚠️ Archivo muy grande</div>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                                <div class="d-flex gap-2 mt-auto">
-                                                    <button type="button" class="btn btn-sm btn-light-danger flex-fill" wire:click="eliminarArchivo({{ $index }})">
-                                                        <i class="ki-outline ki-trash fs-5"></i> Quitar
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                            @endif
-
-                            @if($modoModal == 2 && !empty($archivosExistentes) && count($archivosExistentes) > 0)
-                            <div class="mt-4">
-                                <div class="separator my-4"></div>
-                                <div class="fw-bold text-dark mb-3">
-                                    <i class="bi bi-file-earmark-check text-success me-2"></i> Archivos guardados ({{ count($archivosExistentes) }})
-                                </div>
-                                <div class="row g-3">
-                                    @foreach($archivosExistentes as $archivoExistente)
-                                    <div class="col-md-6 col-lg-4" wire:key="archivo-{{ $archivoExistente->id_archivo_documento }}">
-                                        <div class="card shadow-sm border border-success border-2 h-100">
-                                            <div class="card-body p-4 d-flex flex-column">
-                                                <div class="d-flex align-items-center mb-3">
-                                                    <div class="symbol symbol-50px me-3">
-                                                        <span class="symbol-label bg-light-{{ $archivoExistente->color }}">
-                                                            <i class="bi {{ $archivoExistente->icono }} fs-3 text-{{ $archivoExistente->color }}"></i>
-                                                        </span>
-                                                    </div>
-                                                    <div class="flex-grow-1 overflow-hidden">
-                                                        <div class="fw-bold text-gray-800 text-truncate text-sm" title="{{ $archivoExistente->nombre_original }}">
-                                                            {{ Str::limit($archivoExistente->nombre_original, 20) }}
-                                                        </div>
-                                                        <div class="text-muted fs-7">
-                                                            <i class="bi bi-check-circle-fill text-success"></i> {{ $archivoExistente->tamanio_formateado }}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="d-flex gap-2 mt-auto">
-                                                    <a href="{{ route('archivo.ver', ['path' => $archivoExistente->ruta_archivo]) }}" target="_blank" class="btn btn-sm btn-light-success flex-fill">
-                                                        <i class="ki-outline ki-eye fs-5"></i> Ver
-                                                    </a>
-                                                    <button type="button" class="btn btn-sm btn-light-danger" wire:click="eliminarArchivoExistente({{ $archivoExistente->id_archivo_documento }})" wire:confirm="¿Estás seguro de eliminar este archivo?">
-                                                        <i class="ki-outline ki-trash fs-5"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                            @endif
 
                             <div wire:loading wire:target="archivosDocumento" class="mt-3 text-primary">
                                 <span class="spinner-border spinner-border-sm me-2"></span>
@@ -265,10 +208,107 @@
                             </div>
                         </div>
 
+                        {{-- Archivos a subir --}}
+                        @if(!empty($archivosDocumento))
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="fw-semibold text-gray-700">
+                                    <i class="bi bi-file-earmark-arrow-up me-2 text-primary"></i>
+                                    Archivos a subir ({{ count($archivosDocumento) }}/10)
+                                </span>
+                            </div>
+                            <div class="row g-3">
+                                @foreach($archivosDocumento as $index => $archivo)
+                                @php
+                                    $nombre = $archivo->getClientOriginalName();
+                                    $sizeBytes = $archivo->getSize();
+                                    $sizeMB = number_format($sizeBytes / (1024 * 1024), 2);
+                                    $ext = strtolower($archivo->getClientOriginalExtension());
+                                    $isPdf = $ext === 'pdf';
+                                    $isValid = $sizeBytes <= 10485760; // 10MB
+                                @endphp
+                                <div class="col-md-6 col-xl-4" wire:key="nuevo-arquivo-{{ $index }}">
+                                    <div class="card border {{ $isValid ? 'border-gray-300' : 'border-danger' }} h-100">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-start">
+                                                <div class="symbol symbol-45px me-3 flex-shrink-0">
+                                                    <span class="symbol-label {{ $isValid ? 'bg-light-primary' : 'bg-light-danger' }}">
+                                                        <i class="bi {{ $isPdf ? 'bi-file-earmark-pdf text-danger' : 'bi-image text-primary' }} fs-3"></i>
+                                                    </span>
+                                                </div>
+                                                <div class="flex-grow-1 overflow-hidden me-2">
+                                                    <div class="fw-bold text-gray-800 text-truncate fs-7" title="{{ $nombre }}">
+                                                        {{ Str::limit($nombre, 28) }}
+                                                    </div>
+                                                    <div class="text-muted fs-8 {{ $isValid ? '' : 'text-danger fw-semibold' }}">
+                                                        {{ $sizeMB }} MB
+                                                    </div>
+                                                    @if (!$isValid)
+                                                        <div class="text-danger fs-8 fw-semibold">⚠️ Muy grande</div>
+                                                    @endif
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-icon btn-light-danger flex-shrink-0" wire:click="eliminarArchivo({{ $index }})" title="Quitar archivo">
+                                                    <i class="ki-outline ki-trash fs-5"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
+                        {{-- Archivos existentes --}}
+                        @if($modoModal == 2 && !empty($archivosExistentes) && count($archivosExistentes) > 0)
+                        <div class="mb-4">
+                            <div class="separator my-4"></div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="fw-semibold text-gray-700">
+                                    <i class="bi bi-file-earmark-check text-success me-2"></i>
+                                    Archivos guardados ({{ count($archivosExistentes) }})
+                                </span>
+                            </div>
+                            <div class="row g-3">
+                                @foreach($archivosExistentes as $archivoExistente)
+                                <div class="col-md-6 col-xl-4" wire:key="archivo-{{ $archivoExistente->id_archivo_documento }}">
+                                    <div class="card border border-success h-100">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-start">
+                                                <div class="symbol symbol-45px me-3 flex-shrink-0">
+                                                    <span class="symbol-label bg-light-{{ $archivoExistente->color }}">
+                                                        <i class="bi {{ $archivoExistente->icono }} fs-3 text-{{ $archivoExistente->color }}"></i>
+                                                    </span>
+                                                </div>
+                                                <div class="flex-grow-1 overflow-hidden">
+                                                    <div class="fw-bold text-gray-800 text-truncate fs-7" title="{{ $archivoExistente->nombre_original }}">
+                                                        {{ Str::limit($archivoExistente->nombre_original, 22) }}
+                                                    </div>
+                                                    <div class="text-muted fs-8">
+                                                        <i class="bi bi-check-circle-fill text-success"></i> {{ $archivoExistente->tamanio_formateado }}
+                                                    </div>
+                                                    <div class="d-flex gap-1 mt-2">
+                                                        <a href="{{ route('archivo.ver', ['path' => $archivoExistente->ruta_archivo]) }}" target="_blank" class="btn btn-sm btn-light-success btn-xs">
+                                                            <i class="ki-outline ki-eye fs-6"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-light-danger btn-xs" wire:click="eliminarArchivoExistente({{ $archivoExistente->id_archivo_documento }})" wire:confirm="¿Estás seguro de eliminar este archivo?">
+                                                            <i class="ki-outline ki-trash fs-6"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
                     </div>
                 </div>
 
-                <div class="modal-footer flex-center border-0">
+                <div class="modal-footer flex-center border-0 pt-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                         Cancelar
                     </button>
