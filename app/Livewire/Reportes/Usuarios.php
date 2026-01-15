@@ -27,8 +27,8 @@ class Usuarios extends Component
 
     public function mount(): void
     {
-        $this->fechaInicio = Carbon::now()->subDays(30)->format('Y-m-d');
-        $this->fechaFin = Carbon::now()->format('Y-m-d');
+        $this->fechaInicio = null;
+        $this->fechaFin = null;
     }
 
     // Resetear página cuando cambia cualquier filtro
@@ -39,83 +39,94 @@ class Usuarios extends Component
 
     public function limpiarFiltros(): void
     {
-        $this->reset(['buscar', 'usuarioFiltro', 'tipoAccionFiltro']);
-        $this->fechaInicio = Carbon::now()->subDays(30)->format('Y-m-d');
-        $this->fechaFin = Carbon::now()->format('Y-m-d');
+        $this->reset(['buscar', 'usuarioFiltro', 'tipoAccionFiltro', 'fechaInicio', 'fechaFin']);
         $this->resetPage();
     }
 
     public function obtenerActividadesUsuarios()
     {
-        $desde = $this->fechaInicio . ' 00:00:00';
-        $hasta = $this->fechaFin . ' 23:59:59';
+        // Validar que fechaInicio no sea mayor que fechaFin si ambas están seleccionadas
+        if ($this->fechaInicio && $this->fechaFin && Carbon::parse($this->fechaInicio)->isAfter(Carbon::parse($this->fechaFin))) {
+            $base = DB::table('ta_documento')
+                ->select(
+                    DB::raw("'documento' as tipo_tabla"),
+                    'au_usuariocr as usuario_id',
+                    'au_fechacr as fecha_accion',
+                    DB::raw("'Crear Documento' as tipo_accion"),
+                    DB::raw("CONCAT(COALESCE(numero_documento, 'S/N'), ' - ', COALESCE(asunto_documento, 'Sin asunto')) as descripcion")
+                )
+                ->whereRaw('1=0');
+
+            return DB::query()->fromSub($base, 't')->paginate(50);
+        }
+
+        // Determinar si hay filtro de fechas
+        $tieneFiltroFechas = !empty($this->fechaInicio) && !empty($this->fechaFin);
+
+        if ($tieneFiltroFechas) {
+            $desde = $this->fechaInicio . ' 00:00:00';
+            $hasta = $this->fechaFin . ' 23:59:59';
+        }
 
         // 1. Documentos Creados
-        $base = DB::table('ta_documento')
+        $docCreados = DB::table('ta_documento')
             ->select(
                 DB::raw("'documento' as tipo_tabla"),
                 'au_usuariocr as usuario_id',
                 'au_fechacr as fecha_accion',
                 DB::raw("'Crear Documento' as tipo_accion"),
-                // CORREGIDO: asunto_documento
                 DB::raw("CONCAT(COALESCE(numero_documento, 'S/N'), ' - ', COALESCE(asunto_documento, 'Sin asunto')) as descripcion")
             )
-            ->whereNotNull('au_usuariocr')
-            ->whereBetween('au_fechacr', [$desde, $hasta])
+            ->whereNotNull('au_usuariocr');
 
-            ->unionAll(
-                // 2. Documentos Editados
-                DB::table('ta_documento')
-                    ->select(
-                        DB::raw("'documento' as tipo_tabla"),
-                        'au_usuariomd as usuario_id',
-                        'au_fechamd as fecha_accion',
-                        DB::raw("'Editar Documento' as tipo_accion"),
-                        // CORREGIDO: asunto_documento
-                        DB::raw("CONCAT(COALESCE(numero_documento, 'S/N'), ' - ', COALESCE(asunto_documento, 'Sin asunto')) as descripcion")
-                    )
-                    ->whereNotNull('au_usuariomd')
-                    ->whereBetween('au_fechamd', [$desde, $hasta])
+        if ($tieneFiltroFechas) {
+            $docCreados->whereBetween('au_fechacr', [$desde, $hasta]);
+        }
+
+        // 2. Documentos Editados
+        $docEditados = DB::table('ta_documento')
+            ->select(
+                DB::raw("'documento' as tipo_tabla"),
+                'au_usuariomd as usuario_id',
+                'au_fechamd as fecha_accion',
+                DB::raw("'Editar Documento' as tipo_accion"),
+                DB::raw("CONCAT(COALESCE(numero_documento, 'S/N'), ' - ', COALESCE(asunto_documento, 'Sin asunto')) as descripcion")
             )
-            ->unionAll(
-                // 3. Movimientos Creados
-                DB::table('ta_movimiento')
-                    ->join('ta_documento', 'ta_movimiento.id_documento', '=', 'ta_documento.id_documento')
-                    ->select(
-                        DB::raw("'movimiento' as tipo_tabla"),
-                        'ta_movimiento.au_usuariocr as usuario_id',
-                        'ta_movimiento.au_fechacr as fecha_accion',
-                        DB::raw("'Crear Movimiento' as tipo_accion"),
-                        // CORREGIDO: ta_documento.asunto_documento
-                        DB::raw("CONCAT('Derivación: ', COALESCE(ta_documento.numero_documento, 'S/N'), ' - ', COALESCE(ta_documento.asunto_documento, 'Sin asunto')) as descripcion")
-                    )
-                    ->whereNotNull('ta_movimiento.au_usuariocr')
-                    ->whereBetween('ta_movimiento.au_fechacr', [$desde, $hasta])
+            ->whereNotNull('au_usuariomd');
+
+        if ($tieneFiltroFechas) {
+            $docEditados->whereBetween('au_fechamd', [$desde, $hasta]);
+        }
+
+        // 3. Movimientos con acciones específicas
+        $movimientos = DB::table('ta_movimiento')
+            ->join('ta_documento', 'ta_movimiento.id_documento', '=', 'ta_documento.id_documento')
+            ->join('ta_estado', 'ta_movimiento.id_estado', '=', 'ta_estado.id_estado')
+            ->select(
+                DB::raw("'movimiento' as tipo_tabla"),
+                'ta_movimiento.au_usuariocr as usuario_id',
+                'ta_movimiento.au_fechacr as fecha_accion',
+                DB::raw("UPPER(ta_estado.nombre_estado) as tipo_accion"),
+                DB::raw("CONCAT(UPPER(ta_estado.nombre_estado), ': ', COALESCE(ta_documento.numero_documento, 'S/N'), ' - ', COALESCE(ta_documento.asunto_documento, 'Sin asunto')) as descripcion")
             )
-            ->unionAll(
-                // 4. Movimientos Editados
-                DB::table('ta_movimiento')
-                    ->join('ta_documento', 'ta_movimiento.id_documento', '=', 'ta_documento.id_documento')
-                    ->select(
-                        DB::raw("'movimiento' as tipo_tabla"),
-                        'ta_movimiento.au_usuariomd as usuario_id',
-                        'ta_movimiento.au_fechamd as fecha_accion',
-                        DB::raw("'Editar Movimiento' as tipo_accion"),
-                        // CORREGIDO: ta_documento.asunto_documento
-                        DB::raw("CONCAT('Edición Derivación: ', COALESCE(ta_documento.numero_documento, 'S/N'), ' - ', COALESCE(ta_documento.asunto_documento, 'Sin asunto')) as descripcion")
-                    )
-                    ->whereNotNull('ta_movimiento.au_usuariomd')
-                    ->whereBetween('ta_movimiento.au_fechamd', [$desde, $hasta])
-            );
+            ->whereNotNull('ta_movimiento.au_usuariocr');
+
+        if ($tieneFiltroFechas) {
+            $movimientos->whereBetween('ta_movimiento.au_fechacr', [$desde, $hasta]);
+        }
+
+        // Combinar todas las consultas
+        $base = $docCreados->unionAll($docEditados)->unionAll($movimientos);
 
         $query = DB::query()->fromSub($base, 't');
 
+        // Aplicar filtros adicionales
         if ($this->usuarioFiltro) {
             $query->where('usuario_id', $this->usuarioFiltro);
         }
 
         if ($this->tipoAccionFiltro) {
-            $query->where('tipo_accion', $this->tipoAccionFiltro);
+            $query->where('tipo_accion', 'like', "%{$this->tipoAccionFiltro}%");
         }
 
         if ($this->buscar) {
@@ -128,18 +139,21 @@ class Usuarios extends Component
     // Estadísticas: Usuarios más activos
     public function usuariosMasActivos()
     {
-        $desde = $this->fechaInicio . ' 00:00:00';
-        $hasta = $this->fechaFin . ' 23:59:59';
-
-        return DB::table('ta_usuario')
+        $query = DB::table('ta_usuario')
             ->select(
                 'ta_usuario.id_usuario',
                 'ta_usuario.nombre_usuario',
                 'ta_persona.nombres_persona',
-                'ta_persona.apellido_paterno_persona', // AGREGRADO
-                'ta_persona.apellido_materno_persona'  // AGREGRADO
-            )
-            ->selectRaw('((
+                'ta_persona.apellido_paterno_persona',
+                'ta_persona.apellido_materno_persona'
+            );
+
+        // Si hay filtro de fechas, aplicarlo
+        if ($this->fechaInicio && $this->fechaFin) {
+            $desde = $this->fechaInicio . ' 00:00:00';
+            $hasta = $this->fechaFin . ' 23:59:59';
+
+            $query->selectRaw('((
                 SELECT COUNT(*) FROM ta_documento
                 WHERE ta_documento.au_usuariocr = ta_usuario.id_usuario
                 AND ta_documento.au_fechacr BETWEEN ? AND ?
@@ -147,7 +161,19 @@ class Usuarios extends Component
                 SELECT COUNT(*) FROM ta_movimiento
                 WHERE ta_movimiento.au_usuariocr = ta_usuario.id_usuario
                 AND ta_movimiento.au_fechacr BETWEEN ? AND ?
-            )) as total_acciones', [$desde, $hasta, $desde, $hasta])
+            )) as total_acciones', [$desde, $hasta, $desde, $hasta]);
+        } else {
+            // Sin filtro de fechas: contar todas las acciones
+            $query->selectRaw('((
+                SELECT COUNT(*) FROM ta_documento
+                WHERE ta_documento.au_usuariocr = ta_usuario.id_usuario
+            ) + (
+                SELECT COUNT(*) FROM ta_movimiento
+                WHERE ta_movimiento.au_usuariocr = ta_usuario.id_usuario
+            )) as total_acciones');
+        }
+
+        return $query
             ->leftJoin('ta_persona', 'ta_usuario.id_persona', '=', 'ta_persona.id_persona')
             ->having('total_acciones', '>', 0)
             ->orderByDesc('total_acciones')
@@ -157,11 +183,21 @@ class Usuarios extends Component
 
     public function accionesPorTipo()
     {
-        $desde = $this->fechaInicio . ' 00:00:00';
-        $hasta = $this->fechaFin . ' 23:59:59';
+        $docsQuery = DB::table('ta_documento')->whereNotNull('au_usuariocr');
+        $movsQuery = DB::table('ta_movimiento')->whereNotNull('au_usuariocr');
 
-        $documentos = DB::table('ta_documento')->whereBetween('au_fechacr', [$desde, $hasta])->whereNotNull('au_usuariocr')->count();
-        $movimientos = DB::table('ta_movimiento')->whereBetween('au_fechacr', [$desde, $hasta])->whereNotNull('au_usuariocr')->count();
+        // Si hay filtro de fechas, aplicarlo
+        if ($this->fechaInicio && $this->fechaFin) {
+            $desde = $this->fechaInicio . ' 00:00:00';
+            $hasta = $this->fechaFin . ' 23:59:59';
+
+            $documentos = $docsQuery->whereBetween('au_fechacr', [$desde, $hasta])->count();
+            $movimientos = $movsQuery->whereBetween('au_fechacr', [$desde, $hasta])->count();
+        } else {
+            // Sin filtro de fechas: contar todas
+            $documentos = $docsQuery->count();
+            $movimientos = $movsQuery->count();
+        }
 
         return [
             ['tipo' => 'Documentos Creados', 'cantidad' => $documentos, 'color' => '#009ef7'],
@@ -169,13 +205,37 @@ class Usuarios extends Component
         ];
     }
 
+    // Obtener tipos de acción únicos para el filtro
+    public function tiposAccionFiltro()
+    {
+        $tiposMovimientos = DB::table('ta_estado')
+            ->select('nombre_estado')
+            ->distinct()
+            ->pluck('nombre_estado')
+            ->map(fn($estado) => strtoupper($estado))
+            ->toArray();
+
+        $tiposDocumentos = [
+            'Crear Documento',
+            'Editar Documento'
+        ];
+
+        return array_values(array_unique(array_merge($tiposDocumentos, $tiposMovimientos)));
+    }
+
     public function totalUsuariosActivos()
     {
-        $desde = $this->fechaInicio . ' 00:00:00';
-        $hasta = $this->fechaFin . ' 23:59:59';
+        $usuariosDocs = DB::table('ta_documento')->select('au_usuariocr');
+        $usuariosMovs = DB::table('ta_movimiento')->select('au_usuariocr');
 
-        $usuariosDocs = DB::table('ta_documento')->whereBetween('au_fechacr', [$desde, $hasta])->select('au_usuariocr');
-        $usuariosMovs = DB::table('ta_movimiento')->whereBetween('au_fechacr', [$desde, $hasta])->select('au_usuariocr');
+        // Si hay filtro de fechas, aplicarlo
+        if ($this->fechaInicio && $this->fechaFin) {
+            $desde = $this->fechaInicio . ' 00:00:00';
+            $hasta = $this->fechaFin . ' 23:59:59';
+
+            $usuariosDocs->whereBetween('au_fechacr', [$desde, $hasta]);
+            $usuariosMovs->whereBetween('au_fechacr', [$desde, $hasta]);
+        }
 
         return $usuariosDocs->union($usuariosMovs)->distinct()->count('au_usuariocr');
     }
@@ -200,6 +260,7 @@ class Usuarios extends Component
             'accionesPorTipo' => $this->accionesPorTipo(),
             'totalUsuariosActivos' => $this->totalUsuariosActivos(),
             'usuarios' => $listaUsuarios,
+            'tiposAccion' => $this->tiposAccionFiltro(),
         ]);
     }
 }
