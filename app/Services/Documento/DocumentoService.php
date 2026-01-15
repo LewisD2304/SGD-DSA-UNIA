@@ -401,7 +401,7 @@ class DocumentoService
                 'id_documento' => $idDocumento,
                 'id_estado' => $datosDocumento['id_estado'] ?? $transicion->id_estado_siguiente_transicion,
                 'observacion_doc_movimiento' => $datos['observacion'] ?? null,
-                'comentario_documento' => $datos['comentario_documento'] ?? null,
+                'comentario_documento' => isset($datos['comentario_documento']) ? $datos['comentario_documento'] : null,
                 'au_fechacr' => Carbon::now(),
                 'au_fechamd' => Carbon::now(),
             ];
@@ -755,7 +755,8 @@ class DocumentoService
                 $transicion->id_transicion,
                 [
                     'id_area_destino' => $idAreaDestino,
-                    'observacion'     => $motivo
+                    'observacion'     => $motivo,
+                    'comentario_documento' => '' // Limpiar comentario con cadena vacía
                 ]
             );
 

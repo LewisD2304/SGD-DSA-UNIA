@@ -11,7 +11,7 @@
                 </div>
             </div>
 
-            <form autocomplete="off" novalidate class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit="guardarUsuario">
+            <form autocomplete="off" novalidate class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit.prevent="guardarUsuario">
 
                 <div class="modal-body px-5">
                     <div class="d-flex flex-column px-5 px-lg-10">
@@ -22,7 +22,7 @@
                             </label>
 
                             <div wire:ignore>
-                                <select id="idPersona" class="form-select idPersona" wire:model="idPersona" data-placeholder="Buscar persona" style="width: 100%">
+                                <select id="idPersona" class="form-select idPersona" data-placeholder="Buscar persona" style="width: 100%">
                                     <option value="">Buscar persona</option>
                                     @forelse($this->listaPersona() as $persona)
                                     <option value="{{ $persona->id_persona }}">
@@ -44,7 +44,7 @@
                             </label>
 
                             <div wire:ignore>
-                                <select id="idRol" class="form-select idRol" wire:model="idRol" style="width: 100%">
+                                <select id="idRol" class="form-select idRol" style="width: 100%">
                                     <option value="">Seleccione el rol</option>
                                     @forelse($this->listaRol() as $rol)
                                     <option value="{{ $rol->id_rol }}">
@@ -66,11 +66,11 @@
 
                         <div class="form-floating mb-3">
                             <input type="text"
-                                class="form-control text-uppercase @if($errors->has('nombreUsuario')) is-invalid @elseif($nombreUsuario) is-valid @endif"
+                                class="form-control text-uppercase @error('nombreUsuario') is-invalid @enderror"
                                 id="nombreUsuario"
                                 autocomplete="off"
                                 placeholder="Nombre de usuario"
-                                wire:model.live="nombreUsuario"
+                                wire:model.parent="nombreUsuario"
                                 maxlength="120" />
                             <label for="nombreUsuario">Nombre de usuario <span class="text-danger">*</span></label>
                             @error('nombreUsuario') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -78,11 +78,11 @@
 
                         <div class="form-floating" x-data="{ show: false }">
                             <input :type="show ? 'text' : 'password'"
-                                class="form-control @if($errors->has('claveUsuario')) is-invalid @elseif($claveUsuario && $modoModal == 1) is-valid @endif"
+                                class="form-control @error('claveUsuario') is-invalid @enderror"
                                 id="claveUsuario"
                                 autocomplete="off"
                                 placeholder="password"
-                                wire:model.lazy="claveUsuario"
+                                wire:model.parent="claveUsuario"
                                 maxlength="80" />
 
                             <label for="claveUsuario">
@@ -120,89 +120,70 @@
 @script
 <script>
     const initSelect2Usuario = () => {
-        // Configuración base para Select2
-        const configSelect2 = (placeholder) => ({
-            placeholder: placeholder,
-            minimumResultsForSearch: 0,
+        // Configuración común
+        const commonConfig = {
+            width: '100%',
             allowClear: true,
             dropdownParent: $('#modal-usuario'),
-            width: '100%',
             language: {
                 noResults: () => "No hay resultados",
                 searching: () => "Buscando...",
             }
-        });
+        };
 
-        // Inicializar ID PERSONA
-        if (!$('.idPersona').hasClass("select2-hidden-accessible")) {
-            $('.idPersona').select2(configSelect2("Buscar persona"))
-            .on('change', function (e) {
+        // Inicializar PERSONA
+        if (!$('#idPersona').hasClass("select2-hidden-accessible")) {
+            $('#idPersona').select2({
+                ...commonConfig,
+                placeholder: "Buscar persona"
+            }).on('change', function (e) {
+                // Sincronizar con Livewire
                 @this.set('idPersona', $(this).val());
-                // Validación visual manual si se desea
-                if($(this).val()) {
-                    $(this).next('.select2-container').find('.select2-selection').addClass('is-valid').removeClass('is-invalid');
-                }
             });
         }
 
-        // Inicializar ID ROL
-        if (!$('.idRol').hasClass("select2-hidden-accessible")) {
-            $('.idRol').select2(configSelect2("Seleccione el rol"))
-            .on('change', function (e) {
+        // Inicializar ROL
+        if (!$('#idRol').hasClass("select2-hidden-accessible")) {
+            $('#idRol').select2({
+                ...commonConfig,
+                placeholder: "Seleccione el rol"
+            }).on('change', function (e) {
+                // Sincronizar con Livewire
                 @this.set('idRol', $(this).val());
-                if($(this).val()) {
-                    $(this).next('.select2-container').find('.select2-selection').addClass('is-valid').removeClass('is-invalid');
-                }
             });
         }
     };
 
-    // Inicializar al cargar
+    // Inicializar al cargar la página
     initSelect2Usuario();
 
-    // Hook de Livewire
-    document.addEventListener('livewire:initialized', () => {
-        initSelect2Usuario();
-    });
+    // Re-inicializar cuando Livewire actualiza el componente (navegación, updates)
+    document.addEventListener('livewire:initialized', initSelect2Usuario);
 
-    // Reinicializar al abrir modal
+    // IMPORTANTE: Re-inicializar cuando el modal se muestra para asegurar que el dropdownParent funcione bien
     $('#modal-usuario').on('shown.bs.modal', function () {
         initSelect2Usuario();
     });
 
-    // Limpiar Select2 al cerrar o resetear
-    Livewire.on('limpiarSelect2', () => {
-        $('.idPersona').val(null).trigger('change');
-        $('.idRol').val(null).trigger('change');
-        // Remover clases de validación al limpiar
-        $('.select2-selection').removeClass('is-valid is-invalid');
-    });
-
-    // === AQUÍ ESTÁ LA MAGIA PARA CARGAR DATOS ===
+    // Escuchar evento para cargar datos en edición
     Livewire.on('cargarDatosModal', (data) => {
-        // Livewire a veces envía los datos envueltos en un array
+        // Asegurarse de que data es un objeto
         const usuarioData = Array.isArray(data) ? data[0] : data;
 
-        // Usamos un pequeño timeout para asegurar que el modal está listo
         setTimeout(() => {
-            // Cargar nombre de usuario con validación visual
-            if (usuarioData.nombreUsuario) {
-                $('#nombreUsuario')
-                    .val(usuarioData.nombreUsuario)
-                    .removeClass('is-invalid')
-                    .addClass('is-valid');
-            }
-
-            // Cargar persona
             if (usuarioData.idPersona) {
-                $('.idPersona').val(usuarioData.idPersona).trigger('change');
+                $('#idPersona').val(usuarioData.idPersona).trigger('change');
             }
-
-            // Cargar rol
             if (usuarioData.idRol) {
-                $('.idRol').val(usuarioData.idRol).trigger('change');
+                $('#idRol').val(usuarioData.idRol).trigger('change');
             }
-        }, 150);
+        }, 100);
+    });
+
+    // Escuchar evento para limpiar el formulario
+    Livewire.on('limpiarSelect2', () => {
+        $('#idPersona').val(null).trigger('change');
+        $('#idRol').val(null).trigger('change');
     });
 </script>
 @endscript

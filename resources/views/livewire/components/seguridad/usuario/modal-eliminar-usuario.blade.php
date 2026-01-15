@@ -15,7 +15,7 @@
                 </div>
             </div>
 
-            <form autocomplete="off" class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit="eliminarUsuario">
+            <form autocomplete="off" class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit.prevent="eliminarUsuario">
 
                 <div class="modal-body px-5">
                     <div class="d-flex flex-column px-5 ">

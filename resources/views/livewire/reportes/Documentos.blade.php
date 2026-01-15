@@ -62,12 +62,12 @@
 
                         <div class="col-md-3">
                             <label class="form-label fw-bold">Fecha Inicio</label>
-                            <input type="date" wire:model.live="fechaInicio" class="form-control form-control-solid">
+                            <input type="date" wire:model.live="fechaInicio" max="{{ $fechaFin }}" title="Fecha de inicio" class="form-control form-control-solid">
                         </div>
 
                         <div class="col-md-3">
                             <label class="form-label fw-bold">Fecha Fin</label>
-                            <input type="date" wire:model.live="fechaFin" class="form-control form-control-solid">
+                            <input type="date" wire:model.live="fechaFin" min="{{ $fechaInicio }}" title="Fecha fin" class="form-control form-control-solid">
                         </div>
 
                         <div class="col-md-3">

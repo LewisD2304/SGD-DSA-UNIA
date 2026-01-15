@@ -19,6 +19,7 @@
                         @php
                             $nombreEstado = strtoupper($modeloDocumento->estado->nombre_estado ?? '');
                             $esObservacionRecepcionado = str_contains($nombreEstado, 'OBSERVACION') && str_contains($nombreEstado, 'RECEPCIONADO');
+                            $esObservado = str_contains($nombreEstado, 'OBSERV'); // Cualquier estado con OBSERV
                             $archivosExistentesCollection = collect($archivosExistentes);
                             $archivosEvidenciaObservacion = $archivosExistentesCollection->where('tipo_archivo', 'evidencia_observacion');
                         @endphp
@@ -171,7 +172,7 @@
                                             <i class="ki-outline ki-send fs-3 text-success me-2"></i>
                                             <h5 class="fw-bold text-gray-800 m-0">Datos de Respuesta</h5>
                                         </div>
-                                        @if($comentarioDerivacion)
+                                        @if($comentarioDerivacion && !$esObservado)
                                             <span class="badge badge-light-primary fs-8 fw-semibold cursor-pointer"
                                                   data-bs-toggle="tooltip"
                                                   title="{{ $comentarioDerivacion }}">

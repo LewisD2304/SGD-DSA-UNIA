@@ -62,9 +62,9 @@
                         <div class="row mb-6">
                             <label class="col-lg-4 col-form-label required fw-semibold fs-6">Nombres</label>
                             <div class="col-lg-8">
-                                <input type="text" wire:model="nombres_persona" class="form-control form-control-solid @error('nombres_persona') is-invalid @enderror" placeholder="Nombres">
+                                <input type="text" wire:model="nombres_persona" class="form-control form-control-solid @error('nombres_persona') is-invalid @enderror" placeholder="Nombres" disabled>
                                 @error('nombres_persona')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
@@ -72,130 +72,32 @@
                         <div class="row mb-6">
                             <label class="col-lg-4 col-form-label required fw-semibold fs-6">Apellido Paterno</label>
                             <div class="col-lg-8">
-                                <input type="text" wire:model="apellido_paterno_persona" class="form-control form-control-solid @error('apellido_paterno_persona') is-invalid @enderror" placeholder="Apellido Paterno">
+                                <input type="text" wire:model="apellido_paterno_persona" class="form-control form-control-solid @error('apellido_paterno_persona') is-invalid @enderror" placeholder="Apellido Paterno" disabled>
                                 @error('apellido_paterno_persona')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
 
                         <div class="row mb-6">
-                            <label class="col-lg-4 col-form-label fw-semibold fs-6">Apellido Materno</label>
+                            <label class="col-lg-4 col-form-label required fw-semibold fs-6 ">Apellido Materno</label>
                             <div class="col-lg-8">
-                                <input type="text" wire:model="apellido_materno_persona" class="form-control form-control-solid" placeholder="Apellido Materno">
+                                <input type="text" wire:model="apellido_materno_persona" class="form-control form-control-solid" placeholder="Apellido Materno" disabled>
                             </div>
                         </div>
 
-                        <div class="row mb-6">
-                            <label class="col-lg-4 col-form-label required fw-semibold fs-6">Documento</label>
-                            <div class="col-lg-8">
-                                <input type="text" wire:model="documento_persona" class="form-control form-control-solid @error('documento_persona') is-invalid @enderror" placeholder="DNI/Documento">
-                                @error('documento_persona')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-6">
-                            <label class="col-lg-4 col-form-label fw-semibold fs-6">Teléfono</label>
-                            <div class="col-lg-8">
-                                <input type="text" wire:model="telefono_persona" class="form-control form-control-solid" placeholder="Teléfono">
-                            </div>
-                        </div>
 
                         <div class="row mb-6">
                             <label class="col-lg-4 col-form-label required fw-semibold fs-6">Correo Electrónico</label>
                             <div class="col-lg-8">
-                                <input type="email" wire:model="correo_persona" class="form-control form-control-solid @error('correo_persona') is-invalid @enderror" placeholder="correo@ejemplo.com">
+                                <input type="email" wire:model="correo_persona" class="form-control form-control-solid @error('correo_persona') is-invalid @enderror" placeholder="correo@ejemplo.com" disabled>
                                 @error('correo_persona')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                        </div>
-
-                        <div class="card-footer d-flex justify-content-end py-6 px-9">
-                            <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="actualizarPerfil">
-                                <span wire:loading.remove wire:target="actualizarPerfil">
-                                    <i class="ki-outline ki-check fs-3"></i>
-                                    Guardar Cambios
-                                </span>
-                                <span wire:loading wire:target="actualizarPerfil">
-                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                                    Guardando...
-                                </span>
-                            </button>
                         </div>
                     </form>
                 </div>
-            </div>
-
-            <div class="card mb-5 mb-xl-10">
-                <div class="card-header cursor-pointer" wire:click="toggleCambioPassword">
-                    <div class="card-title m-0">
-                        <h3 class="fw-bold m-0">
-                            <i class="ki-outline ki-lock fs-2 me-2"></i>
-                            Cambiar Contraseña
-                        </h3>
-                    </div>
-                    <div class="card-toolbar">
-                        <button type="button" class="btn btn-sm btn-light-primary">
-                            <i class="ki-outline ki-{{ $mostrarCambioPassword ? 'up' : 'down' }} fs-3"></i>
-                            {{ $mostrarCambioPassword ? 'Ocultar' : 'Mostrar' }}
-                        </button>
-                    </div>
-                </div>
-
-                @if($mostrarCambioPassword)
-                <div class="card-body p-9">
-                    <form wire:submit.prevent="cambiarPassword">
-                        <div class="row mb-6">
-                            <label class="col-lg-4 col-form-label required fw-semibold fs-6">Contraseña Actual</label>
-                            <div class="col-lg-8">
-                                <input type="password" wire:model="password_actual" class="form-control form-control-solid @error('password_actual') is-invalid @enderror" placeholder="Contraseña actual">
-                                @error('password_actual')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-6">
-                            <label class="col-lg-4 col-form-label required fw-semibold fs-6">Nueva Contraseña</label>
-                            <div class="col-lg-8">
-                                <input type="password" wire:model="password_nuevo" class="form-control form-control-solid @error('password_nuevo') is-invalid @enderror" placeholder="Nueva contraseña (mín. 8 caracteres)">
-                                @error('password_nuevo')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-6">
-                            <label class="col-lg-4 col-form-label required fw-semibold fs-6">Confirmar Contraseña</label>
-                            <div class="col-lg-8">
-                                <input type="password" wire:model="password_confirmacion" class="form-control form-control-solid @error('password_confirmacion') is-invalid @enderror" placeholder="Confirmar nueva contraseña">
-                                @error('password_confirmacion')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="card-footer d-flex justify-content-end py-6 px-9">
-                            <button type="button" wire:click="toggleCambioPassword" class="btn btn-light me-3">
-                                Cancelar
-                            </button>
-                            <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="cambiarPassword">
-                                <span wire:loading.remove wire:target="cambiarPassword">
-                                    <i class="ki-outline ki-shield-tick fs-3"></i>
-                                    Cambiar Contraseña
-                                </span>
-                                <span wire:loading wire:target="cambiarPassword">
-                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                                    Cambiando...
-                                </span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                @endif
             </div>
         </div>
     </div>

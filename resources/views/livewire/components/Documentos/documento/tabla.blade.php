@@ -210,7 +210,12 @@
                                                         @endcan
                                                     @endif
 
-                                                    @if(!$estaArchivado && !$estaEnTramite && !$estaPorRectificar)
+                                                    @php
+                                                    // Ocultar Observar si el documento ya está en OBSERVACION RECEPCIONADO
+                                                    $esObservacionRecepcionado = str_contains($nombreEstadoParaLogica, 'OBSERVACION') && str_contains($nombreEstadoParaLogica, 'RECEPCIONADO');
+                                                    @endphp
+
+                                                    @if(!$estaArchivado && !$estaEnTramite && !$estaPorRectificar && !$esObservacionRecepcionado)
                                                         @can('autorizacion', ['OBSERVAR', 'DOCUMENTOS'])
                                                         <div class="menu-item px-3">
                                                             <a href="#" class="menu-link px-3 text-warning" wire:click="$dispatch('abrirModalObservarDocumento', { id_documento: {{ $documento->id_documento }} })">

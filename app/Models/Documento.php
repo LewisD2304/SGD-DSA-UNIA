@@ -104,7 +104,24 @@ class Documento extends Model
         return $this->hasOne(Movimiento::class, 'id_documento', 'id_documento')
             ->whereNotNull('comentario_documento')
             ->where('comentario_documento', '!=', '')
-            ->orderByDesc('au_fechacr');
+            ->orderByDesc('au_fechacr')
+            ->orderByDesc('id_movimiento');
+    }
+
+    // Accessor: retorna null si el documento está OBSERVADO
+    public function getUltimoComentarioMovimientoAttribute()
+    {
+        // Si el documento está en estado OBSERVADO, retornar null
+        if ($this->estado && strtoupper($this->estado->nombre_estado) === 'OBSERVADO') {
+            return null;
+        }
+
+        // Si no está cargada la relación, cargarla
+        if (!$this->relationLoaded('ultimoComentarioMovimiento')) {
+            return $this->ultimoComentarioMovimiento()->first();
+        }
+
+        return $this->getRelation('ultimoComentarioMovimiento');
     }
 
     public function archivos() {

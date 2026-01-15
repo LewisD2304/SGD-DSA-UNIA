@@ -10,7 +10,7 @@
 
                     <div class="d-flex my-2">
                         @can('autorizacion', ['REGISTRAR', 'USUARIOS'])
-                        <button type="button" class="btn btn-primary px-4 px-sm-6" x-data @click="$dispatch('abrirModalUsuario')">
+                        <button type="button" class="btn btn-primary px-4 px-sm-6" x-data="{ cargando: false }" @cargando.window="cargando = false" @click="cargando = true; $dispatch('abrirModalUsuario')">
                             <template x-if="!cargando">
                                 <i class="ki-outline ki-plus fs-2 px-0"></i>
                             </template>

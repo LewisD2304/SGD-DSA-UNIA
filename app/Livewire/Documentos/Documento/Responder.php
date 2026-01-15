@@ -95,10 +95,16 @@ class Responder extends Component
         $this->archivosExistentes = $this->modeloDocumento->archivos ?? collect();
 
         // Obtener el comentario del último movimiento
-        $ultimoComentario = $this->modeloDocumento->ultimoComentarioMovimiento;
-        $this->comentarioDerivacion = ($ultimoComentario && !empty($ultimoComentario->comentario_documento))
-            ? $ultimoComentario->comentario_documento
-            : null;
+        // No mostrar si el documento está en estado OBSERVADO o OBSERVACION
+        $nombreEstado = strtoupper($this->modeloDocumento->estado->nombre_estado ?? '');
+        if (str_contains($nombreEstado, 'OBSERV')) {
+            $this->comentarioDerivacion = null;
+        } else {
+            $ultimoComentario = $this->modeloDocumento->ultimoComentarioMovimiento;
+            $this->comentarioDerivacion = ($ultimoComentario && !empty($ultimoComentario->comentario_documento))
+                ? $ultimoComentario->comentario_documento
+                : null;
+        }
 
         $this->dispatch('cargando', cargando: 'false');
         $this->dispatch('modal', nombre: '#modal-responder-documento', accion: 'show');
@@ -226,6 +232,7 @@ class Responder extends Component
             'archivosExistentes',
             'idAreaRespuesta',
             'comentarioRespuesta',
+            'comentarioDerivacion',
             'archivosRespuesta'
         ]);
         $this->resetErrorBag();

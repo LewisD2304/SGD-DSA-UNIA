@@ -9,36 +9,52 @@
 
     <div class="app-container container-fluid">
 
-        <div class="row g-5 g-xl-8 mb-8">
+        <div class="row g-4 mb-7">
             <div class="col-md-3">
-                <div class="card card-flush bgi-no-repeat bgi-size-contain bgi-position-x-end" style="background-color: #f3f6ff; background-image: url('assets/media/svg/shapes/wave-blue.svg')">
-                    <div class="card-body pb-0">
-                        <span class="fw-bold fs-8 text-gray-400 d-block mb-7">Usuarios Activos</span>
-                        <div class="mb-7"><span class="fw-bold fs-3qx text-gray-800">{{ $totalUsuariosActivos }}</span></div>
+                <div class="card bg-light-primary border-0 h-100">
+                    <div class="card-body d-flex align-items-center justify-content-between p-6">
+                        <div>
+                            <span class="text-muted fw-semibold d-block fs-7 mb-2">Usuarios Activos</span>
+                            <span class="text-gray-800 fw-bold fs-2x d-block mb-1">{{ $totalUsuariosActivos }}</span>
+                            <span class="text-muted fs-7">En el sistema</span>
+                        </div>
+                        <i class="ki-outline ki-profile-user text-primary fs-3x"></i>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card card-flush bgi-no-repeat bgi-size-contain bgi-position-x-end" style="background-color: #fff5ed; background-image: url('assets/media/svg/shapes/wave-orange.svg')">
-                    <div class="card-body pb-0">
-                        <span class="fw-bold fs-8 text-gray-400 d-block mb-7">Total Acciones</span>
-                        <div class="mb-7"><span class="fw-bold fs-3qx text-gray-800">{{ collect($accionesPorTipo)->sum('cantidad') }}</span></div>
+                <div class="card bg-light-warning border-0 h-100">
+                    <div class="card-body d-flex align-items-center justify-content-between p-6">
+                        <div>
+                            <span class="text-muted fw-semibold d-block fs-7 mb-2">Total Acciones</span>
+                            <span class="text-gray-800 fw-bold fs-2x d-block mb-1">{{ collect($accionesPorTipo)->sum('cantidad') }}</span>
+                            <span class="text-muted fs-7">Registradas</span>
+                        </div>
+                        <i class="ki-outline ki-element-11 text-warning fs-3x"></i>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card card-flush bgi-no-repeat bgi-size-contain bgi-position-x-end" style="background-color: #f1fdf9; background-image: url('assets/media/svg/shapes/wave-green.svg')">
-                    <div class="card-body pb-0">
-                        <span class="fw-bold fs-8 text-gray-400 d-block mb-7">Documentos Creados</span>
-                        <div class="mb-7"><span class="fw-bold fs-3qx text-gray-800">{{ collect($accionesPorTipo)->firstWhere('tipo', 'Documentos Creados')['cantidad'] ?? 0 }}</span></div>
+                <div class="card bg-light-success border-0 h-100">
+                    <div class="card-body d-flex align-items-center justify-content-between p-6">
+                        <div>
+                            <span class="text-muted fw-semibold d-block fs-7 mb-2">Documentos Creados</span>
+                            <span class="text-gray-800 fw-bold fs-2x d-block mb-1">{{ collect($accionesPorTipo)->firstWhere('tipo', 'Documentos Creados')['cantidad'] ?? 0 }}</span>
+                            <span class="text-muted fs-7">Total generados</span>
+                        </div>
+                        <i class="ki-outline ki-document text-success fs-3x"></i>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card card-flush bgi-no-repeat bgi-size-contain bgi-position-x-end" style="background-color: #fdf3ff; background-image: url('assets/media/svg/shapes/wave-purple.svg')">
-                    <div class="card-body pb-0">
-                        <span class="fw-bold fs-8 text-gray-400 d-block mb-7">Movimientos</span>
-                        <div class="mb-7"><span class="fw-bold fs-3qx text-gray-800">{{ collect($accionesPorTipo)->firstWhere('tipo', 'Movimientos Creados')['cantidad'] ?? 0 }}</span></div>
+                <div class="card bg-light-info border-0 h-100">
+                    <div class="card-body d-flex align-items-center justify-content-between p-6">
+                        <div>
+                            <span class="text-muted fw-semibold d-block fs-7 mb-2">Movimientos</span>
+                            <span class="text-gray-800 fw-bold fs-2x d-block mb-1">{{ collect($accionesPorTipo)->firstWhere('tipo', 'Movimientos Creados')['cantidad'] ?? 0 }}</span>
+                            <span class="text-muted fs-7">Registrados</span>
+                        </div>
+                        <i class="ki-outline ki-arrows-circle text-info fs-3x"></i>
                     </div>
                 </div>
             </div>
