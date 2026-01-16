@@ -91,6 +91,17 @@
                             </div>
                             @endif
 
+                            @if(isset($menusPermitidos['AREA']))
+                            <div class="menu-item">
+                                <a class="menu-link {{ request()->routeIs($menusPermitidos['AREA']['routePattern'].'.*') || request()->routeIs($menusPermitidos['AREA']['routePattern']) ? 'active' : '' }}" href="{{ route($menusPermitidos['AREA']['ruta']) }}">
+                                    <span class="menu-bullet">
+                                        <i class="ki-outline ki-abstract-47 fs-3"></i>
+                                    </span>
+                                    <span class="menu-title">{{ $menusPermitidos['AREA']['nombre'] }}</span>
+                                </a>
+                            </div>
+                            @endif
+
                             @if(isset($menusPermitidos['CATALOGO']))
                             <div class="menu-item">
                                 <a class="menu-link {{ request()->routeIs($menusPermitidos['CATALOGO']['routePattern'].'.*') || request()->routeIs($menusPermitidos['CATALOGO']['routePattern']) ? 'active' : '' }}" href="{{ route($menusPermitidos['CATALOGO']['ruta']) }}">
