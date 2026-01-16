@@ -121,13 +121,18 @@
                                             if ($estadoVisual) {
                                                 // Usamos mb_strtoupper para asegurar que las tildes se conviertan bien (á -> Á)
                                                 $nombreEstado = mb_strtoupper($estadoVisual->nombre_estado, 'UTF-8');
-                                                $colorEstado = match($nombreEstado) {
-                                                    'RECEPCIONADO' => 'success',
-                                                    'OBSERVADO' => 'danger',
-                                                    'DERIVADO' => 'secondary',
-                                                    'ARCHIVADO' => 'primary',
-                                                    'EN TRÁMITE', 'EN TRAMITE' => 'info',
-                                                    default => 'info'
+
+                                                // Mapeo de colores según catálogo entregado
+                                                $colorEstado = match ($nombreEstado) {
+                                                    'DERIVADO' => 'warning', // Amarillo
+                                                    'RECEPCIONADO', 'OBSERVACION RECEPCIONADO' => 'warning', // Ámbar / Gold
+                                                    'EN TRÁMITE', 'EN TRAMITE' => 'primary', // Azul
+                                                    'OBSERVADO' => 'danger', // Rojo
+                                                    'SUBSANADO' => 'success', // Verde claro
+                                                    'ARCHIVADO' => 'primary', // Verde oscuro
+                                                    'ANULADO' => 'danger', // Gris oscuro
+                                                    'POR RECTIFICAR' => 'warning', // Naranja
+                                                    default => 'secondary'
                                                 };
                                             }
                                             @endphp

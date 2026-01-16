@@ -229,24 +229,33 @@ class Estadisticas extends Component
         $tiempos = Movimiento::join('ta_documento', 'ta_movimiento.id_documento', '=', 'ta_documento.id_documento')
             ->join('ta_area as area_origen', 'ta_movimiento.id_area_origen', '=', 'area_origen.id_area')
             ->whereNotNull('ta_movimiento.fecha_recepcion')
-            ->where('ta_movimiento.id_area_destino', $this->idArea)
+            ->where(function($q) {
+                // Considerar movimientos donde el área actual es origen o destino
+                $q->where('ta_movimiento.id_area_origen', $this->idArea)
+                  ->orWhere('ta_movimiento.id_area_destino', $this->idArea);
+            })
             ->when($this->fechaInicio && $this->fechaFin, function ($q) {
-                // CORRECCIÓN AQUÍ: Aseguramos que filtre por la fecha del movimiento
                 $q->whereBetween('ta_movimiento.au_fechacr', [$this->fechaInicio, $this->fechaFin]);
             })
-            ->selectRaw('area_origen.nombre_area, AVG(DATEDIFF(ta_movimiento.fecha_recepcion, ta_movimiento.au_fechacr)) as promedio_dias')
+            ->selectRaw('area_origen.nombre_area, AVG(TIMESTAMPDIFF(HOUR, ta_movimiento.au_fechacr, ta_movimiento.fecha_recepcion) / 24) as promedio_dias')
             ->groupBy('area_origen.nombre_area')
+            ->havingRaw('promedio_dias > 0')
             ->orderByDesc('promedio_dias')
-            ->limit(4)
+            ->limit(5)
             ->get();
+
+        if ($tiempos->isEmpty()) {
+            $this->datosTiempoRespuesta = ['areas' => [], 'valores' => []];
+            return;
+        }
 
         $areas = [];
         $valores = [];
-        $maxDias = 5;
+        $maxDias = $tiempos->max('promedio_dias') ?: 1;
 
         foreach ($tiempos as $tiempo) {
             $areas[] = $tiempo->nombre_area;
-            $dias = round($tiempo->promedio_dias, 1);
+            $dias = max(0, round($tiempo->promedio_dias, 1));
             $valores[] = [
                 'dias' => $dias,
                 'porcentaje' => min(($dias / $maxDias) * 100, 100)
