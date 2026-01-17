@@ -7,11 +7,11 @@
         </x-breadcrumb>
     @endsection
 
-    <livewire:components.seguridad.persona.tabla/>
-    
+    <livewire:components.seguridad.Persona.tabla/>
 
-    @include('livewire.components.seguridad.persona.modal-persona')
-    @include('livewire.components.seguridad.persona.modal-detalle-persona')
-    @include('livewire.components.seguridad.persona.modal-estado-persona')
-    @include('livewire.components.seguridad.persona.modal-eliminar-persona')
+
+    @include('livewire.components.seguridad.Persona.modal-persona')
+    @include('livewire.components.seguridad.Persona.modal-detalle-persona')
+    @include('livewire.components.seguridad.Persona.modal-estado-persona')
+    @include('livewire.components.seguridad.Persona.modal-eliminar-persona')
 </div>

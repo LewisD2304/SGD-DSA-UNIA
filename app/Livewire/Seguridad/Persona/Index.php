@@ -302,6 +302,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('livewire.seguridad.persona.index');
+        return view('livewire.seguridad.Persona.index');
     }
 }
