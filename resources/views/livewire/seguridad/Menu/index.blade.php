@@ -11,9 +11,9 @@
 <div>
     <livewire:components.seguridad.menu.tabla lazy/>
 
-    @include('livewire.components.seguridad.menu.modal-menu')
-    @include('livewire.components.seguridad.menu.modal-estado-menu')
-    @include('livewire.components.seguridad.menu.modal-eliminar-menu')
+    @include('livewire.components.seguridad.Menu.modal-menu')
+    @include('livewire.components.seguridad.Menu.modal-estado-menu')
+    @include('livewire.components.seguridad.Menu.modal-eliminar-menu')
 
 </div>
 
