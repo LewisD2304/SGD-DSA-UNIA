@@ -6,5 +6,5 @@
     @endsection
 
     <livewire:components.documentos.historial.tabla />
-    @include('livewire.components.documentos.historial.modal-detalle-documento')
+    @include('livewire.components.Documentos.historial.modal-detalle-documento')
 </div>

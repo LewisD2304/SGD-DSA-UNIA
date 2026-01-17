@@ -6,6 +6,6 @@
     @endsection
 
     <livewire:components.documentos.pendientes.tabla />
-    @include('livewire.components.documentos.pendientes.modal-detalle-documento')
-    @include('livewire.components.documentos.pendientes.modal-accion-documento')
+    @include('livewire.components.Documentos.Pendientes.modal-detalle-documento')
+    @include('livewire.components.Documentos.Pendientes.modal-accion-documento')
 </div>

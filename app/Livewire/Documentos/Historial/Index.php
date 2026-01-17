@@ -54,6 +54,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('livewire.documentos.historial.index');
+        return view('livewire.Documentos.historial.index');
     }
 }
