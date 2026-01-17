@@ -9,7 +9,7 @@
 @endsection
 
 <div>
-    <livewire:components.seguridad.menu.tabla lazy/>
+    <livewire:components.seguridad.Menu.tabla lazy/>
 
     @include('livewire.components.seguridad.Menu.modal-menu')
     @include('livewire.components.seguridad.Menu.modal-estado-menu')
