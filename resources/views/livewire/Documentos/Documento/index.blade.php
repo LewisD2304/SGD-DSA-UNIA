@@ -5,14 +5,14 @@
     </x-breadcrumb>
     @endsection
 
-    <livewire:components.documentos.documento.tabla />
+    <livewire:components.documentos.Documento.tabla />
 
-    @include('livewire.components.Documentos.documento.modal-documento')
-    @include('livewire.components.Documentos.documento.modal-detalle-documento')
-    @include('livewire.components.Documentos.documento.modal-eliminar-documento')
-    @include('livewire.components.Documentos.documento.modal-anular-documento')
-    @include('livewire.components.Documentos.documento.modal-derivar-documento')
-    @include('livewire.components.Documentos.documento.modal-rectificar-documento')
-    @include('livewire.components.Documentos.documento.modal-responder-documento')
-    @include('livewire.components.Documentos.documento.modal-observacion-documento')
+    @include('livewire.components.Documentos.Documento.modal-documento')
+    @include('livewire.components.Documentos.Documento.modal-detalle-documento')
+    @include('livewire.components.Documentos.Documento.modal-eliminar-documento')
+    @include('livewire.components.Documentos.Documento.modal-anular-documento')
+    @include('livewire.components.Documentos.Documento.modal-derivar-documento')
+    @include('livewire.components.Documentos.Documento.modal-rectificar-documento')
+    @include('livewire.components.Documentos.Documento.modal-responder-documento')
+    @include('livewire.components.Documentos.Documento.modal-observacion-documento')
 </div>

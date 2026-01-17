@@ -658,7 +658,7 @@ class Index extends Component
                 // Eliminar archivo físico
                 $this->archivoService->eliminarArchivo($archivo->ruta_archivo);
                 // Eliminar registro de BD
-                $archivo->delete();
+                $archivo->delete;
 
                 // Actualizar lista
                 $this->archivosExistentes = collect($this->archivosExistentes)->reject(fn($item) => $item->id_archivo_documento == $idArchivo)->values()->all();
@@ -1332,6 +1332,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('livewire.documentos.documento.index');
+        return view('livewire.documentos.Documento.index');
     }
 }
