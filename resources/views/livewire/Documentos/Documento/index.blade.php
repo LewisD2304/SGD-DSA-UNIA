@@ -5,7 +5,7 @@
     </x-breadcrumb>
     @endsection
 
-    <livewire:components.Documentos.Documento.tabla />
+    <livewire:components.Documentos.documento.tabla />
 
     @include('livewire.components.Documentos.Documento.modal-documento')
     @include('livewire.components.Documentos.Documento.modal-detalle-documento')
