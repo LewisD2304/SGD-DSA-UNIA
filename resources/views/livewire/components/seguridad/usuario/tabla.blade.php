@@ -36,7 +36,7 @@
                                         <th class="w-10px pe-2">N°</th>
                                         <th class="min-w-200px">NOMBRE USUARIO</th>
                                         <th class="min-w-250px">PERSONA</th>
-                                        <th class="min-w-200px">ROL</th>
+                                        <th class="min-w-200px">ROL ASIGNADO</th>
                                         <th class="min-w-60px">ESTADO</th>
                                         <th class="min-w-60px">FECHA DE CREACION</th>
                                         <th class="text-center min-w-60px">ACCIÓN</th>
