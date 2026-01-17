@@ -1,15 +1,15 @@
 <div class="row g-5 gx-xl-10 mb-5 mb-xl-10">
     <div class="col-12">
         <div class="card">
-            <div class="d-flex flex-wrap flex-stack my-5 mx-8">
-                <div class="d-flex align-items-center position-relative my-1 me-4 fs-7">
+            <div class="d-flex flex-wrap flex-stack my-3 my-md-5 mx-3 mx-md-8">
+                <div class="d-flex align-items-center position-relative my-2 me-2 me-md-4 fs-7 w-100 w-md-auto">
                     <i class="ki-outline ki-magnifier fs-3 position-absolute ms-5"></i>
-                    <input type="text" data-kt-user-table-filter="buscar" class="form-control form-control-solid ps-13 w-xl-350px w-300" placeholder="Buscar área" wire:model.live.debounce.500ms="buscar" />
+                    <input type="text" data-kt-user-table-filter="buscar" class="form-control form-control-solid ps-13 w-100" placeholder="Buscar área" wire:model.live.debounce.500ms="buscar" style="max-width: 350px;" />
                 </div>
 
-                <div class="d-flex my-2">
+                <div class="d-flex my-2 w-100 w-md-auto">
                     @can('autorizacion', ['REGISTRAR', 'AREA'])
-                        <button type="button" class="btn btn-primary px-4 px-sm-6" x-data @click="$dispatch('abrirModalArea')">
+                        <button type="button" class="btn btn-primary px-3 px-sm-6 w-100 w-md-auto" x-data @click="$dispatch('abrirModalArea')">
                             <template x-if="!cargando">
                                 <i class="ki-outline ki-plus fs-2 px-0"></i>
                             </template>
@@ -20,6 +20,9 @@
                             </template>
                             <span class="d-none d-sm-inline">
                                 Nuevo
+                            </span>
+                            <span class="d-inline d-sm-none">
+                                Nuevo Área
                             </span>
                         </button>
                     @endcan
@@ -34,9 +37,9 @@
                                 <tr class="text-start text-muted fw-bold text-uppercase gs-0">
                                     <th class="w-10px pe-2">N°</th>
                                     <th class="min-w-200px">NOMBRE DEL ÁREA</th>
-                                    <th class="min-w-100px">SIGLAS</th>
-                                    <th class="min-w-220px">PERSONAS ASIGNADAS</th>
-                                    <th class="min-w-150px">FECHA DE CREACIÓN</th>
+                                    <th class="min-w-100px d-none d-md-table-cell">SIGLAS</th>
+                                    <th class="min-w-220px d-none d-lg-table-cell">PERSONAS ASIGNADAS</th>
+                                    <th class="min-w-150px d-none d-xl-table-cell">FECHA DE CREACIÓN</th>
                                     <th class="min-w-60px">ESTADO</th>
                                     <th class="text-center min-w-60px">ACCIÓN</th>
                                 </tr>
@@ -50,13 +53,16 @@
                                     <td>{{ $contador++ }}</td>
                                     <td>
                                         <div class="fw-bold text-dark">{{ $item->nombre_area }}</div>
+                                        <div class="d-md-none">
+                                            <span class="badge badge-light-info mt-1">{{ $item->siglas_area }}</span>
+                                        </div>
                                     </td>
                                     <!-- SIGLAS -->
-                                    <td>
+                                    <td class="d-none d-md-table-cell">
                                         <span class="badge badge-light-info">{{ $item->siglas_area }}</span>
                                     </td>
                                     <!-- PERSONAS ASIGNADAS -->
-                                    <td>
+                                    <td class="d-none d-lg-table-cell">
                                         @php
                                             $personas = $item->personas ?? collect();
                                         @endphp
@@ -74,7 +80,7 @@
                                         @endif
                                     </td>
                                     <!-- FECHA DE CREACIÓN -->
-                                    <td>{{ formatoFechaText($item->au_fechacr) }}</td>
+                                    <td class="d-none d-xl-table-cell">{{ formatoFechaText($item->au_fechacr) }}</td>
                                     <!-- ESTADO -->
                                     <td>
                                         @if ($item->estado_area === \App\Enums\EstadoEnum::HABILITADO)

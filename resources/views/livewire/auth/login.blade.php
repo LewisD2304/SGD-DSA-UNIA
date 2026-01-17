@@ -542,6 +542,12 @@
         }
 
         /* Responsivo */
+        @media (max-width: 1200px) {
+            .login-left {
+                padding: 40px 50px;
+            }
+        }
+
         @media (max-width: 992px) {
             .login-left {
                 display: none;
@@ -555,6 +561,43 @@
                 box-shadow: none;
                 max-width: 100%;
                 padding: 20px;
+                margin: 20px;
+            }
+
+            .login-card-header {
+                padding: 30px 20px 20px;
+            }
+
+            .login-body {
+                padding: 10px 20px 30px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .login-card {
+                margin: 10px;
+                padding: 10px;
+            }
+
+            .login-heading {
+                font-size: 1.3rem;
+            }
+
+            .login-card-header {
+                padding: 20px 10px 15px;
+            }
+
+            .login-body {
+                padding: 10px 15px 20px;
+            }
+
+            .login-logo {
+                width: 100px;
+            }
+
+            .btn-submit {
+                padding: 12px;
+                font-size: 0.95rem;
             }
         }
 
