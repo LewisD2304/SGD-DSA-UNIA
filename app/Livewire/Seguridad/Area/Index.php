@@ -334,7 +334,7 @@ class Index extends Component
 
     public function render()
     {
-        return view('livewire.seguridad.area.index', [
+        return view('livewire.seguridad.Area.index', [
             'areas' => $this->areas,
             'permisos' => $this->permisos,
         ]);

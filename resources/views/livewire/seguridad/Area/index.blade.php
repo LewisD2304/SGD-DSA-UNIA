@@ -7,10 +7,10 @@
         </x-breadcrumb>
     @endsection
 
-    @include('livewire.components.seguridad.area.tabla')
+    @include('livewire.components.seguridad.Area.tabla')
 
-    @include('livewire.components.seguridad.area.modal-area')
-    @include('livewire.components.seguridad.area.modal-detalle-area')
-    @include('livewire.components.seguridad.area.modal-estado-area')
-    @include('livewire.components.seguridad.area.modal-eliminar-area')
+    @include('livewire.components.seguridad.Area.modal-area')
+    @include('livewire.components.seguridad.Area.modal-detalle-area')
+    @include('livewire.components.seguridad.Area.modal-estado-area')
+    @include('livewire.components.seguridad.Area.modal-eliminar-area')
 </div>
