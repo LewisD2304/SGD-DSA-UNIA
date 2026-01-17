@@ -296,6 +296,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('Livewire.Seguridad.Menu.Index');
+        return view('livewire.seguridad.Menu.index');
     }
 }
