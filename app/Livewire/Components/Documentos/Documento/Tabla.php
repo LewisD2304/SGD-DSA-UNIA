@@ -452,6 +452,6 @@ class Tabla extends Component
 
     public function render()
     {
-        return view('livewire.components.documentos.Documento.tabla');
+        return view('livewire.components.Documentos.Documento.tabla');
     }
 }

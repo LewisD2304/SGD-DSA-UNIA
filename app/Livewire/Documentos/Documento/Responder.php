@@ -240,6 +240,6 @@ class Responder extends Component
 
     public function render()
     {
-        return view('livewire.documentos.documento.responder');
+        return view('livewire.Documentos.Documento.responder');
     }
 }
