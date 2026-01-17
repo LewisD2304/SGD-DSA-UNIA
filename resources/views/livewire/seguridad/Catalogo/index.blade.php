@@ -11,11 +11,11 @@
     <div class="app-container container-fluid">
         <div class="row g-5 g-md-7">
             <div class="col-xl-4">
-                <livewire:components.seguridad.catalogo.lista-padre />
+                <livewire:components.seguridad.Catalogo.lista-padre />
             </div>
             <div class="col-xl-8">
                 @if($id_padre)
-                    <livewire:components.seguridad.catalogo.lista-hijos :id_padre="$id_padre" :key="'lista-hijos-'.$id_padre" />
+                    <livewire:components.seguridad.Catalogo.lista-hijos :id_padre="$id_padre" :key="'lista-hijos-'.$id_padre" />
                 @endif
             </div>
         </div>
