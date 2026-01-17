@@ -1,5 +1,5 @@
 [phases.setup]
-# Actualizado a php83 y añadidas las extensiones requeridas
+# Usamos PHP 8.3 y las extensiones necesarias para Excel, PDF y el sistema
 nixPkgs = [
     'php83',
     'php83Packages.composer',
@@ -13,13 +13,17 @@ nixPkgs = [
 cmds = ['npm install']
 
 [phases.build]
+# Listamos las carpetas para ver los nombres reales en el log y luego instalamos
 cmds = [
+    'ls -R resources/views/livewire',
     'composer install --no-dev --optimize-autoloader',
     'npm run build'
 ]
 
 [phases.deploy]
+# Limpiamos TODA la caché antes de generar la nueva para evitar nombres de carpetas viejos
 cmds = [
+    'php artisan optimize:clear',
     'php artisan storage:link',
     'php artisan config:cache',
     'php artisan route:cache',
@@ -28,11 +32,3 @@ cmds = [
 
 [start]
 cmd = 'frankenphp php-server --listen :$PORT --root public/'
-
-
-[phases.build]
-cmds = [
-    'ls -R resources/views/livewire', # <--- Añade esto
-    'composer install --no-dev --optimize-autoloader',
-    'npm run build'
-]
