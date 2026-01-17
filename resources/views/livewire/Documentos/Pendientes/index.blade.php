@@ -5,7 +5,7 @@
     </x-breadcrumb>
     @endsection
 
-    <livewire:components.documentos.pendientes.tabla />
+    <livewire:components.Documentos.Pendientes.tabla />
     @include('livewire.components.Documentos.Pendientes.modal-detalle-documento')
     @include('livewire.components.Documentos.Pendientes.modal-accion-documento')
 </div>

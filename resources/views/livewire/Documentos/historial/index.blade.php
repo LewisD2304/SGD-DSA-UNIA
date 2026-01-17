@@ -5,6 +5,6 @@
     </x-breadcrumb>
     @endsection
 
-    <livewire:components.documentos.historial.tabla />
+    <livewire:components.Documentos.historial.tabla />
     @include('livewire.components.Documentos.historial.modal-detalle-documento')
 </div>
