@@ -86,7 +86,7 @@ class Documentos extends Component
         $estados = Estado::orderBy('nombre_estado')->get();
         $areas = Area::orderBy('nombre_area')->get();
 
-        return view('livewire.reportes.documentos', [
+        return view('livewire.reportes.Documentos', [
             'documentos' => $documentos,
             'estados' => $estados,
             'areas' => $areas,
