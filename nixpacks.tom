@@ -1,5 +1,13 @@
 [phases.setup]
-nixPkgs = ['php82', 'php82Packages.composer', 'nodejs_20']
+# Actualizado a php83 y añadidas las extensiones requeridas
+nixPkgs = [
+    'php83',
+    'php83Packages.composer',
+    'php83Extensions.zip',
+    'php83Extensions.gd',
+    'php83Extensions.bcmath',
+    'nodejs_20'
+]
 
 [phases.install]
 cmds = ['npm install']
