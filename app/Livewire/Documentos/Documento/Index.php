@@ -814,19 +814,18 @@ class Index extends Component
 
         $reglas = [
             'observacionesDerivar' => 'required|max:500',
+            'archivosEvidenciaRectificacion' => 'required|array|min:1|max:10',
+            'archivosEvidenciaRectificacion.*' => 'required|file|mimetypes:application/pdf,image/png,image/jpeg|max:10240',
         ];
-
-        // Validaciones de archivos solo si se adjuntaron archivos
-        if (!empty($this->archivosEvidenciaRectificacion)) {
-            $reglas['archivosEvidenciaRectificacion'] = 'nullable|array|max:10';
-            $reglas['archivosEvidenciaRectificacion.*'] = 'file|mimetypes:application/pdf,image/png,image/jpeg|max:10240';
-        }
 
         $mensajesCustim = [
             'observacionesDerivar.required' => 'El motivo de rectificación es obligatorio',
             'observacionesDerivar.max' => 'El motivo de rectificación no puede exceder 500 caracteres',
+            'archivosEvidenciaRectificacion.required' => 'Debes adjuntar al menos un archivo de evidencia',
             'archivosEvidenciaRectificacion.array' => 'Los archivos deben ser un conjunto válido.',
+            'archivosEvidenciaRectificacion.min' => 'Debes adjuntar al menos un archivo de evidencia',
             'archivosEvidenciaRectificacion.max' => 'No puedes subir más de 10 archivos de evidencia.',
+            'archivosEvidenciaRectificacion.*.required' => 'Todos los archivos son requeridos.',
             'archivosEvidenciaRectificacion.*.file' => 'Cada archivo de evidencia debe ser un archivo válido.',
             'archivosEvidenciaRectificacion.*.mimetypes' => 'Solo se permiten archivos PDF, PNG o JPEG.',
             'archivosEvidenciaRectificacion.*.max' => 'Cada archivo de evidencia no debe exceder 10MB.',
@@ -859,7 +858,7 @@ class Index extends Component
                 ]
             );
 
-            // Guardar archivos de evidencia (si se adjuntaron)
+            // Guardar archivos de evidencia
             if (!empty($this->archivosEvidenciaRectificacion)) {
                 $usuario = \Illuminate\Support\Facades\Auth::user();
                 $idAreaUsuario = $usuario->persona->id_area ?? null;
@@ -901,6 +900,7 @@ class Index extends Component
         }
     }
 
+    // Quitar un archivo del listado antes de guardar
     // Quitar un archivo del listado antes de guardar
     public function quitarArchivoEvidencia(int $index): void
     {
