@@ -377,7 +377,7 @@
     </div>
 
     <!-- Modal de observación -->
-    @include('livewire.components.documentos.documento.modal-observacion-documento')
+    @include('livewire.components.Documentos.documento.modal-observacion-documento')
 
 </div>
 
