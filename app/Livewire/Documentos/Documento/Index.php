@@ -1332,6 +1332,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('livewire.Documentos.documento.index');
+        return view('livewire.Documentos.Documento.index');
     }
 }
