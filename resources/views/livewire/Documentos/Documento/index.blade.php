@@ -13,6 +13,6 @@
     @include('livewire.components.Documentos.documento.modal-anular-documento')
     @include('livewire.components.Documentos.documento.modal-derivar-documento')
     @include('livewire.components.Documentos.documento.modal-rectificar-documento')
-    @include('livewire.components.Documentos.documento.modal-responder-documento')
+    @include('livewire.components.documentos.documento.modal-responder-documento')
     @include('livewire.components.Documentos.documento.modal-observacion-documento')
 </div>
