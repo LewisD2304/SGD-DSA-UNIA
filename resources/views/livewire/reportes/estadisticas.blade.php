@@ -119,7 +119,7 @@
                                             <div class="mb-4">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <span class="text-gray-700 fw-semibold fs-7">{{ $area }}</span>
-                                                    <span class="badge badge-light fw-bold">{{ $datosTiempoRespuesta['valores'][$index]['dias'] }} días</span>
+                                                    <span class="badge badge-light fw-bold">{{ round($datosTiempoRespuesta['valores'][$index]['dias']) }} días</span>
                                                 </div>
                                                 <div class="progress h-6px rounded-pill">
                                                     <div class="progress-bar bg-{{ ['primary', 'info', 'success', 'warning'][$index % 4] }}"

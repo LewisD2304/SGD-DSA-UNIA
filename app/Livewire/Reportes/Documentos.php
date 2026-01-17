@@ -29,8 +29,8 @@ class Documentos extends Component
 
     public function mount(): void
     {
-        $this->fechaInicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        $this->fechaFin = Carbon::now()->format('Y-m-d');
+        $this->fechaInicio = '';
+        $this->fechaFin = '';
     }
 
     public function updated($name): void
@@ -44,8 +44,6 @@ class Documentos extends Component
     {
         $this->reset(['tipoReporte', 'fechaInicio', 'fechaFin', 'idEstado', 'idArea', 'buscar']);
         $this->tipoReporte = 'todos';
-        $this->fechaInicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        $this->fechaFin = Carbon::now()->format('Y-m-d');
         $this->resetPage();
     }
 
@@ -132,11 +130,11 @@ class Documentos extends Component
     {
         $inicio = $this->fechaInicio
             ? Carbon::parse($this->fechaInicio)->startOfDay()
-            : Carbon::now()->startOfMonth();
+            : Carbon::parse('1900-01-01')->startOfDay(); // Rango muy amplio si no hay fecha inicio
 
         $fin = $this->fechaFin
             ? Carbon::parse($this->fechaFin)->endOfDay()
-            : Carbon::now()->endOfDay();
+            : Carbon::now()->endOfDay(); // Hasta hoy si no hay fecha fin
 
         return [$inicio, $fin];
     }

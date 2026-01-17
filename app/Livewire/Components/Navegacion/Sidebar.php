@@ -55,6 +55,11 @@ class Sidebar extends Component
                 'ruta' => 'seguridad.persona.index',
                 'routePattern' => 'seguridad.persona'
             ],
+            'AREA' => [
+                'nombre' => 'Areas',
+                'ruta' => 'seguridad.area.index',
+                'routePattern' => 'seguridad.area'
+            ],
             'DOCUMENTO' => [
                 'nombre' => 'Documentos',
                 'ruta' => 'documentos.documento.index',

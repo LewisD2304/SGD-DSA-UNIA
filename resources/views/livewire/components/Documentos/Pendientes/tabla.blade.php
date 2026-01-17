@@ -22,6 +22,7 @@
                                         <th class="min-w-150px">DESTINO</th>
                                         <th class="min-w-125px">FECHA CREACIÓN</th>
                                         <th class="min-w-100px">ESTADO</th>
+                                        <th class="text-center min-w-50px">VER</th>
                                         <th class="text-center min-w-100px">ACCIONES</th>
                                     </tr>
                                 </thead>
@@ -43,12 +44,24 @@
                                             <div class="text-gray-800">{{ Str::limit($documento->asunto_documento, 60) }}</div>
                                         </td>
 
+                                        @php
+                                        // Obtener el último movimiento para mostrar el área que está enviando actualmente
+                                        $ultimoMovimiento = $documento->movimientos->sortByDesc('au_fechacr')->first();
+
+                                        // Si hay movimiento, usar el área origen del último movimiento, sino usar el área remitente original
+                                        $nombreRemitenteActual = $ultimoMovimiento && $ultimoMovimiento->areaOrigen
+                                            ? $ultimoMovimiento->areaOrigen->nombre_area
+                                            : ($documento->areaRemitente->nombre_area ?? 'N/A');
+
+                                        $nombreDestinoActual = $documento->areaDestino->nombre_area ?? 'N/A';
+                                        @endphp
+
                                         <td>
-                                            <div class="text-gray-800">{{ $documento->areaRemitente->nombre_area ?? 'N/A' }}</div>
+                                            <div class="text-gray-800">{{ $nombreRemitenteActual }}</div>
                                         </td>
 
                                         <td>
-                                            <div class="text-gray-800">{{ $documento->areaDestino->nombre_area ?? 'N/A' }}</div>
+                                            <div class="text-gray-800">{{ $nombreDestinoActual }}</div>
                                         </td>
                                         <td>{{ formatoFechaText($documento->au_fechacr)}}</td>
 
@@ -70,96 +83,125 @@
                                             @else
                                             <span class="badge badge-light-secondary py-2 px-3">Sin estado</span>
                                             @endif </td>
+
+                                        <td>
+                                            @can('autorizacion',['VER','DOCUMENTOS'])
+                                            <button type="button" class="btn btn-light btn-sm" wire:click="$dispatch('abrirModalDetalleDocumento', { id_documento: {{ $documento->id_documento }} })">
+                                                <i class="ki-outline ki-eye fs-4 me-1"></i> Ver
+                                            </button>
+                                            @endcan
+
+                                            @php
+                                                $ultimoComentario = $documento->ultimoComentarioMovimiento;
+                                                $tieneComentario = $ultimoComentario && !empty($ultimoComentario->comentario_documento);
+                                            @endphp
+
+                                            @if($tieneComentario)
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-light btn-sm position-relative"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-placement="left"
+                                                    data-bs-html="true"
+                                                    data-bs-custom-class="tooltip-comentario"
+                                                    title="<div class='text-start'><strong class='d-block mb-2'>Comentario de derivación:</strong><div class='text-wrap'>{{ $ultimoComentario->comentario_documento }}</div></div>"
+                                                >
+                                                    <i class="ki-outline ki-message-text fs-2"></i>
+                                                    <span class="position-absolute top-0 start-100 translate-middle badge badge-circle badge-primary" style="width: 12px; height: 12px; padding: 0;"></span>
+                                                </button>
+                                            @else
+                                                <button type="button" class="btn btn-light btn-sm" disabled>
+                                                    <i class="ki-outline ki-message-text fs-2 text-muted"></i>
+                                                </button>
+                                            @endif
+                                        </td>
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center gap-2 flex-wrap">
-                                                @can('autorizacion',['VER','DOCUMENTOS'])
-                                                <button type="button" class="btn btn-light btn-sm" wire:click="$dispatch('abrirModalDetalleDocumento', { id_documento: {{ $documento->id_documento }} })">
-                                                    <i class="ki-outline ki-eye fs-4 me-1"></i> Ver
-                                                </button>
-                                                @endcan
-
                                                 @php
                                                 $nombreEstado = strtoupper($documento->estado->nombre_estado ?? '');
                                                 $esSolicitudRectificacion = ($documento->id_estado == 10) || str_contains($nombreEstado, 'RECTIFIC');
                                                 @endphp
 
-                                                @if($esSolicitudRectificacion)
-                                                @can('autorizacion',['RECTIFICAR','DOCUMENTOS'])
-                                                <button type="button" class="btn btn-success btn-sm" wire:click="abrirRectificacion({{ $documento->id_documento }}, 'aceptar')">
-                                                    <i class="ki-outline ki-check fs-4 me-1"></i> Aceptar
-                                                </button>
-                                                <button type="button" class="btn btn-danger btn-sm" wire:click="abrirRectificacion({{ $documento->id_documento }}, 'rechazar')">
-                                                    <i class="ki-outline ki-cross fs-4 me-1"></i> Rechazar
-                                                </button>
-                                                @endcan
-                                                @else
-                                                @php
-                                                // Verificar si el documento viene de vuelta a Mesa de Partes (área creadora original)
-                                                $areaUsuario = Auth::user()->persona->id_area ?? null;
-                                                $esCreadorOriginal = ($documento->id_area_remitente == $areaUsuario &&
-                                                $documento->id_area_destino == $areaUsuario);
+                                                @if(!$esSolicitudRectificacion)
+                                                    @php
+                                                    $areaUsuario = Auth::user()->persona->id_area ?? null;
+                                                    $esCreadorOriginal = ($documento->id_area_remitente == $areaUsuario &&
+                                                    $documento->id_area_destino == $areaUsuario);
 
-                                                $transiciones = $this->obtenerTransicionesDisponibles($documento->id_estado);
+                                                    $transiciones = $this->obtenerTransicionesDisponibles($documento->id_estado);
 
-                                                // Mesa de Partes: primero recepciona, luego archiva cuando el estado ya es RECEPCIONADO
-                                                if ($esCreadorOriginal) {
-                                                $transiciones = $transiciones->filter(function($t) use ($nombreEstado) {
-                                                $evento = strtoupper($t->evento_transicion);
-                                                if ($nombreEstado === 'RECEPCIONADO') {
+                                                    if ($esCreadorOriginal) {
+                                                    $transiciones = $transiciones->filter(function($t) use ($nombreEstado) {
+                                                    $evento = strtoupper($t->evento_transicion);
+                                                    if ($nombreEstado === 'RECEPCIONADO') {
                                                     return in_array($evento, ['ARCHIVADO', 'ARCHIVAR']);
-                                                }
-                                                if ($nombreEstado === 'OBSERVADO') {
-                                                    return $evento === 'OBSERVACION RECEPCIONADO';
-                                                }
-                                                if ($nombreEstado === 'RECEPCION SUBSANADA' || $nombreEstado === 'SUBSANADO') {
-                                                    return $evento === 'RECEPCIONAR SUBSANACION';
-                                                }
-                                                return $evento === 'RECEPCIONAR';
-                                                });
-                                                } else {
-                                                // Para otras áreas, EXCLUIR las transiciones EN TRAMITE y ARCHIVADO
-                                                $transiciones = $transiciones->filter(function($t) {
-                                                $evento = strtoupper($t->evento_transicion);
-                                                return !in_array($evento, ['EN TRAMITE', 'EN TRÁMITE', 'ARCHIVADO']);
-                                                });
-                                                }
-                                                @endphp
+                                                    }
+                                                    if ($nombreEstado === 'OBSERVADO') {
+                                                    return strpos($evento, 'OBSERVACION') !== false || strpos($evento, 'RECIBIR') !== false;
+                                                    }
+                                                    if ($nombreEstado === 'RECEPCION SUBSANADA' || $nombreEstado === 'SUBSANADO') {
+                                                    return strpos($evento, 'SUBSANACION') !== false || strpos($evento, 'SUBSANAR') !== false;
+                                                    }
+                                                    return $evento === 'RECEPCIONAR';
+                                                    });
+                                                    } else {
+                                                    $transiciones = $transiciones->filter(function($t) {
+                                                    $evento = strtoupper($t->evento_transicion);
+                                                    return !in_array($evento, ['EN TRAMITE', 'EN TRÁMITE', 'ARCHIVADO']);
+                                                    });
+                                                    }
+                                                    @endphp
 
-                                                @foreach($transiciones as $transicion)
-                                                @php
-                                                $evento = strtoupper($transicion->evento_transicion);
-                                                $accion = strtolower($evento);
+                                                    @foreach($transiciones as $transicion)
+                                                    @php
+                                                    $evento = strtoupper($transicion->evento_transicion);
+                                                    $accion = strtolower($evento);
 
-                                                $config = [
-                                                'RECEPCIONAR' => ['color' => 'success', 'icono' => 'folder-check', 'texto' => 'Recepcionar'],
-                                                    'OBSERVACION RECEPCIONADO' => ['color' => 'success', 'icono' => 'folder-check', 'texto' => 'Recepcionar observado'],
-                                                'RECEPCIONAR SUBSANACION' => ['color' => 'success', 'icono' => 'shield-tick', 'texto' => 'Recepcionar subsanación'],
-                                                'ARCHIVADO' => ['color' => 'warning', 'icono' => 'archive', 'texto' => 'Archivar'],
-                                                'ARCHIVAR' => ['color' => 'warning', 'icono' => 'archive', 'texto' => 'Archivar'],
-                                                'DEVOLVER' => ['color' => 'danger', 'icono' => 'arrow-left', 'texto' => 'Devolver'],
-                                                'DERIVAR' => ['color' => 'primary', 'icono' => 'arrow-right', 'texto' => 'Derivar'],
-                                                'SUBSANAR' => ['color' => 'warning', 'icono' => 'document-check', 'texto' => 'Subsanar']
-                                                ];
+                                                    $config = [
+                                                        'RECEPCIONAR' => ['color' => 'success', 'icono' => 'folder-check', 'texto' => 'Recepcionar'],
+                                                        'OBSERVACION RECEPCIONADO' => ['color' => 'success', 'icono' => 'folder-check', 'texto' => 'Recepcionar observado'],
+                                                        'RECEPCIONAR SUBSANACION' => ['color' => 'success', 'icono' => 'shield-tick', 'texto' => 'Recepcionar subsanación'],
+                                                        'ARCHIVADO' => ['color' => 'warning', 'icono' => 'archive', 'texto' => 'Archivar'],
+                                                        'ARCHIVAR' => ['color' => 'warning', 'icono' => 'archive', 'texto' => 'Archivar'],
+                                                        'DEVOLVER' => ['color' => 'danger', 'icono' => 'arrow-left', 'texto' => 'Devolver'],
+                                                        'DERIVAR' => ['color' => 'primary', 'icono' => 'arrow-right', 'texto' => 'Derivar'],
+                                                        'SUBSANAR' => ['color' => 'warning', 'icono' => 'document-check', 'texto' => 'Subsanar']
+                                                    ];
 
-                                                $btnConfig = $config[$evento] ?? ['color' => 'secondary', 'icono' => 'abstract-26', 'texto' => $evento];
-                                                @endphp
+                                                    $btnConfig = $config[$evento] ?? ['color' => 'secondary', 'icono' => 'abstract-26', 'texto' => $evento];
+                                                    @endphp
 
-                                                @if($evento === 'RECEPCIONAR' || $evento === 'OBSERVACION RECEPCIONADO' || $evento === 'RECEPCIONAR SUBSANACION')
-                                                <button type="button" class="btn btn-{{ $btnConfig['color'] }} btn-sm" wire:click="solicitarRecepcion({{ $documento->id_documento }}, false)">
-                                                    <i class="ki-outline ki-{{ $btnConfig['icono'] }} fs-4 me-1"></i>
-                                                    {{ $btnConfig['texto'] }}
-                                                </button>
-                                                @elseif($evento === 'ARCHIVADO' || $evento === 'ARCHIVAR')
-                                                <button type="button" class="btn btn-{{ $btnConfig['color'] }} btn-sm" wire:click="solicitarRecepcion({{ $documento->id_documento }}, true)">
-                                                    <i class="ki-outline ki-{{ $btnConfig['icono'] }} fs-4 me-1"></i>
-                                                    {{ $btnConfig['texto'] }}
-                                                </button>
+                                                    @if($evento === 'RECEPCIONAR' || $evento === 'OBSERVACION RECEPCIONADO' || $evento === 'RECEPCIONAR SUBSANACION')
+                                                    <button type="button" class="btn btn-{{ $btnConfig['color'] }} btn-sm" wire:click="solicitarRecepcion({{ $documento->id_documento }}, false)">
+                                                        <i class="ki-outline ki-{{ $btnConfig['icono'] }} fs-4 me-1"></i>
+                                                        {{ $btnConfig['texto'] }}
+                                                    </button>
+                                                    @elseif($evento === 'ARCHIVADO' || $evento === 'ARCHIVAR')
+                                                    <button type="button" class="btn btn-{{ $btnConfig['color'] }} btn-sm" wire:click="solicitarRecepcion({{ $documento->id_documento }}, true)">
+                                                        <i class="ki-outline ki-{{ $btnConfig['icono'] }} fs-4 me-1"></i>
+                                                        {{ $btnConfig['texto'] }}
+                                                    </button>
+                                                    @else
+                                                    <button type="button" class="btn btn-{{ $btnConfig['color'] }} btn-sm" wire:click="$dispatch('abrirModalAccion', { id_documento: {{ $documento->id_documento }}, accion: '{{ $accion }}' })">
+                                                        <i class="ki-outline ki-{{ $btnConfig['icono'] }} fs-4 me-1"></i>
+                                                        {{ $btnConfig['texto'] }}
+                                                    </button>
+                                                    @endif
+                                                    @endforeach
+
                                                 @else
-                                                <button type="button" class="btn btn-{{ $btnConfig['color'] }} btn-sm" wire:click="$dispatch('abrirModalAccion', { id_documento: {{ $documento->id_documento }}, accion: '{{ $accion }}' })">
-                                                    <i class="ki-outline ki-{{ $btnConfig['icono'] }} fs-4 me-1"></i>
-                                                    {{ $btnConfig['texto'] }}
-                                                </button>
-                                                @endif @endforeach @endif </div>
+                                                    @can('autorizacion',['RECTIFICAR','DOCUMENTOS'])
+                                                    <button type="button" class="btn btn-success btn-sm" wire:click="abrirRectificacion({{ $documento->id_documento }}, 'aceptar')">
+                                                        <i class="ki-outline ki-check fs-4 me-1"></i>
+                                                        Aceptar
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger btn-sm" wire:click="abrirRectificacion({{ $documento->id_documento }}, 'rechazar')">
+                                                        <i class="ki-outline ki-cross fs-4 me-1"></i>
+                                                        Rechazar
+                                                    </button>
+                                                    @endcan
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                     @empty
@@ -334,4 +376,54 @@
         </div>
     </div>
 
+    <!-- Modal de observación -->
+    @include('livewire.components.documentos.documento.modal-observacion-documento')
+
 </div>
+
+@push('styles')
+<style>
+    .tooltip-comentario .tooltip-inner {
+        max-width: 350px;
+        text-align: left;
+        background-color: #1e1e2d;
+        padding: 12px 15px;
+        border-radius: 6px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    .tooltip-comentario .tooltip-arrow::before {
+        border-left-color: #1e1e2d !important;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('livewire:init', function () {
+        // Función para inicializar tooltips
+        function initTooltips() {
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                // Destruir tooltip existente si hay
+                const existingTooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
+                if (existingTooltip) {
+                    existingTooltip.dispose();
+                }
+                // Crear nuevo tooltip
+                new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+
+        // Inicializar al cargar
+        initTooltips();
+
+        // Reinicializar después de cada actualización de Livewire
+        Livewire.hook('morph.updated', () => {
+            setTimeout(() => {
+                initTooltips();
+            }, 100);
+        });
+    });
+</script>
+@endpush

@@ -15,7 +15,7 @@
                 </div>
             </div>
 
-            <form autocomplete="off" novalidate class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit="cambiarEstadoUsuario">
+            <form autocomplete="off" novalidate class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit.prevent="$parent.cambiarEstadoUsuario">
 
                 <div class="modal-body px-5">
                     <div class="d-flex flex-column px-5 ">
@@ -66,12 +66,12 @@
                         type="submit"
                         class="btn d-flex align-items-center btn-{{ $modoModal === 1 ? 'success' : 'danger' }}"
                         wire:loading.attr="disabled"
-                        wire:target="cambiarEstadoUsuario"
+                        wire:target="$parent.cambiarEstadoUsuario"
                     >
-                        <span class="indicator-label" wire:loading.remove wire:target="cambiarEstadoUsuario">
+                        <span class="indicator-label" wire:loading.remove wire:target="$parent.cambiarEstadoUsuario">
                             {{ $modoModal === 1 ? 'Habilitar' : 'Deshabilitar' }}
                         </span>
-                        <span class="indicator-progress" wire:loading wire:target="cambiarEstadoUsuario">
+                        <span class="indicator-progress" wire:loading wire:target="$parent.cambiarEstadoUsuario">
                             Cargando...
                             <span>
                                 <x-spinner style="width: 20px; height: 20px;"/>

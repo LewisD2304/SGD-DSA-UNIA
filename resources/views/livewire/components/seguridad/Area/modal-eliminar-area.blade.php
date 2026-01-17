@@ -1,10 +1,10 @@
-<div wire:ignore.self class="modal fade" id="modal-eliminar-usuario" data-bs-backdrop="static" data-bs-keyboard="false">
+<div wire:ignore.self class="modal fade" id="modal-eliminar-area" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
             <div class="modal-header placeholder-glow">
                 <h3 class="fw-bold my-0">
-                    Eliminar usuario
+                    Eliminar área
                 </h3>
                 <div
                     class="btn btn-icon btn-sm btn-active-icon-primary icon-rotate-custom"
@@ -15,7 +15,7 @@
                 </div>
             </div>
 
-            <form autocomplete="off" class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit.prevent="eliminarUsuario">
+            <form autocomplete="off" novalidate class="form fv-plugins-bootstrap5 fv-plugins-framework" wire:submit="eliminarArea">
 
                 <div class="modal-body px-5">
                     <div class="d-flex flex-column px-5 ">
@@ -26,25 +26,29 @@
                                     <span class="path1"></span>
                                     <span class="path2"></span>
                                     <span class="path3"></span>
-                                    <span class="path4"></span>
-                                    <span class="path5"></span>
                                 </i>
                             </p>
                             <h4 class="modal-title w-100 mt-5">
-                                ¿Estás seguro de que deseas eliminar este registro?
+                                ¿Estás seguro de que deseas eliminar esta área?
                             </h4>
                         </div>
 
                         <div class="px-4 text-center fs-5">
                             <p class="text-gray-700">
-                                Esta acción no se puede deshacer y eliminará los datos permanentemente.
-                                Asegúrate de que esta es la acción que deseas realizar.
+                                Esta acción no se puede deshacer. Se eliminará permanentemente el registro y todos sus datos asociados.
                             </p>
 
                             <div class="d-flex justify-content-center mt-7">
-                                <div class="fw-bold">Registro:</div>
-                                <div class="px-2 text-gray-700 text-start">{{ $nombreUsuarioEliminar }}</div>
+                                <div class="fw-bold">Área:</div>
+                                <div class="px-2 text-gray-700 text-start">{{ $nombreAreaEliminar }}</div>
                             </div>
+
+                            @if(!empty($validacionEliminar))
+                                <div class="alert alert-warning mt-4" role="alert">
+                                    <i class="ki-outline ki-warning me-2"></i>
+                                    {{ $validacionEliminar }}
+                                </div>
+                            @endif
                         </div>
 
                     </div>
@@ -64,12 +68,13 @@
                         type="submit"
                         class="btn d-flex align-items-center btn-danger"
                         wire:loading.attr="disabled"
-                        wire:target="eliminarUsuario"
+                        wire:target="eliminarArea"
+                        @if(!empty($validacionEliminar)) disabled @endif
                     >
-                        <span class="indicator-label" wire:loading.remove wire:target="eliminarUsuario">
+                        <span class="indicator-label" wire:loading.remove wire:target="eliminarArea">
                             Eliminar
                         </span>
-                        <span class="indicator-progress" wire:loading wire:target="eliminarUsuario">
+                        <span class="indicator-progress" wire:loading wire:target="eliminarArea">
                             Cargando...
                             <span>
                                 <x-spinner style="width: 20px; height: 20px;"/>

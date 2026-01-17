@@ -8,6 +8,7 @@ use App\Livewire\Seguridad\Rol\Index as RolIndex;
 use App\Livewire\Seguridad\Rol\ConfiguracionAcceso;
 use App\Livewire\Seguridad\Usuario\Index as UsuarioIndex;
 use App\Livewire\Seguridad\Persona\Index as PersonaIndex;
+use App\Livewire\Seguridad\Area\Index as AreaIndex;
 use App\Livewire\Seguridad\Catalogo\Index as CatalogoIndex;
 use App\Livewire\Seguridad\Menu\Index as MenuIndex;
 use App\Livewire\Seguridad\Perfil\Index as PerfilIndex;
@@ -16,6 +17,7 @@ use App\Livewire\Reportes\Index as ReportesIndex;
 use App\Livewire\Reportes\Estadisticas as ReportesEstadisticas;
 use App\Livewire\Reportes\Documentos as ReporteDocumentos;
 use App\Livewire\Reportes\DocumentosDetalles;
+use App\Livewire\Reportes\Usuarios as ReporteUsuarios;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -67,6 +69,8 @@ Route::middleware(['throttle:100,1'])->group(function () {
             Route::get('/rol/{id_rol}/configuracion-acceso', ConfiguracionAcceso::class)->name('rol.asignar');
             // Persona
             Route::get('/persona', PersonaIndex::class)->name('persona.index');
+            // Área
+            Route::get('/area', AreaIndex::class)->name('area.index');
             // Catalogo
             Route::get('/catalogo', CatalogoIndex::class)->name('catalogo.index');
         });
@@ -97,6 +101,7 @@ Route::middleware(['throttle:100,1'])->group(function () {
             Route::get('/index', ReportesIndex::class)->name('index');
             Route::get('/estadisticas', ReportesEstadisticas::class)->name('estadisticas');
             Route::get('/documentos', ReporteDocumentos::class)->name('documentos');
+            Route::get('/usuarios', ReporteUsuarios::class)->name('usuarios');
             Route::get('/documentos/{idDocumento}', DocumentosDetalles::class)->name('documentos.detalles');
         });
 

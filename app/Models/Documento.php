@@ -34,7 +34,8 @@ class Documento extends Model
         'id_estado',
         'tipo_documento_catalogo',
         'nombre_archivo_original',
-        'id_area'
+        'id_area',
+        'oficina_catalogo'
     ];
 
     protected $hidden = [
@@ -90,8 +91,37 @@ class Documento extends Model
         return $this->belongsTo(Catalogo::class, 'tipo_documento_catalogo', 'id_catalogo');
     }
 
+    public function oficina() {
+        return $this->belongsTo(Catalogo::class, 'oficina_catalogo', 'id_catalogo');
+    }
+
     public function movimientos() {
         return $this->hasMany(Movimiento::class, 'id_documento');
+    }
+
+    public function ultimoComentarioMovimiento()
+    {
+        return $this->hasOne(Movimiento::class, 'id_documento', 'id_documento')
+            ->whereNotNull('comentario_documento')
+            ->where('comentario_documento', '!=', '')
+            ->orderByDesc('au_fechacr')
+            ->orderByDesc('id_movimiento');
+    }
+
+    // Accessor: retorna null si el documento está OBSERVADO
+    public function getUltimoComentarioMovimientoAttribute()
+    {
+        // Si el documento está en estado OBSERVADO, retornar null
+        if ($this->estado && strtoupper($this->estado->nombre_estado) === 'OBSERVADO') {
+            return null;
+        }
+
+        // Si no está cargada la relación, cargarla
+        if (!$this->relationLoaded('ultimoComentarioMovimiento')) {
+            return $this->ultimoComentarioMovimiento()->first();
+        }
+
+        return $this->getRelation('ultimoComentarioMovimiento');
     }
 
     public function archivos() {

@@ -27,9 +27,9 @@ class DocumentoService
         return $this->repository->listarPaginadoPorArea($idArea, $paginado, $buscar, $columnaOrden, $orden, $relaciones);
     }
 
-    public function listarPorAreaConFiltros(int $idArea, int $paginado = 10, ?string $buscar = null, ?string $fechaInicio = null, ?string $fechaFin = null, ?string $idEstado = null, string $columnaOrden = 'id_documento', string $orden = 'asc', array $relaciones = [])
+    public function listarPorAreaConFiltros(int $idArea, int $paginado = 10, ?string $buscar = null, ?string $fechaInicio = null, ?string $fechaFin = null, ?string $idEstado = null, ?string $idOficinaCatalogo = null, string $columnaOrden = 'id_documento', string $orden = 'asc', array $relaciones = [])
     {
-        return $this->repository->listarPaginadoPorAreaConFiltros($idArea, $paginado, $buscar, $fechaInicio, $fechaFin, $idEstado, $columnaOrden, $orden, $relaciones);
+        return $this->repository->listarPaginadoPorAreaConFiltros($idArea, $paginado, $buscar, $fechaInicio, $fechaFin, $idEstado, $idOficinaCatalogo, $columnaOrden, $orden, $relaciones);
     }
 
     // Encontrar un documento por id
@@ -257,7 +257,7 @@ class DocumentoService
     }
 
     // Derivar un documento a otra área
-    public function derivar(int $idDocumento, int $idAreaDestino, ?string $observaciones = null, array $nuevosArchivos = [])
+    public function derivar(int $idDocumento, int $idAreaDestino, ?string $observaciones = null, ?string $comentarioDocumento = null, array $nuevosArchivos = [])
     {
         DB::beginTransaction();
 
@@ -293,6 +293,7 @@ class DocumentoService
                 'id_area_origen'  => $idAreaOrigen,  // DE
                 'id_area_destino' => $idAreaDestino, // PARA
                 'observacion_doc_movimiento' => $observaciones,
+                'comentario_documento' => $comentarioDocumento,
             ]);
 
             // 4. ACTUALIZAR EL DOCUMENTO (Cambio de manos)
@@ -400,6 +401,7 @@ class DocumentoService
                 'id_documento' => $idDocumento,
                 'id_estado' => $datosDocumento['id_estado'] ?? $transicion->id_estado_siguiente_transicion,
                 'observacion_doc_movimiento' => $datos['observacion'] ?? null,
+                'comentario_documento' => isset($datos['comentario_documento']) ? $datos['comentario_documento'] : null,
                 'au_fechacr' => Carbon::now(),
                 'au_fechamd' => Carbon::now(),
             ];
@@ -753,7 +755,8 @@ class DocumentoService
                 $transicion->id_transicion,
                 [
                     'id_area_destino' => $idAreaDestino,
-                    'observacion'     => $motivo
+                    'observacion'     => $motivo,
+                    'comentario_documento' => '' // Limpiar comentario con cadena vacía
                 ]
             );
 

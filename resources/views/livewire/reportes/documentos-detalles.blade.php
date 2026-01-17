@@ -80,7 +80,7 @@
                                     </h4>
                                     <div class="mb-4">
                                         <span class="text-muted fw-semibold d-block fs-7 mb-2">Remitente</span>
-                                        <span class="text-gray-800 fw-medium fs-6">{{ $documento->remitente ?? 'N/A' }}</span>
+                                        <span class="text-gray-800 fw-medium fs-6">{{ $documento->oficina->descripcion_catalogo ?? 'N/A' }}</span>
                                     </div>
                                     <div class="mb-4">
                                         <span class="text-muted fw-semibold d-block fs-7 mb-2">Fecha de Creación</span>

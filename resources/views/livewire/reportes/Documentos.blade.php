@@ -62,12 +62,12 @@
 
                         <div class="col-md-3">
                             <label class="form-label fw-bold">Fecha Inicio</label>
-                            <input type="date" wire:model.live="fechaInicio" class="form-control form-control-solid">
+                            <input type="date" wire:model.live="fechaInicio" max="{{ $fechaFin }}" title="Fecha de inicio" class="form-control form-control-solid">
                         </div>
 
                         <div class="col-md-3">
                             <label class="form-label fw-bold">Fecha Fin</label>
-                            <input type="date" wire:model.live="fechaFin" class="form-control form-control-solid">
+                            <input type="date" wire:model.live="fechaFin" min="{{ $fechaInicio }}" title="Fecha fin" class="form-control form-control-solid">
                         </div>
 
                         <div class="col-md-3">
@@ -231,11 +231,9 @@
                                                     </span>
                                                     @endif
                                                 </div>
-                                                @if($documento->remitente)
                                                 <div class="mt-1">
-                                                    <span class="text-gray-500 fs-8">Por: <span class="text-gray-700 fw-semibold">{{ Str::limit($documento->remitente, 40) }}</span></span>
+                                                    <span class="text-gray-500 fs-8">Remitente: <span class="text-gray-700 fw-semibold">{{ $documento->oficina->descripcion_catalogo ?? 'N/A' }}</span></span>
                                                 </div>
-                                                @endif
                                             </div>
                                         </td>
 

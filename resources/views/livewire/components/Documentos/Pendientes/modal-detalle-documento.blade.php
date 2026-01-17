@@ -60,6 +60,19 @@ use Illuminate\Support\Str;
                         ->merge($archivosEvidenciaObs->pluck('id_archivo_documento'))->toArray();
 
                     $archivosDelDocumento = $archivos->whereNotIn('id_archivo_documento', $idsEvidencia);
+
+                    // Agrupación para la vista: Originales, Corrección, Anexos de otras áreas
+                    $idAreaRemitente = $modeloDocumento->id_area_remitente ?? null;
+
+                    $archivosCorreccion = $archivos->where('tipo_archivo', 'respuesta');
+
+                    $archivosOriginales = $archivosDelDocumento->filter(function($archivo) use ($idAreaRemitente) {
+                        return ($archivo->id_area ?? null) === null || ($archivo->id_area ?? null) == $idAreaRemitente;
+                    });
+
+                    $archivosAnexosOtrasAreas = $archivosDelDocumento->filter(function($archivo) use ($idAreaRemitente) {
+                        return ($archivo->id_area ?? null) !== null && ($archivo->id_area ?? null) != $idAreaRemitente;
+                    });
                 @endphp
 
                 <div class="row g-0">
@@ -157,26 +170,75 @@ use Illuminate\Support\Str;
                         @endif
 
                         {{-- Archivos del Documento --}}
-                        <div>
-                            <label class="fw-bold text-gray-600 fs-9 mb-2 text-uppercase">Archivos del Documento</label>
-                            @if($archivosDelDocumento->count() > 0)
-                                <div class="d-flex flex-column gap-2">
-                                    @foreach($archivosDelDocumento as $archivo)
-                                    <div class="d-flex align-items-center bg-white border border-gray-300 rounded p-2 px-3 shadow-sm">
-                                        <i class="ki-outline {{ $archivo->icono ?? 'ki-file' }} fs-2 text-primary me-3"></i>
-                                        <div class="d-flex flex-column flex-grow-1 overflow-hidden">
-                                            <span class="text-gray-800 fw-bold fs-7 text-truncate">{{ $archivo->nombre_original }}</span>
-                                            <span class="text-muted fs-9">{{ $archivo->tamanio_formateado }}</span>
+                        <div class="d-flex flex-column gap-4">
+                            {{-- Originales --}}
+                            <div>
+                                <label class="fw-bold text-gray-600 fs-9 mb-2 text-uppercase">Archivos originales</label>
+                                @if($archivosOriginales->count() > 0)
+                                    <div class="d-flex flex-column gap-2">
+                                        @foreach($archivosOriginales as $archivo)
+                                        <div class="d-flex align-items-center bg-white border border-gray-300 rounded p-2 px-3 shadow-sm">
+                                            <i class="ki-outline {{ $archivo->icono ?? 'ki-file' }} fs-2 text-primary me-3"></i>
+                                            <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+                                                <span class="text-gray-800 fw-bold fs-7 text-truncate">{{ $archivo->nombre_original }}</span>
+                                                <span class="text-muted fs-9">Original · {{ $archivo->tamanio_formateado }}</span>
+                                            </div>
+                                            <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-icon btn-sm btn-light-primary">
+                                                <i class="ki-outline ki-eye fs-4"></i>
+                                            </a>
                                         </div>
-                                        <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-icon btn-sm btn-light-primary">
-                                            <i class="ki-outline ki-eye fs-4"></i>
-                                        </a>
+                                        @endforeach
                                     </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="text-muted fs-7 fst-italic">Sin archivos adjuntos.</div>
-                            @endif
+                                @else
+                                    <div class="text-muted fs-7 fst-italic">Sin archivos originales.</div>
+                                @endif
+                            </div>
+
+                            {{-- Archivos de Corrección (Respuesta/Subsanación) --}}
+                            <div>
+                                <label class="fw-bold text-gray-600 fs-9 mb-2 text-uppercase">Archivos de corrección</label>
+                                @if($archivosCorreccion->count() > 0)
+                                    <div class="d-flex flex-column gap-2">
+                                        @foreach($archivosCorreccion as $archivo)
+                                        <div class="d-flex align-items-center bg-white border border-gray-300 rounded p-2 px-3 shadow-sm">
+                                            <i class="ki-outline {{ $archivo->icono ?? 'ki-folder-check' }} fs-2 text-success me-3"></i>
+                                            <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+                                                <span class="text-gray-800 fw-bold fs-7 text-truncate">{{ $archivo->nombre_original }}</span>
+                                                <span class="text-muted fs-9">Corrección · {{ $archivo->tamanio_formateado }}</span>
+                                            </div>
+                                            <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-icon btn-sm btn-light-primary">
+                                                <i class="ki-outline ki-eye fs-4"></i>
+                                            </a>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="text-muted fs-7 fst-italic">Sin archivos de corrección.</div>
+                                @endif
+                            </div>
+
+                            {{-- Anexos subidos por otras áreas --}}
+                            <div>
+                                <label class="fw-bold text-gray-600 fs-9 mb-2 text-uppercase">Anexos de otras áreas</label>
+                                @if($archivosAnexosOtrasAreas->count() > 0)
+                                    <div class="d-flex flex-column gap-2">
+                                        @foreach($archivosAnexosOtrasAreas as $archivo)
+                                        <div class="d-flex align-items-center bg-white border border-gray-300 rounded p-2 px-3 shadow-sm">
+                                            <i class="ki-outline {{ $archivo->icono ?? 'ki-folder' }} fs-2 text-info me-3"></i>
+                                            <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+                                                <span class="text-gray-800 fw-bold fs-7 text-truncate">{{ $archivo->nombre_original }}</span>
+                                                <span class="text-muted fs-9">Anexo · {{ $archivo->tamanio_formateado }}</span>
+                                            </div>
+                                            <a href="{{ route('archivo.ver', ['path' => $archivo->ruta_archivo]) }}" target="_blank" class="btn btn-icon btn-sm btn-light-primary">
+                                                <i class="ki-outline ki-eye fs-4"></i>
+                                            </a>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="text-muted fs-7 fst-italic">Sin anexos de otras áreas.</div>
+                                @endif
+                            </div>
                         </div>
 
                     </div>

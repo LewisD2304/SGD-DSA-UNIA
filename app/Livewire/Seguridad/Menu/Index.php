@@ -157,6 +157,7 @@ class Index extends Component
             $this->ruta_menu = $this->modelo_menu->ruta_menu;
             $this->acciones = $this->modelo_menu->acciones->pluck('tipoAccion.id_catalogo')->toArray() ?? [];
             $this->dispatch('autocompletado');
+
         } else {
             $this->titulo_modal = 'Registrar nuevo menú';
             $this->modo_modal = 1;

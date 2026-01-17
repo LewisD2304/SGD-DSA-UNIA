@@ -2,10 +2,13 @@
 
 namespace App\Repositories\Configuracion\Area;
 
+use App\Enums\EstadoEnum;
 use App\Models\Area;
+use App\Traits\BaseRepositoryTrait;
 
 class AreaRepository implements AreaRepositoryInterface
 {
+    use BaseRepositoryTrait;
     protected $model;
 
     public function __construct(Area $area)
@@ -13,18 +16,37 @@ class AreaRepository implements AreaRepositoryInterface
         $this->model = $area;
     }
 
-    public function listar()
+    // Listar áreas habilitadas
+    public function listarHabilitados()
     {
-        return $this->model::orderBy('nombre_area')->get();
+        return $this->model::estado(EstadoEnum::HABILITADO)
+            ->orderBy('nombre_area')
+            ->get();
     }
 
-    public function listarActivas()
+    // Verificar si un área existe por nombre
+    public function existePorNombre(string $nombreArea): bool
     {
-        return $this->model::orderBy('nombre_area')->get();
+        return $this->model::where('nombre_area', $nombreArea)->exists();
     }
 
-    public function obtenerPorId(int $id)
+    // Sincronizar personas asignadas a un área
+    public function sincronizarPersonas(Area $area, array $idsPersonas): void
     {
-        return $this->model::find($id);
+        // Si el array está vacío, desasignar TODAS las personas del área
+        if (empty($idsPersonas)) {
+            \App\Models\Persona::where('id_area', $area->id_area)
+                ->update(['id_area' => null]);
+            return;
+        }
+
+        // Desasignar personas que ya no están en la lista
+        \App\Models\Persona::where('id_area', $area->id_area)
+            ->whereNotIn('id_persona', $idsPersonas)
+            ->update(['id_area' => null]);
+
+        // Asignar nuevas personas al área
+        \App\Models\Persona::whereIn('id_persona', $idsPersonas)
+            ->update(['id_area' => $area->id_area]);
     }
 }

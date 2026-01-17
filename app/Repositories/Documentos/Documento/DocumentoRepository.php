@@ -78,7 +78,7 @@ class DocumentoRepository implements DocumentoRepositoryInterface
         return $query->orderBy($columnaOrden, $orden)->paginate($paginado);
     }
 
-    public function listarPaginadoPorAreaConFiltros(int $idArea, int $paginado = 10, ?string $buscar = null, ?string $fechaInicio = null, ?string $fechaFin = null, ?string $idEstado = null, string $columnaOrden = 'id_documento', string $orden = 'asc', array $relaciones = [])
+    public function listarPaginadoPorAreaConFiltros(int $idArea, int $paginado = 10, ?string $buscar = null, ?string $fechaInicio = null, ?string $fechaFin = null, ?string $idEstado = null, ?string $idOficinaCatalogo = null, string $columnaOrden = 'id_documento', string $orden = 'asc', array $relaciones = [])
     {
         $query = $this->model::query()
             ->with($relaciones)
@@ -111,6 +111,11 @@ class DocumentoRepository implements DocumentoRepositoryInterface
         // Filtro por estado
         if (!empty($idEstado)) {
             $query->where('id_estado', $idEstado);
+        }
+
+        // Filtro por oficina
+        if (!empty($idOficinaCatalogo)) {
+            $query->where('oficina_catalogo', $idOficinaCatalogo);
         }
 
         return $query->orderBy($columnaOrden, $orden)->paginate($paginado);

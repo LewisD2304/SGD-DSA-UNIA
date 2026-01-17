@@ -42,7 +42,7 @@
                                     <th class="min-w-120px">ÁREA ORIGEN</th>
                                     <th class="min-w-120px">ÁREA DESTINO</th>
                                     <th class="min-w-140px">FECHA DEL MOVIMIENTO</th>
-                                    <th class="min-w-100px">ESTADO</th>
+                                    <th class="min-w-100px">ESTADO ACTUAL</th>
                                     <th class="text-center min-w-70px">VER</th>
                                 </tr>
                             </thead>
@@ -71,14 +71,18 @@
                                     </td>
                                     <td>
                                         @php
-                                            // Determinar el tipo de acción
+                                            // Determinar el tipo de acción con la paleta solicitada
                                             $tipoAccion = strtoupper($estadoMovimiento);
                                             $badgeClass = match($tipoAccion) {
-                                                'RECEPCIONADO', 'FINALIZADO', 'SUBSANADO' => 'badge-light-success',
-                                                'DERIVADO' => 'badge-light-primary',
-                                                'OBSERVADO' => 'badge-light-danger',
-                                                'ARCHIVADO' => 'badge-light-info',
-                                                'POR RECTIFICAR', 'SOLICITAR RECTIFICACION' => 'badge-light-warning',
+                                                'DERIVADO' => 'badge-light-warning',           // Amarillo
+                                                'RECEPCIONADO' => 'badge-light-warning',       // Ámbar / Gold
+                                                'EN TRÁMITE', 'EN TRAMITE' => 'badge-light-primary', // Azul
+                                                'OBSERVADO' => 'badge-light-danger',           // Rojo
+                                                'SUBSANADO' => 'badge-light-success',          // Verde claro
+                                                'ARCHIVADO' => 'badge-light-primary',          // Verde oscuro
+                                                'ANULADO' => 'danger',               // Gris oscuro
+                                                'POR RECTIFICAR', 'SOLICITAR RECTIFICACION' => 'badge-light-warning', // Naranja
+                                                'FINALIZADO' => 'badge-light-success',
                                                 default => 'badge-light-secondary'
                                             };
                                         @endphp
@@ -110,12 +114,16 @@
                                         @php
                                         $nombreEstado = strtoupper($estadoDoc->nombre_estado);
                                         $colorEstado = match($nombreEstado) {
-                                            'RECEPCIONADO' => 'success',
-                                            'OBSERVADO' => 'danger',
-                                            'DERIVADO' => 'secondary',
-                                            'ARCHIVADO' => 'primary',
-                                            'FINALIZADO' => 'info',
-                                            default => 'warning'
+                                            'DERIVADO' => 'warning',           // Amarillo
+                                            'RECEPCIONADO' => 'warning',       // Ámbar / Gold
+                                            'EN TRÁMITE', 'EN TRAMITE' => 'primary', // Azul
+                                            'OBSERVADO' => 'danger',           // Rojo
+                                            'SUBSANADO' => 'success',          // Verde claro
+                                            'ARCHIVADO' => 'primary',          // Verde oscuro
+                                            'ANULADO' => 'danger',               // Gris oscuro
+                                            'POR RECTIFICAR', 'SOLICITAR RECTIFICACION' => 'warning', // Naranja
+                                            'FINALIZADO' => 'success',
+                                            default => 'secondary'
                                         };
                                         @endphp
                                         <span class="badge badge-light-{{ $colorEstado }} fw-bold py-2 px-3">

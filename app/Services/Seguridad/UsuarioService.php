@@ -104,7 +104,7 @@ class UsuarioService
             return $usuario;
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception('Ocurrió un error al cambiar el estado del usuario');
+            throw new \Exception('Ocurrió un error al cambiar el estado del usuario'($e->getMessage()).'');
         }
     }
 
