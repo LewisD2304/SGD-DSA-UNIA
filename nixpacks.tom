@@ -28,3 +28,11 @@ cmds = [
 
 [start]
 cmd = 'frankenphp php-server --listen :$PORT --root public/'
+
+
+[phases.build]
+cmds = [
+    'ls -R resources/views/livewire', # <--- Añade esto
+    'composer install --no-dev --optimize-autoloader',
+    'npm run build'
+]

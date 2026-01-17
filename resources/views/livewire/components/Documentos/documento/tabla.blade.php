@@ -367,6 +367,6 @@
         </div>
     </div>
 
-    @include('livewire.components.documentos.documento.modal-observacion-documento')
+    @include('livewire.components.Documentos.Documento.modal-observacion-documento')
 
 </div>
